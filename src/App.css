@@ -1,0 +1,32 @@
+.dataTables_wrapper {
+    position: relative;
+    clear: both;
+    zoom: 1;
+}
+
+.logo-box img {
+    padding-top: 0;
+    width: 100%;
+    height: auto;
+    max-width: 80px;
+    margin-right: 9px;
+}
+
+
+.logo-box {
+    padding-top: 18px;
+}
+
+
+.header_top-contact a, .header_top-contact a:hover {
+    display: flex;
+    color: #ffffff;
+}
+
+section.header_section {
+    background: rgba(47, 63 ,124, 0.1);
+    padding-bottom: 18px;
+}
+div#navbarSupportedContent > * {
+    margin-right: 0 !important;
+}
