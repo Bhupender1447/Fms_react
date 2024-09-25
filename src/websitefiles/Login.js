@@ -9,24 +9,37 @@ const[Password,setPassword]=useState('');
 const[error,seterror]=useState('');
 
 let navigate = useNavigate();
-let handleonSubmit=(e)=>{
-    e.preventDefault();
-    const formdata = new FormData();
-    formdata.append("email", Email);
-    formdata.append("password",Password);
-    axios.post('https://isovia.ca/fms_api/api/login',formdata)
-    .then(res=>{
+const handleonSubmit = (e) => {
+  e.preventDefault();
+  const formdata = new FormData();
+  formdata.append("email", Email);
+  formdata.append("password", Password);
+
+  axios.post('https://isovia.ca/fms_api/api/login', formdata)
+    .then(res => {
       let loginres = res.data;
-      if(loginres.status=="success"){
-        let data ={name:loginres.username,id:loginres.user_id,email:loginres.email}
-        localStorage.setItem("logindetail",JSON.stringify(data))
-        navigate('/admin')
-      }else if(loginres.status=="error"){
-        seterror(loginres.message)
+      console.log(loginres);
+      if (loginres.status === "success") {
+        let data = {
+          name: loginres.username,
+          id: loginres.user_id,
+          email: loginres.email,
+          role: loginres.role // Assuming the response contains a 'role' field
+        };
+        localStorage.setItem("logindetail", JSON.stringify(data));
+        
+        // Navigate based on user role
+        if (loginres.role === "admin") {
+          navigate('/admin');
+        } else if (loginres.role === "user") {
+          navigate('/user'); // Change '/user' to the appropriate route for regular users
+        }
+      } else if (loginres.status === "error") {
+        seterror(loginres.message);
       }
     })
-    .catch(err=>seterror(err))
-}
+    .catch(err => seterror(err.message));
+};
 
   return (
     <><div className="login-box">

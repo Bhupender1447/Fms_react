@@ -2,12 +2,224 @@ import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 
 const Createtrips = () => {
-const[data,setdata]=useState([])
+  const[data,setdata]=useState([])
+  const[error,seterror]=useState([])
+  const [formData, setFormData] = useState({
+    company: "",
+    customerorderno: "",
+    shipmenttype: "",
+    commission: "",
+    customer_id: "",
+    loadtype: "",
+    frieghton: "",
+    salesman: "",
+    scaleticketno: "",
+    pickup_from: "",
+    pickup_address: "",
+    pickupdate: "",
+    pickuptime: "",
+    pickup_refno: "",
+    pickup_desc: "",
+    delivery: "",
+    delivery_address: "",
+    deliverydate: "",
+    deliverytime: "",
+    delivery_refno: "",
+    dappointment: "",
+    delivery_desc: "",
+    lat: "",
+    lng: "",
+    source_lat: "",
+    source_lng: "",
+    commodity: [""], 
+    weight: [""],
+    unit: [""],
+    package: [""],
+    trailortype: "",
+    manifest: "",
+    hazmat: "",
+    addlcharge: "",
+    appt: "",
+    pip: "",
+    ctpat: "",
+    rate: [""],
+    ratevalue: [""],
+    gross_amount: "",
+    hst: "",
+    hstamount: "",
+    cst: "",
+    cstamount: "",
+    net_amount: "",
+  });
+
+const[messageres,setmessage]=useState()
+const handleInputChange = (e) => {
+  const { name, value } = e.target;
+
+  if (name === "delivery") {
+    // Find the selected location based on the value (id)
+    const selectedLocation = data.locations.find((item) => item.id === value);
+    
+    // Update formData with the new delivery address and delivery id
+    setFormData({
+      ...formData,
+      [name]: value,
+      delivery_address: selectedLocation ? selectedLocation.address1 : ""
+    });
+  } else if(name==="pickup_from") {
+    const selectedLocation = data.locations.find((item) => item.id === value);
+    
+    // Update formData with the new delivery address and delivery id
+    setFormData({
+      ...formData,
+      [name]: value,
+      pickup_address: selectedLocation ? selectedLocation.address1 : ""
+    });
+  }else {
+    // For other input fields
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  }
+};
+
+  const handleInputChange2 = (e, index, field) => {
+    const { value } = e.target;
+
+    setFormData(prevState => {
+        const updatedFormData = { ...prevState };
+
+        // Ensure the array exists in the state
+        if (!updatedFormData[field]) {
+            updatedFormData[field] = [];
+        }
+
+        // Update the value at the specified index
+        updatedFormData[field][index] = value;
+
+        return updatedFormData;
+    });
+}
+
+  
+  
 useEffect(()=>{
 axios.get('https://isovia.ca/fms_api/api/getOrderData')
-.then(res=>console.log(res))
-.catch(error=>console.log(error))
+.then(res=>{setdata(res.data)
+  setFormData({customerorderno:res&&res.data.triprno})
+console.log(res.data)})
+.catch(error=>seterror(error))
+handleAddRow();
 },[])
+
+
+const [rows, setRows] = useState([]);
+
+let handleonSubmit = async (e) => {
+  e.preventDefault();
+  
+  const form = new FormData();
+    // Append regular fields
+    Object.keys(formData).forEach((key) => {
+      if (Array.isArray(formData[key])) {
+        formData[key].forEach((item) => form.append(`${key}[]`, item)); // Append arrays
+      } else {
+        form.append(key, formData[key]);
+      }
+    });
+
+  try {
+    const response = await axios.post('https://isovia.ca/fms_api/api/create', form);
+    setmessage(response.data.message);
+    alert("Trip create")
+    return response.data;
+  } catch (error) {
+    console.error('Error:', error);
+    throw error; // Rethrow the error to handle it in the calling code
+  }
+}
+{console.log(formData?.commodity)}
+const handleAddRow = () => {
+  setRows(prevRows => [
+    ...prevRows,
+    (
+      <tr key={prevRows.length + 1}>
+      <td>
+     
+        <input
+          type="text"
+          name={`commodity[${prevRows.length}]`}
+          placeholder="Enter Commodity"
+          className="form-control name_list"
+          required
+          value={formData?.commodity[prevRows.length] || ""}
+          onChange={(e) => handleInputChange2(e, prevRows.length, 'commodity')}
+        />
+      </td>
+      <td>
+        <input
+          type="text"
+          name={`weight[${prevRows.length}]`}
+          placeholder="Enter Weight"
+          className="form-control name_list"
+          required
+          value={formData?.weight[prevRows.length] || ""}
+          onChange={(e) => handleInputChange2(e, prevRows.length, 'weight')}
+        />
+      </td>
+      <td>
+        <select
+          name={`unit[${prevRows.length}]`}
+          className="form-control name_list"
+          required
+          value={formData?.unit[prevRows.length] || ""}
+          onChange={(e) => handleInputChange2(e, prevRows.length, 'unit')}
+        >
+          <option value="na" disabled>Select Unit</option>
+          <option value="Gallons">Gallons</option>
+          <option value="KG">KG</option>
+          <option value="TON">TON</option>
+          <option value="Metric Ton">Metric Ton</option>
+          <option value="Ounces">Ounces</option>
+          <option value="MBF">MBF</option>
+          <option value="Pounds">Pounds</option>
+        </select>
+      </td>
+      <td>
+        <input
+          type="text"
+          name={`package[${prevRows.length}]`}
+          placeholder="Enter No. of Packages"
+          className="form-control name_list"
+          required
+          value={formData?.package[prevRows.length] || ""}
+          onChange={(e) => handleInputChange2(e, prevRows.length, 'package')}
+        />
+      </td>
+      <td>
+        <button
+          type="button"
+          name="remove"
+          className="btn btn-danger btn_remove"
+          onClick={() => handleRemoveRow(prevRows.length + 1)}
+        >
+          X
+        </button>
+      </td>
+    </tr>
+    
+    
+    )
+  ]);
+};
+
+
+const handleRemoveRow = (index) => {
+  setRows(prevRows => prevRows.filter((row, i) => i !== index - 1));
+};
+
+
 
   return (
     <div className='content-wrapper'><section className="content-header">
@@ -35,7 +247,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
             <h4>
               <span className="label label-success">CUSTOMER DETAILS</span>
             </h4>
-            <h3 align="center">TRIP # : ISV_TRIP-1230</h3>
+            <h3 align="center">TRIP # : {data&&data.triprno}</h3>
           </div>
         </div>
         {/* /.box-header */}
@@ -45,10 +257,13 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               <div className="col-md-12 col-xs-12 pull pull-left">
                 <div className="form-group">
                   <label htmlFor="store">Company</label>
-                  <select className="form-control" id="company" name="company">
-                    <option value="Adonis Freight Inc.">
-                      ADONIS FREIGHT INC.
-                    </option>
+                  <select className="form-control" id="company" name="company" value={formData.company} onChange={handleInputChange}>
+                  <option value="">Select Company</option>
+                  {data.company_data?.map(item=>( <option value={item.company_name}>
+                      
+                     {item.company_name}
+                    </option>))}
+                   
                   </select>
                 </div>
               </div>
@@ -57,9 +272,10 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                 className="form-control"
                 id="customerorderno"
                 name="customerorderno"
-                defaultValue="ISV_TRIP-1230"
+                defaultValue={data&&data.triprno}
                 placeholder="Enter Customer Order #"
                 autoComplete="off"
+                value={data&&data.triprno}
               />
               <div className="col-md-6 col-xs-12 pull pull-left">
                 <div className="form-group">
@@ -68,6 +284,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     className="form-control"
                     id="shipmenttype"
                     name="shipmenttype"
+                    value={formData.shipmenttype} onChange={handleInputChange}
                   >
                     <option value="Regular">Regular</option>
                     <option value="into Canada">into Canada</option>
@@ -83,6 +300,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     className="form-control"
                     id="commission"
                     name="commission"
+                    value={formData.commission} onChange={handleInputChange}
                   >
                     <option value="Order">Order</option>
                   </select>
@@ -97,6 +315,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     className="form-control"
                     id="customer_id"
                     name="customer_id"
+                    value={formData.customer_id} onChange={handleInputChange}
                   >
                     <option value={23}>RELIANCE LOGISTICS GROUP INC.</option>
                     <option value={19}>LOYAL EXPRESS TRANSPORT</option>
@@ -113,6 +332,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     className="form-control"
                     id="loadtype"
                     name="loadtype"
+                    value={formData.loadtype} onChange={handleInputChange}
                   >
                     <option value="FTL">FTL</option>
                     <option value="LTL">LTL</option>
@@ -126,6 +346,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     className="form-control"
                     id="frieghton"
                     name="frieghton"
+                    value={formData.frieghton} onChange={handleInputChange}
                   >
                     <option value="Order">Order</option>
                   </select>
@@ -138,55 +359,12 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     className="form-control"
                     id="salesman"
                     name="salesman"
+                    value={formData.salesman} onChange={handleInputChange}
                   >
-                    <option value={23}>
-                      Reliance Logistics Group Inc., Wertheim Court, Richmond
-                      Hill, ON, Canada
-                    </option>
-                    <option value={22}>
-                      HBC TRANSPORTATION, Armstrong Avenue, Georgetown, ON,
-                      Canada
-                    </option>
-                    <option value={21}>
-                      Montreal Polymers, Chemin Dalton, Mount Royal, QC, Canada
-                    </option>
-                    <option value={20}>
-                      Pratt &amp; Whitney Canada, Courtneypark Drive East,
-                      Mississauga, ON, Canada
-                    </option>
-                    <option value={19}>
-                      Loyal Express Transport, Avenue Edward Vii, Dorval, QC,
-                      Canada
-                    </option>
-                    <option value={18}>Metairie, LA, USA</option>
-                    <option value={17}>
-                      Testaccio market, Via Aldo Manuzio, Rome, Metropolitan
-                      City of Rome, Italy
-                    </option>
-                    <option value={16}>
-                      Marvel Safety &amp; Complaince Inc, Mississauga, ON,
-                      Canada
-                    </option>
-                    <option value={15}>
-                      National Produce Marketing Inc, Plywood Place, Etobicoke,
-                      ON, Canada
-                    </option>
-                    <option value={14}>Holt Marine - terminal</option>
-                    <option value={13}>
-                      National Produce Marketing Inc, Plywood Place, Etobicoke,
-                      ON, Canada
-                    </option>
-                    <option value={12}>
-                      Rollx Carriers, Drew Road, Mississauga, ON, Canada
-                    </option>
-                    <option value={11}>
-                      Impexive Technologies, Depalpur Road, Ambikapuri
-                      Extension, Ambikapuri Main, Indore, Madhya Pradesh,
-                    </option>
-                    <option value={9}>
-                      VASPLANET, Sector 70, Sahibzada Ajit Singh Nagar, Punjab,
-                      India
-                    </option>
+                    {data.customers?.map(item=>( <option value={item.id}>
+                      
+                      {item.name}
+                     </option>))}
                   </select>
                 </div>
               </div>
@@ -198,9 +376,11 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     className="form-control"
                     id="scaleticketno"
                     name="scaleticketno"
-                    defaultValue="ISV_TRIP-1230"
+                    defaultValue={data&&data.triprno}
                     placeholder="Enter Scale Ticket #"
                     autoComplete="off"
+                    value={formData.scaleticketno?formData.scaleticketno:data&&data.triprno} onChange={handleInputChange}
+
                   />
                 </div>
               </div>
@@ -385,162 +565,15 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
           <div className="form-group">
             <label htmlFor="store">
               Pickup From |{" "}
-              <a href="http://localhost/fms/locations/create">Add Location</a>{" "}
+              <a href="/locations/create">Add Location</a>{" "}
             </label>
             <select
               className="form-control"
               id="pickup_from"
-              onchange="fetch_address();"
+              value={formData.pickup_from} onChange={handleInputChange}
               name="pickup_from"
             >
-              <option value={58}>Top O' the River</option>
-              <option value={57}>
-                Kisko Products, 50 Royal Group Crescent, Woodbridge, ON L4H 1X9
-              </option>
-              <option value={56}>
-                C&amp;S Wholesale Grocers Logistics, East Penn Avenue,
-                Robesonia, PA, USA
-              </option>
-              <option value={55}>
-                Supervalu Distribution Center, Paintersville Road, New Stanton,
-                PA, USA
-              </option>
-              <option value={54}>
-                Dollar General, East Pike, Zanesville, OH, USA
-              </option>
-              <option value={53}>
-                Furlani Foods, Aimco Boulevard, Mississauga, ON, Canada
-              </option>
-              <option value={52}>
-                Costco, Brant Street, Burlington, ON, Canada
-              </option>
-              <option value={51}>
-                Adonis Carriers Inc, Dixie Road, Mississauga, ON, Canada
-              </option>
-              <option value={50}>ECBVerdyol, Riverton, MB, Canada</option>
-              <option value={49}>
-                Murphy Warehouse Co, 24th Avenue Southeast, Minneapolis, MN, USA
-              </option>
-              <option value={48}>
-                Conwed Plastics LLC, Weeks Avenue Southeast, Minneapolis, MN,
-                USA
-              </option>
-              <option value={47}>
-                Winnipeg James Armstrong Richardson International Airport (YWG),
-                Wellington Avenue, Winnipeg, MB, Ca
-              </option>
-              <option value={46}>
-                Versa Cold, 78 Avenue Southeast, Calgary, AB, Canada
-              </option>
-              <option value={45}>
-                Precise Manufacturing Inc, Merchant Road, Fort Wayne, IN, USA
-              </option>
-              <option value={44}>
-                Richard's Produce, North Creek Drive, Festus, MO, USA
-              </option>
-              <option value={43}>Maryland City, MD, USA</option>
-              <option value={42}>
-                Arizona Mills, South Arizona Mills Circle, Tempe, AZ, USA
-              </option>
-              <option value={41}>
-                Husted's Hazel Dell Lanes, Northeast Highway 99, Vancouver, WA,
-                USA
-              </option>
-              <option value={40}>
-                Fort Worth Stockyards, East Exchange Avenue, Fort Worth, TX, USA
-              </option>
-              <option value={39}>
-                Metro Ontario Inc, Dundas Street West, Etobicoke, ON, Canada
-              </option>
-              <option value={38}>
-                Baketree, Gana Court, Mississauga, ON, Canada
-              </option>
-              <option value={37}>
-                Dallas Love Field Airport (DAL), Herb Kelleher Way, Dallas, TX,
-                USA
-              </option>
-              <option value={34}>
-                Jaipur Junction, Station Road, Gopalbari, Jaipur, Rajasthan,
-                India
-              </option>
-              <option value={33}>
-                Major's Tower, Lakhnaur Pind Road, Sector 74, Sahibzada Ajit
-                Singh Nagar, Punjab, India
-              </option>
-              <option value={32}>
-                Manitoulin Transport, Shawson Drive, Mississauga, ON, Canada
-              </option>
-              <option value={31}>
-                HBC TRANSPORTATION, Armstrong Avenue, Georgetown, ON, Canada
-              </option>
-              <option value={30}>
-                Spark Freight System, Williams Parkway, Brampton, ON, Canada
-              </option>
-              <option value={29}>
-                Boise Engineered Woodproducts ALLjoist, Rue Industrielle,
-                Saint-Jacques, NB, Canada
-              </option>
-              <option value={28}>
-                Greenovative Solutions, Inc., Chemin de la Côte-de-Liesse,
-                Saint-Laurent, QC, Canada
-              </option>
-              <option value={27}>
-                Boise Engineered Woodproducts ALLjoist, Rue Industrielle,
-                Saint-Jacques, NB, Canada
-              </option>
-              <option value={26}>
-                Pratt &amp; Whitney, Bee Line Highway, Jupiter, FL, USA
-              </option>
-              <option value={25}>
-                Pratt &amp; Whitney Canada, Boulevard Marie-Victorin, Longueuil,
-                QC, Canada
-              </option>
-              <option value={24}>
-                Pratt &amp; Whitney Canada, Courtneypark Drive East,
-                Mississauga, ON, Canada
-              </option>
-              <option value={22}>
-                Dollarama, Royalmount Avenue, Mount Royal, QC, Canada
-              </option>
-              <option value={20}>
-                Wisconsin State Capitol, East Main Street, Madison, WI, USA
-              </option>
-              <option value={19}>
-                Turlock DMV, East Monte Vista Avenue, Turlock, CA, USA
-              </option>
-              <option value={18}>
-                Mohali Stadium Road, Phase 3B-1, Phase 3B-2, Sector 60,
-                Sahibzada Ajit Singh Nagar, Punjab, India
-              </option>
-              <option value={17}>
-                Ontario Mills, Mills Circle, Ontario, CA, USA
-              </option>
-              <option value={16}>
-                Marvel Safety &amp; Complaince Inc, Mississauga, ON, Canada
-              </option>
-              <option value={14}>
-                Marvel Safety &amp; Complaince Inc, Windmill Road, Dartmouth,
-                NS, Canada
-              </option>
-              <option value={13}>
-                Marvel Safety &amp; Complaince Inc, Mississauga, ON, Canada
-              </option>
-              <option value={12}>
-                Rollx Carriers, Drew Road, Mississauga, ON, Canada
-              </option>
-              <option value={11}>Hamburg, Germany</option>
-              <option value={10}>
-                Brisbane Airport Domestic Terminal Multi-Storey Car Park,
-                Brisbane Airport QLD, Australia
-              </option>
-              <option value={9}>
-                A2z Immigration Consultancy, Sector 70, Mohali, Punjab, India
-              </option>
-              <option value={8}>Gushaini, Himachal Pradesh, India</option>
-              <option value={7}>Chandigarh, Punjab, India</option>
-              <option value={4}>Patiala, Punjab, India</option>
-              <option value={3}>California</option>
-              <option value={2}>Brampton</option>
+                 {data.locations?.map(item=>( <option value={item.id}>{item.name}</option>))}
             </select>
           </div>
         </div>
@@ -553,6 +586,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               id="pickup_address"
               name="pickup_address"
               autoComplete="off"
+              value={formData.pickup_address} onChange={handleInputChange}
             />
           </div>
         </div>
@@ -564,6 +598,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               name="pickupdate"
               id="pickupdate"
               className="form-control"
+              value={formData.pickupdate} onChange={handleInputChange}
             />
             <div className="input-group-addon">
               <span className="glyphicon glyphicon-th" />
@@ -575,6 +610,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
             id="pickuptime"
             placeholder="Set Time"
             name="pickuptime"
+            value={formData.pickuptime} onChange={handleInputChange}
           />
         </div>
         <div className="col-md-4 col-xs-12 pull pull-left">
@@ -587,6 +623,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               defaultValue="ISV_TRIP-1230"
               name="pickup_refno"
               autoComplete="off"
+              value={formData.pickup_refno?formData.pickup_refno:data&&data.triprno} onChange={handleInputChange}
             />
           </div>
         </div>
@@ -618,6 +655,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               name="pickup_desc"
               placeholder="Enter Pickup Notes"
               autoComplete="off"
+              value={formData.pickup_desc} onChange={handleInputChange}
               defaultValue={"  "}
             />
           </div>
@@ -630,157 +668,11 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
             <select
               className="form-control"
               id="delivery"
-              onchange="fetch_delivery_address();"
+             
               name="delivery"
+              value={formData.delivery} onChange={handleInputChange}
             >
-              <option value={58}>Top O' the River</option>
-              <option value={57}>
-                Kisko Products, 50 Royal Group Crescent, Woodbridge, ON L4H 1X9
-              </option>
-              <option value={56}>
-                C&amp;S Wholesale Grocers Logistics, East Penn Avenue,
-                Robesonia, PA, USA
-              </option>
-              <option value={55}>
-                Supervalu Distribution Center, Paintersville Road, New Stanton,
-                PA, USA
-              </option>
-              <option value={54}>
-                Dollar General, East Pike, Zanesville, OH, USA
-              </option>
-              <option value={53}>
-                Furlani Foods, Aimco Boulevard, Mississauga, ON, Canada
-              </option>
-              <option value={52}>
-                Costco, Brant Street, Burlington, ON, Canada
-              </option>
-              <option value={51}>
-                Adonis Carriers Inc, Dixie Road, Mississauga, ON, Canada
-              </option>
-              <option value={50}>ECBVerdyol, Riverton, MB, Canada</option>
-              <option value={49}>
-                Murphy Warehouse Co, 24th Avenue Southeast, Minneapolis, MN, USA
-              </option>
-              <option value={48}>
-                Conwed Plastics LLC, Weeks Avenue Southeast, Minneapolis, MN,
-                USA
-              </option>
-              <option value={47}>
-                Winnipeg James Armstrong Richardson International Airport (YWG),
-                Wellington Avenue, Winnipeg, MB, Ca
-              </option>
-              <option value={46}>
-                Versa Cold, 78 Avenue Southeast, Calgary, AB, Canada
-              </option>
-              <option value={45}>
-                Precise Manufacturing Inc, Merchant Road, Fort Wayne, IN, USA
-              </option>
-              <option value={44}>
-                Richard's Produce, North Creek Drive, Festus, MO, USA
-              </option>
-              <option value={43}>Maryland City, MD, USA</option>
-              <option value={42}>
-                Arizona Mills, South Arizona Mills Circle, Tempe, AZ, USA
-              </option>
-              <option value={41}>
-                Husted's Hazel Dell Lanes, Northeast Highway 99, Vancouver, WA,
-                USA
-              </option>
-              <option value={40}>
-                Fort Worth Stockyards, East Exchange Avenue, Fort Worth, TX, USA
-              </option>
-              <option value={39}>
-                Metro Ontario Inc, Dundas Street West, Etobicoke, ON, Canada
-              </option>
-              <option value={38}>
-                Baketree, Gana Court, Mississauga, ON, Canada
-              </option>
-              <option value={37}>
-                Dallas Love Field Airport (DAL), Herb Kelleher Way, Dallas, TX,
-                USA
-              </option>
-              <option value={34}>
-                Jaipur Junction, Station Road, Gopalbari, Jaipur, Rajasthan,
-                India
-              </option>
-              <option value={33}>
-                Major's Tower, Lakhnaur Pind Road, Sector 74, Sahibzada Ajit
-                Singh Nagar, Punjab, India
-              </option>
-              <option value={32}>
-                Manitoulin Transport, Shawson Drive, Mississauga, ON, Canada
-              </option>
-              <option value={31}>
-                HBC TRANSPORTATION, Armstrong Avenue, Georgetown, ON, Canada
-              </option>
-              <option value={30}>
-                Spark Freight System, Williams Parkway, Brampton, ON, Canada
-              </option>
-              <option value={29}>
-                Boise Engineered Woodproducts ALLjoist, Rue Industrielle,
-                Saint-Jacques, NB, Canada
-              </option>
-              <option value={28}>
-                Greenovative Solutions, Inc., Chemin de la Côte-de-Liesse,
-                Saint-Laurent, QC, Canada
-              </option>
-              <option value={27}>
-                Boise Engineered Woodproducts ALLjoist, Rue Industrielle,
-                Saint-Jacques, NB, Canada
-              </option>
-              <option value={26}>
-                Pratt &amp; Whitney, Bee Line Highway, Jupiter, FL, USA
-              </option>
-              <option value={25}>
-                Pratt &amp; Whitney Canada, Boulevard Marie-Victorin, Longueuil,
-                QC, Canada
-              </option>
-              <option value={24}>
-                Pratt &amp; Whitney Canada, Courtneypark Drive East,
-                Mississauga, ON, Canada
-              </option>
-              <option value={22}>
-                Dollarama, Royalmount Avenue, Mount Royal, QC, Canada
-              </option>
-              <option value={20}>
-                Wisconsin State Capitol, East Main Street, Madison, WI, USA
-              </option>
-              <option value={19}>
-                Turlock DMV, East Monte Vista Avenue, Turlock, CA, USA
-              </option>
-              <option value={18}>
-                Mohali Stadium Road, Phase 3B-1, Phase 3B-2, Sector 60,
-                Sahibzada Ajit Singh Nagar, Punjab, India
-              </option>
-              <option value={17}>
-                Ontario Mills, Mills Circle, Ontario, CA, USA
-              </option>
-              <option value={16}>
-                Marvel Safety &amp; Complaince Inc, Mississauga, ON, Canada
-              </option>
-              <option value={14}>
-                Marvel Safety &amp; Complaince Inc, Windmill Road, Dartmouth,
-                NS, Canada
-              </option>
-              <option value={13}>
-                Marvel Safety &amp; Complaince Inc, Mississauga, ON, Canada
-              </option>
-              <option value={12}>
-                Rollx Carriers, Drew Road, Mississauga, ON, Canada
-              </option>
-              <option value={11}>Hamburg, Germany</option>
-              <option value={10}>
-                Brisbane Airport Domestic Terminal Multi-Storey Car Park,
-                Brisbane Airport QLD, Australia
-              </option>
-              <option value={9}>
-                A2z Immigration Consultancy, Sector 70, Mohali, Punjab, India
-              </option>
-              <option value={8}>Gushaini, Himachal Pradesh, India</option>
-              <option value={7}>Chandigarh, Punjab, India</option>
-              <option value={4}>Patiala, Punjab, India</option>
-              <option value={3}>California</option>
-              <option value={2}>Brampton</option>
+                {data.locations?.map(item=>( <option value={item.id}>{item.name}</option>))}
             </select>
           </div>
         </div>
@@ -793,6 +685,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               id="delivery_address"
               name="delivery_address"
               autoComplete="off"
+              value={formData.delivery_address} onChange={handleInputChange}
             />
           </div>
         </div>
@@ -804,6 +697,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               name="deliverydate"
               id="deliverydate"
               className="form-control"
+              value={formData.deliverydate} onChange={handleInputChange}
             />
             <div className="input-group-addon">
               <span className="glyphicon glyphicon-th" />
@@ -815,6 +709,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
             id="deliverytime"
             placeholder="Set Time"
             name="deliverytime"
+            value={formData.deliverytime} onChange={handleInputChange}
           />
         </div>
         <div className="col-md-4 col-xs-12 pull pull-left">
@@ -827,6 +722,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               defaultValue="ISV_TRIP-1230"
               name="delivery_refno"
               autoComplete="off"
+              value={formData.delivery_refno?formData.delivery_refno:data&&data.triprno} onChange={handleInputChange}
             />
           </div>
         </div>
@@ -855,6 +751,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               className="form-control"
               id="dappointment"
               name="dappointment"
+              value={formData.dappointment} onChange={handleInputChange}
             >
               <option value="YES">YES</option>
               <option value="NO">NO</option>
@@ -871,6 +768,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               name="delivery_desc"
               placeholder="Enter Delivery Notes"
               autoComplete="off"
+              value={formData.delivery_desc} onChange={handleInputChange}
               defaultValue={"                                    "}
             />
           </div>
@@ -954,6 +852,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                   name="manageTablestops_length"
                   aria-controls="manageTablestops"
                   className="form-control input-sm"
+
                 >
                   <option value={10}>10</option>
                   <option value={25}>25</option>
@@ -1095,6 +994,8 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                       name="commodity[]"
                       placeholder="Enter Commodity"
                       autoComplete="off"
+                      value={formData.commodity} onChange={handleInputChange}
+
                     />
                   </div>
                 </div>
@@ -1110,6 +1011,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                       name="weight[]"
                       placeholder="Enter Weight"
                       autoComplete="off"
+                      value={formData.weight} onChange={handleInputChange}
                     />
                   </div>
                 </div>
@@ -1118,7 +1020,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                 <div className="col-md-12 col-xs-12 pull pull-left">
                   <div className="form-group">
                     <label htmlFor="username">Packages(s)</label>
-                    <select className="form-control" id="unit[]" name="unit[]">
+                    <select className="form-control" id="unit[]" name="unit[]"  value={formData.unit} onChange={handleInputChange}unit>
                       <option value="Gallons">Gallons</option>
                       <option value="Gallons">Gallons</option>
                       <option value="Grams">Grams</option>
@@ -1142,6 +1044,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                       id="package[]"
                       name="package[]"
                       autoComplete="off"
+                      value={formData.package} onChange={handleInputChange}
                     />
                   </div>
                 </div>
@@ -1171,26 +1074,21 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               className="form-control"
               id="trailortype"
               name="trailortype"
+              value={formData.trailortype} onChange={handleInputChange}
             >
               <option value="" disabled="" selected="">
                 Choose Trailor Type
               </option>
-              <option value="Dry VAN 53">DRY VAN 53"</option>
-              <option value="Dry VAN 53">DRY VAN 53"</option>
-              <option value="Auto Carrier Trailer">AUTO CARRIER TRAILER</option>
-              <option value="Beverage Rack Trailer">
-                BEVERAGE RACK TRAILER
-              </option>
-              <option value="20 feet sea container(closed top)">
-                20 FEET SEA CONTAINER(CLOSED TOP)
-              </option>
+              {data.trailors?.map(item=>(<option value={item.trailortype} >
+                     {item.trailortype}
+                    </option>))}
             </select>
           </div>
         </div>
         <div className="col-md-3 col-xs-12 pull pull-left">
           <div className="form-group">
             <label htmlFor="store">View Manifest</label>
-            <select className="form-control" id="manifest" name="manifest">
+            <select className="form-control" id="manifest" name="manifest"  value={formData.manifest} onChange={handleInputChange}>
               <option value="YES">YES</option>
               <option value="NO">NO</option>
             </select>
@@ -1199,7 +1097,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
         <div className="col-md-3 col-xs-12 pull pull-left">
           <div className="form-group">
             <label htmlFor="store">Hazmat</label>
-            <select className="form-control" id="hazmat" name="hazmat">
+            <select className="form-control" id="hazmat" name="hazmat"  value={formData.hazmat} onChange={handleInputChange}>
               <option value="YES">YES</option>
               <option value="NO">NO</option>
             </select>
@@ -1214,6 +1112,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               id="addlcharge"
               name="addlcharge"
               autoComplete="off"
+              value={formData.addlcharge} onChange={handleInputChange}
             />
           </div>
         </div>
@@ -1238,13 +1137,14 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
               id="appt"
               name="appt"
               autoComplete="off"
+              value={formData.appt} onChange={handleInputChange}
             />
           </div>
         </div>
         <div className="col-md-3 col-xs-12 pull pull-left">
           <div className="form-group">
             <label htmlFor="store">PIP</label>
-            <select className="form-control" id="pip" name="pip">
+            <select className="form-control" id="pip" name="pip" value={formData.pip} onChange={handleInputChange}>
               <option value="YES">YES</option>
               <option value="NO">NO</option>
             </select>
@@ -1253,7 +1153,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
         <div className="col-md-3 col-xs-12 pull pull-left">
           <div className="form-group">
             <label htmlFor="store">CTPAT</label>
-            <select className="form-control" id="ctpat" name="ctpat">
+            <select className="form-control" id="ctpat" name="ctpat"  value={formData.ctpat} onChange={handleInputChange}>
               <option value="YES">YES</option>
               <option value="NO">NO</option>
             </select>
@@ -1291,6 +1191,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     placeholder="Enter Rate (0.00)"
                     className="form-control name_list"
                     required=""
+                    value={formData.rate} onChange={handleInputChange}
                   />
                 </td>
                 <td>
@@ -1301,6 +1202,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     placeholder="Enter Qty"
                     className="form-control name_list"
                     required=""
+                    value={formData.ratevalue} onChange={handleInputChange}
                   />{" "}
                 </td>
                 <td>
@@ -1334,6 +1236,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     name="gross_amount"
                     defaultValue={0}
                     autoComplete="off"
+                    value={formData.gross_amount} onChange={handleInputChange}
                   />
                 </td>
               </tr>
@@ -1349,6 +1252,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     name="hst"
                     defaultValue={0}
                     autoComplete="off"
+                    value={formData.hst} onChange={handleInputChange}
                   />
                 </td>
                 <td>
@@ -1360,6 +1264,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     name="hstamount"
                     defaultValue={0}
                     autoComplete="off"
+                    value={formData.hstamount} onChange={handleInputChange}
                   />
                 </td>
               </tr>
@@ -1376,6 +1281,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     name="cst"
                     defaultValue={0}
                     autoComplete="off"
+                    value={formData.cst} onChange={handleInputChange}
                   />
                 </td>
                 <td>
@@ -1386,6 +1292,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     name="cstamount"
                     defaultValue={0}
                     autoComplete="off"
+                    value={formData.cstamount} onChange={handleInputChange}
                   />
                 </td>
               </tr>
@@ -1403,6 +1310,7 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
                     name="net_amount"
                     defaultValue={0}
                     autoComplete="off"
+                    value={formData.net_amount} onChange={handleInputChange}
                   />
                 </td>
               </tr>
@@ -1416,10 +1324,10 @@ axios.get('https://isovia.ca/fms_api/api/getOrderData')
   </div>
   {/* /.box */}
   <div className="text-center">
-    <button type="submit" className="btn btn-primary">
+    <button type="submit" className="btn btn-primary" onClick={handleonSubmit}>
       CREATE TRIP
     </button>
-    <a href="http://localhost/fms/orders/" className="btn btn-warning">
+    <a href="/orders/" className="btn btn-warning">
       Back
     </a>
   </div>

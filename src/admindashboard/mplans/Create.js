@@ -1,6 +1,48 @@
-import React from 'react'
+import axios from 'axios';
+import React, { useState } from 'react'
 
 const Createmplans = () => {
+
+  const [formData, setFormData] = useState({
+    mfor: '',
+    company: '',
+    mtype: '',
+    sstatus: '',
+    amount: '',
+    currency: '',
+    type: '',
+    frequency: '',
+    sdate: '',
+    reminder: 'NO',
+    remarks: '',
+    _wysihtml5_mode: '1'
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const data = new FormData();
+    for (const key in formData) {
+      data.append(key, formData[key]);
+    }
+
+    try {
+      const response = await axios.post('https://isovia.ca/fms_api/api/createmplans', data);
+
+      if (response.status === 200) {
+        console.log('Form submitted successfully');
+      } else {
+        console.error('Form submission failed');
+      }
+    } catch (error) {
+      console.error('Error submitting form', error);
+    }
+  };
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
     {/* Content Header (Page header) */}
@@ -42,7 +84,7 @@ const Createmplans = () => {
                   <div className="col-md-6 col-xs-12 pull pull-left">
                     <div className="form-group">
                       <label htmlFor="store">Maintenance for </label>
-                      <select className="form-control" id="mfor" name="mfor">
+                      <select className="form-control" id="mfor" name="mfor" value={formData.mfor} onChange={handleChange}>
                         <option value="Truck">Truck</option>
                         <option value="Trailor">Trailor</option>
                         <option value="Driver">Driver</option>
@@ -57,6 +99,7 @@ const Createmplans = () => {
                         className="form-control"
                         id="company"
                         name="company"
+                        value={formData.company} onChange={handleChange}
                       >
                         <option value="Truck">Company</option>
                       </select>
@@ -65,7 +108,7 @@ const Createmplans = () => {
                   <div className="col-md-6 col-xs-12 pull pull-left">
                     <div className="form-group">
                       <label htmlFor="store">Maintenance Type </label>
-                      <select className="form-control" id="mtype" name="mtype">
+                      <select className="form-control" id="mtype" name="mtype" value={formData.mtype} onChange={handleChange}>
                         <option value="Truck">Mtype</option>
                       </select>
                     </div>
@@ -77,6 +120,7 @@ const Createmplans = () => {
                         className="form-control"
                         id="sstatus"
                         name="sstatus"
+                        value={formData.sstatus} onChange={handleChange}
                       >
                         <option value="Planning">Planning</option>
                         <option value="Done">Done</option>
@@ -93,6 +137,7 @@ const Createmplans = () => {
                         name="amount"
                         placeholder="Enter Expense Amount"
                         autoComplete="off"
+                        value={formData.amount} onChange={handleChange}
                       />
                     </div>
                   </div>
@@ -103,6 +148,7 @@ const Createmplans = () => {
                         className="form-control"
                         id="currency"
                         name="currency"
+                        value={formData.currency} onChange={handleChange}
                       >
                         <option value="CAD">CAD</option>
                       </select>
@@ -111,7 +157,7 @@ const Createmplans = () => {
                   <div className="col-md-3 col-xs-12 pull pull-left">
                     <div className="form-group">
                       <label htmlFor="store">Type </label>
-                      <select className="form-control" id="type" name="type">
+                      <select className="form-control" id="type" name="type" value={formData.type} onChange={handleChange}>
                         <option value="Scheduled">Scheduled</option>
                         <option value="One Time">One Time</option>
                       </select>
@@ -123,7 +169,7 @@ const Createmplans = () => {
                       <select
                         className="form-control"
                         id="frequency"
-                        name="frequency"
+                        name="frequency"   value={formData.frequency} onChange={handleChange} 
                       >
                         <option value="CAD">Daily</option>
                         <option value="Monthly">Monthly</option>
@@ -139,6 +185,7 @@ const Createmplans = () => {
                         type="text"
                         id="sdate"
                         name="sdate"
+                        value={formData.sdate} onChange={handleChange} 
                         className="form-control"
                       />
                       <div className="input-group-addon">
@@ -165,6 +212,7 @@ const Createmplans = () => {
                         className="form-control"
                         id="reminder"
                         name="reminder"
+                        value={formData.reminder} onChange={handleChange}
                       >
                         <option value="YES">YES</option>
                         <option value="NO">NO</option>
@@ -504,7 +552,7 @@ const Createmplans = () => {
                         autoComplete="off"
                         placeholder="Enter Remarks"
                         style={{ display: "none" }}
-                        defaultValue={"                                    "}
+                        value={formData.remarks} onChange={handleChange}
                       />
                       <input
                         type="hidden"
@@ -571,7 +619,7 @@ const Createmplans = () => {
             <button type="submit" className="btn btn-primary">
               Save Changes
             </button>
-            <a href="http://localhost/fms/customers/" className="btn btn-warning">
+            <a href="/customers/" className="btn btn-warning">
               Back
             </a>
           </div>

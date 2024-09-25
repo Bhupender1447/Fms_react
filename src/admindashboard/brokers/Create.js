@@ -571,7 +571,7 @@ const Createbrokers = () => {
                 Save Changes
               </button>
               <a
-                href="http://localhost/fms/customers/"
+                href="/customers/"
                 className="btn btn-warning"
               >
                 Back

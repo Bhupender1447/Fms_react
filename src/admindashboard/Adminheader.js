@@ -3,25 +3,25 @@ import Sidebar from './Sidebar'
 import { Link } from 'react-router-dom';
 
 const Adminheader = () => {
-  useEffect(() => {
-    const handleMenuClick = (event) => {
-      const target = event.currentTarget; 
-      console.log(target)
-      if (target.classList.contains('treeview')) {
-        target.classList.toggle('menu-open');
-      }
-    };
+  // useEffect(() => {
+  //   const handleMenuClick = (event) => {
+  //     const target = event.currentTarget; 
+  //     console.log(target)
+  //     if (target.classList.contains('treeview')) {
+  //       target.classList.toggle('menu-open');
+  //     }
+  //   };
 
-    document.querySelectorAll('.treeview').forEach((item) => {
-      item.addEventListener('click', handleMenuClick);
-    });
+  //   document.querySelectorAll('.treeview').forEach((item) => {
+  //     item.addEventListener('click', handleMenuClick);
+  //   });
 
-    return () => {
-      document.querySelectorAll('.treeview').forEach((item) => {
-        item.removeEventListener('click', handleMenuClick);
-      });
-    };
-  }, []);
+  //   return () => {
+  //     document.querySelectorAll('.treeview').forEach((item) => {
+  //       item.removeEventListener('click', handleMenuClick);
+  //     });
+  //   };
+  // }, []);
 
   return (<>
 <header className="main-header">

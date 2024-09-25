@@ -83,7 +83,7 @@ const Createcarriers = () => {
                   Search
                 </button>
                 <a
-                  href="http://localhost/fms/carriers/"
+                  href="/carriers/"
                   className="btn btn-warning"
                 >
                   Back

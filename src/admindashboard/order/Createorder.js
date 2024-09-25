@@ -49,15 +49,36 @@ const Createorder = () => {
     net_amount: ""
   });
 const[messageres,setmessage]=useState()
-  const handleInputChange = (e) => {
+const handleInputChange = (e) => {
+  const { name, value } = e.target;
 
-    const { name, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
+  if (name === "delivery") {
+    // Find the selected location based on the value (id)
+    const selectedLocation = data.locations.find((item) => item.id === value);
     
-  };
+    // Update formData with the new delivery address and delivery id
+    setFormData({
+      ...formData,
+      [name]: value,
+      delivery_address: selectedLocation ? selectedLocation.address1 : ""
+    });
+  } else if(name==="pickup_from") {
+    const selectedLocation = data.locations.find((item) => item.id === value);
+    
+    // Update formData with the new delivery address and delivery id
+    setFormData({
+      ...formData,
+      [name]: value,
+      pickup_address: selectedLocation ? selectedLocation.address1 : ""
+    });
+  }else {
+    // For other input fields
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  }
+};
   const handleInputChange2 = (e, index, field) => {
     const { value } = e.target;
 
@@ -660,7 +681,7 @@ const handleRemoveRow = (index) => {
               <div className="form-group">
                 <label htmlFor="store">
                   Pickup From |{" "}
-                  <a href="http://localhost/fms/locations/create">
+                  <a href="/locations/create">
                     Add Location
                   </a>{" "}
                 </label>
@@ -681,7 +702,7 @@ const handleRemoveRow = (index) => {
               <div className="form-group">
                 <label htmlFor="username">Add New Locations</label>
                 <a
-                  href="http://localhost/fms/locations/create"
+                  href="/locations/create"
                   className="btn btn-warning"
                 >
                   Add
@@ -1243,7 +1264,7 @@ const handleRemoveRow = (index) => {
     <button onClick={handleonSubmit} className="btn btn-primary">
       Save
     </button>
-    <a href="http://localhost/fms/orders/" className="btn btn-warning">
+    <a href="/orders/" className="btn btn-warning">
       Back
     </a>
   </div>

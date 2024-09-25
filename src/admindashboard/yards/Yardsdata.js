@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 
 const Yardsdata = () => {
+ 
   
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
@@ -11,13 +12,11 @@ const Yardsdata = () => {
         <small>Yards</small>
       </h1>
     </section>
-    {/* Main content */}
     <section className="content">
-      {/* Small boxes (Stat box) */}
       <div className="row">
         <div className="col-md-12 col-xs-12">
           <div id="messages" />
-          <a href="http://localhost/fms/yards/create" className="btn btn-primary">
+          <a href="/yards/create" className="btn btn-primary">
             Add yards
           </a>
           {/*        <a href="" class="btn btn-success">View Motors</a> */}
@@ -165,7 +164,7 @@ const Yardsdata = () => {
                           <td>L5P 1B2</td>
                           <td>
                             <a
-                              href="http://localhost/fms/yards/update/8"
+                              href="/yards/update/8"
                               className="btn btn-default btn-sm"
                             >
                               <i className="fa fa-pencil" />
@@ -192,7 +191,7 @@ const Yardsdata = () => {
                           <td>L6R 3J7</td>
                           <td>
                             <a
-                              href="http://localhost/fms/yards/update/7"
+                              href="/yards/update/7"
                               className="btn btn-default btn-sm"
                             >
                               <i className="fa fa-pencil" />

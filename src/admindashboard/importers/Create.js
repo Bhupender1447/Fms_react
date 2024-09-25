@@ -1,6 +1,46 @@
-import React from 'react'
+import axios from 'axios';
+import React, { useState } from 'react'
 
 const Createimporters = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    ext: '',
+    email: '',
+    remarks: '',
+    _wysihtml5_mode: '1',
+    company: '',
+    fax: '',
+    csa: 'NO',
+    fast: 'NO'
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const data = new FormData();
+    for (const key in formData) {
+      data.append(key, formData[key]);
+    }
+
+    try {
+      const response = await axios.post('https://isovia.ca/fms_api/api/createimporters', data);
+
+      if (response.status === 200) {
+        console.log('Form submitted successfully');
+      } else {
+        console.error('Form submission failed');
+      }
+    } catch (error) {
+      console.error('Error submitting form', error);
+    }
+  };
+
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
     {/* Content Header (Page header) */}
@@ -23,7 +63,7 @@ const Createimporters = () => {
             {/* /.box-header */}
             <form
               role="form"
-              action=""
+              onSubmit={handleSubmit}
               method="post"
               encType="multipart/form-data"
             >
@@ -47,6 +87,7 @@ const Createimporters = () => {
                         name="name"
                         placeholder="Enter Name"
                         autoComplete="off"
+                        value={formData.name} onChange={handleChange}
                       />
                     </div>
                   </div>
@@ -60,6 +101,7 @@ const Createimporters = () => {
                         name="phone"
                         placeholder="Enter Phone"
                         autoComplete="off"
+                        value={formData.phone} onChange={handleChange}
                       />
                     </div>
                   </div>
@@ -73,6 +115,7 @@ const Createimporters = () => {
                         name="ext"
                         placeholder="Enter Ext."
                         autoComplete="off"
+                        value={formData.ext} onChange={handleChange} 
                       />
                     </div>
                   </div>
@@ -86,6 +129,7 @@ const Createimporters = () => {
                         name="email"
                         placeholder="Email"
                         autoComplete="off"
+                        value={formData.email} onChange={handleChange}
                       />
                     </div>
                   </div>
@@ -411,7 +455,7 @@ const Createimporters = () => {
                         placeholder="Enter 
               Remarks"
                         style={{ display: "none" }}
-                        defaultValue={"                                    "}
+                        value={formData.remarks} onChange={handleChange} 
                       />
                       <input
                         type="hidden"
@@ -466,6 +510,7 @@ const Createimporters = () => {
                         name="company"
                         placeholder="Enter  Company Name"
                         autoComplete="off"
+                        value={formData.company} onChange={handleChange} 
                       />
                     </div>
                   </div>
@@ -479,13 +524,14 @@ const Createimporters = () => {
                         name="fax"
                         placeholder="Fax"
                         autoComplete="off"
+                        value={formData.fax} onChange={handleChange}
                       />
                     </div>
                   </div>
                   <div className="col-md-3 col-xs-12 pull pull-left">
                     <div className="form-group">
                       <label htmlFor="store">CSA</label>
-                      <select className="form-control" id="csa" name="csa">
+                      <select className="form-control" id="csa" name="csa" value={formData.csa} onChange={handleChange}>
                         <option value="YES">YES</option>
                         <option value="NO">NO</option>
                       </select>
@@ -494,7 +540,7 @@ const Createimporters = () => {
                   <div className="col-md-3 col-xs-12 pull pull-left">
                     <div className="form-group">
                       <label htmlFor="store">FAST</label>
-                      <select className="form-control" id="fast" name="fast">
+                      <select className="form-control" id="fast" name="fast"  value={formData.fast} onChange={handleChange}>
                         <option value="YES">YES</option>
                         <option value="NO">NO</option>
                       </select>
@@ -520,7 +566,7 @@ const Createimporters = () => {
                   Save Changes
                 </button>
                 <a
-                  href="http://localhost/fms/customers/"
+                  href="/customers/"
                   className="btn btn-warning"
                 >
                   Back

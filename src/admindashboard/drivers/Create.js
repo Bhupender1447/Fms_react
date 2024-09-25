@@ -27,6 +27,7 @@ const Createdrivers = () => {
     ext: '',
     fax: '',
     email: '',
+    password: '',
     dob: '',
     hiredate: '',
     termdate: '',
@@ -858,6 +859,20 @@ const Createdrivers = () => {
                       name="email"
                       autoComplete="off"
                       value={formData.email}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+                <div className="col-md-6 col-xs-12 pull pull-left">
+                  <div className="form-group">
+                    <label htmlFor="username">Password</label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      id="password"
+                      name="password"
+                      autoComplete="off"
+                      value={formData.password}
                       onChange={handleChange}
                     />
                   </div>

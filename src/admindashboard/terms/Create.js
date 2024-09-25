@@ -1,6 +1,39 @@
-import React from 'react'
+import axios from 'axios';
+import React, { useState } from 'react'
 
 const Createterms = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    company: '',
+    value: '',
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const data = new FormData();
+    for (const key in formData) {
+      data.append(key, formData[key]);
+    }
+
+    try {
+      const response = await axios.post('https://isovia.ca/fms_api/api/createterms', data);
+
+      if (response.status === 200) {
+      alert('Form submitted successfully');
+      } else {
+        console.error('Form submission failed');
+      }
+    } catch (error) {
+      console.error('Error submitting form', error);
+    }
+  };
+
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
   {/* Content Header (Page header) */}
@@ -34,7 +67,7 @@ const Createterms = () => {
             action=""
             method="post"
             encType="multipart/form-data"
-          >
+            onSubmit={handleSubmit}>
             <div className="box-body">
               <div className="col-md-6 col-xs-12 pull pull-left">
                 <br />
@@ -50,6 +83,7 @@ const Createterms = () => {
                       name="name"
                       placeholder="Enter Name"
                       autoComplete="off"
+                      value={formData.name} onChange={handleChange}
                     />
                   </div>
                 </div>
@@ -60,6 +94,7 @@ const Createterms = () => {
                       className="form-control"
                       id="company"
                       name="company"
+                      value={formData.company} onChange={handleChange}
                     >
                       <option value="Canada">Canada</option>
                     </select>
@@ -86,6 +121,7 @@ const Createterms = () => {
                       name="value"
                       placeholder="Enter Values"
                       autoComplete="off"
+                      value={formData.value} onChange={handleChange}
                     />
                   </div>
                 </div>
@@ -131,7 +167,7 @@ const Createterms = () => {
                 Save Changes
               </button>
               <a
-                href="http://localhost/fms/customers/"
+                href="/customers/"
                 className="btn btn-warning"
               >
                 Back

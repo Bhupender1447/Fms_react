@@ -1,6 +1,43 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 const Createextracharges = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    company: '',
+    chargetype: '',
+    value: '',
+    remarks: '',
+    _wysihtml5_mode: '1',
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const data = new FormData();
+    for (const key in formData) {
+      data.append(key, formData[key]);
+    }
+
+    try {
+      const response = await fetch('https://isovia.ca/fms_api/api/createextracharges', {
+        method: 'POST',
+        body: data,
+      });
+
+      if (response.ok) {
+        console.log('Form submitted successfully');
+      } else {
+        console.error('Form submission failed');
+      }
+    } catch (error) {
+      console.error('Error submitting form', error);
+    }
+  };
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
   {/* Content Header (Page header) */}
@@ -34,6 +71,7 @@ const Createextracharges = () => {
             action=""
             method="post"
             encType="multipart/form-data"
+            onSubmit={handleSubmit}
           >
             <div className="box-body">
               <div className="col-md-6 col-xs-12 pull pull-left">
@@ -50,6 +88,7 @@ const Createextracharges = () => {
                       name="name"
                       placeholder="Enter Name"
                       autoComplete="off"
+                      value={formData.name} onChange={handleChange}
                     />
                   </div>
                 </div>
@@ -60,6 +99,7 @@ const Createextracharges = () => {
                       className="form-control"
                       id="company"
                       name="company"
+                      value={formData.company} onChange={handleChange}
                     >
                       <option value="Canada">Canada</option>
                     </select>
@@ -72,6 +112,7 @@ const Createextracharges = () => {
                       className="form-control"
                       id="chargetype"
                       name="chargetype"
+                      value={formData.chargetype} onChange={handleChange}
                     >
                       <option value="Flat">Flat</option>
                       <option value="Percentage">Percentage</option>
@@ -89,6 +130,7 @@ const Createextracharges = () => {
                       name="value"
                       placeholder="Enter Value"
                       autoComplete="off"
+                      value={formData.value} onChange={handleChange}
                     />
                   </div>
                 </div>
@@ -425,7 +467,7 @@ const Createextracharges = () => {
                       autoComplete="off"
                       placeholder="Enter  Remarks"
                       style={{ display: "none" }}
-                      defaultValue={"                                    "}
+                      value={formData.remarks} onChange={handleChange}
                     />
                     <input
                       type="hidden"
@@ -488,7 +530,7 @@ const Createextracharges = () => {
                 Save Changes
               </button>
               <a
-                href="http://localhost/fms/customers/"
+                href="/customers/"
                 className="btn btn-warning"
               >
                 Back

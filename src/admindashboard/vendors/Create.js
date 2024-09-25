@@ -914,7 +914,7 @@ const Createvendors = () => {
           <button type="button" className="btn btn-primary" onClick={handleSubmit}>
             Save Changes
           </button>
-          <a href="http://localhost/fms/customers/" className="btn btn-warning">
+          <a href="/customers/" className="btn btn-warning">
             Back
           </a>
         </div>

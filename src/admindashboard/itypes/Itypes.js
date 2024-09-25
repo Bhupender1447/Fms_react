@@ -1,243 +1,146 @@
-import React from 'react'
+import axios from 'axios'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 const Itypes = () => {
+  const [data, setData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
+  useEffect(() => {
+    axios.get('https://isovia.ca/fms_api/api/fetchitypesProductData')
+      .then(res => setData(res.data))
+      .catch(error => console.log(error));
+  }, []);
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Remove function
+  const handleRemove = async (id) => {
+    try {
+      const response = await axios.post(
+        'https://isovia.ca/fms_api/api/remove',
+        new URLSearchParams({
+          id: id,
+          type: 'fms_itypes'  // Adjust the type if necessary
+        }).toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cookie': 'ci_session=06vlfcjjenfs9pp507kpsbcetr7h8va3'
+          }
+        }
+      );
+      console.log("Response:", response.data);
+      // Remove the item from the state after successful deletion
+      setData(data.filter(item => item.id !== id));
+    } catch (error) {
+      console.error("Error removing item:", error);
+    }
+  };
+
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
-    {/* Content Header (Page header) */}
-    <section className="content-header">
-      <h1>
-        Manage
-        <small>Insyrance Types</small>
-      </h1>
-      <ol className="breadcrumb">
-        <li>
-          <a href="../cpanel/">
-            <i className="fa fa-dashboard" /> Home
-          </a>
-        </li>
-        <li className="active">Insurance Types</li>
-      </ol>
-    </section>
-    {/* Main content */}
-    <section className="content">
-      {/* Small boxes (Stat box) */}
-      <div className="row">
-        <div className="col-md-12 col-xs-12">
-          <div id="messages" />
-          <Link
-            to="/itypes/create"
-            className="btn btn-primary"
-          >
-            Add Insurance Types
-          </Link>
-          {/*        <a href="" class="btn btn-success">View Motors</a> */}
-          <br /> <br />
-          <div className="box">
-            <div className="col-md-6 col-xs-12 pull pull-right">
-              <button id="exportButton" className="btn btn-default ">
-                <span className="fa fa-file-pdf-o" /> Export to PDF
-              </button>
-              <button id="exportButtonExcl" className="btn btn-default">
-                <span className="fa fa-file-excel-o" /> Export to Excel
-              </button>
-            </div>
-            {/* /.box-header */}
-            <div className="box-body">
-              <div
-                id="manageTable_wrapper"
-                className="dataTables_wrapper form-inline dt-bootstrap no-footer"
-              >
-                <div className="row">
-                  <div className="col-sm-6">
-                    <div className="dataTables_length" id="manageTable_length">
-                      <label>
-                        Show{" "}
-                        <select
-                          name="manageTable_length"
-                          aria-controls="manageTable"
-                          className="form-control input-sm"
-                        >
-                          <option value={10}>10</option>
-                          <option value={25}>25</option>
-                          <option value={50}>50</option>
-                          <option value={100}>100</option>
-                        </select>{" "}
-                        entries
-                      </label>
-                    </div>
-                  </div>
-                  <div className="col-sm-6">
-                    <div id="manageTable_filter" className="dataTables_filter">
-                      <label>
-                        Search:
-                        <input
-                          type="search"
-                          className="form-control input-sm"
-                          placeholder=""
-                          aria-controls="manageTable"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <div className="row">
-                  <div className="col-sm-12">
-                    <table
-                      id="manageTable"
-                      className="table table-bordered table-striped dataTable no-footer"
-                      role="grid"
-                      aria-describedby="manageTable_info"
-                      style={{ width: 1239 }}
-                    >
-                      <thead>
-                        <tr role="row">
-                          <th
-                            className="sorting"
-                            tabIndex={0}
-                            aria-controls="manageTable"
-                            rowSpan={1}
-                            colSpan={1}
-                            aria-label="Name: activate to sort column ascending"
-                            style={{ width: "234.2px" }}
+      <section className="content-header">
+        <h1>
+          Manage
+          <small>Insurance Types</small>
+        </h1>
+        <ol className="breadcrumb">
+          <li>
+            <a href="../cpanel/">
+              <i className="fa fa-dashboard" /> Home
+            </a>
+          </li>
+          <li className="active">Insurance Types</li>
+        </ol>
+      </section>
+      <section className="content">
+        <div className="row">
+          <div className="col-md-12 col-xs-12">
+            <div id="messages" />
+            <Link to="/itypes/create" className="btn btn-primary">
+              Add Insurance Types
+            </Link>
+            <br /> <br />
+            <div className="box">
+              <div className="col-md-6 col-xs-12 pull pull-right">
+                <button id="exportButton" className="btn btn-default ">
+                  <span className="fa fa-file-pdf-o" /> Export to PDF
+                </button>
+                <button id="exportButtonExcl" className="btn btn-default">
+                  <span className="fa fa-file-excel-o" /> Export to Excel
+                </button>
+              </div>
+              <div className="box-body">
+                <table className="table table-bordered table-striped">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Remarks</th>
+                      <th>Active</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentItems.map(item => (
+                      <tr key={item.id}>
+                        <td>{item.name}</td>
+                        <td>{item.remarks}</td>
+                        <td>{item.active}</td>
+                        <td>
+                          <Link to={`/itypes/update/${item.id}`} className="btn btn-default">
+                            <i className="fa fa-pencil" />
+                          </Link>{" "}
+                          <button
+                            type="button"
+                            className="btn btn-default"
+                            onClick={() => handleRemove(item.id)}
                           >
-                            Name
-                          </th>
-                          <th
-                            className="sorting"
-                            tabIndex={0}
-                            aria-controls="manageTable"
-                            rowSpan={1}
-                            colSpan={1}
-                            aria-label="Remarks: activate to sort column ascending"
-                            style={{ width: "308.2px" }}
-                          >
-                            Remarks
-                          </th>
-                          <th
-                            className="sorting"
-                            tabIndex={0}
-                            aria-controls="manageTable"
-                            rowSpan={1}
-                            colSpan={1}
-                            aria-label="Active: activate to sort column ascending"
-                            style={{ width: "247.2px" }}
-                          >
-                            Active
-                          </th>
-                          <th
-                            className="sorting"
-                            tabIndex={0}
-                            aria-controls="manageTable"
-                            rowSpan={1}
-                            colSpan={1}
-                            aria-label="Action: activate to sort column ascending"
-                            style={{ width: 295 }}
-                          >
-                            Action
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr role="row" className="odd">
-                          <td>test</td>
-                          <td>
-                            <p>testtt</p>
-                          </td>
-                          <td>1</td>
-                          <td>
-                            <a
-                              href="http://localhost/fms/itypes/update/1"
-                              className="btn btn-default"
-                            >
-                              <i className="fa fa-pencil" />
-                            </a>{" "}
-                            <button
-                              type="button"
-                              className="btn btn-default"
-                              onclick="removeFunc(1)"
-                              data-toggle="modal"
-                              data-target="#removeModal"
-                            >
-                              <i className="fa fa-trash" />
-                            </button>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                            <i className="fa fa-trash" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Pagination */}
                 <div className="row">
                   <div className="col-sm-5">
-                    <div
-                      className="dataTables_info"
-                      id="manageTable_info"
-                      role="status"
-                      aria-live="polite"
-                    >
-                      Showing 1 to 1 of 1 entries
+                    <div className="dataTables_info" role="status" aria-live="polite">
+                      Showing {indexOfFirstItem + 1} to {indexOfLastItem} of {data.length} entries
                     </div>
                   </div>
                   <div className="col-sm-7">
-                    <div
-                      className="dataTables_paginate paging_simple_numbers"
-                      id="manageTable_paginate"
-                    >
-                      <ul className="pagination">
-                        <li
-                          className="paginate_button previous disabled"
-                          id="manageTable_previous"
-                        >
-                          <a
-                            href="#"
-                            aria-controls="manageTable"
-                            data-dt-idx={0}
-                            tabIndex={0}
+                    <ul className="pagination">
+                      {Array.from({ length: totalPages }, (_, index) => (
+                        <li key={index} className={`paginate_button ${currentPage === index + 1 ? 'active' : ''}`}>
+                          <button
+                            onClick={() => paginate(index + 1)}
+                            className="btn btn-default"
                           >
-                            Previous
-                          </a>
+                            {index + 1}
+                          </button>
                         </li>
-                        <li className="paginate_button active">
-                          <a
-                            href="#"
-                            aria-controls="manageTable"
-                            data-dt-idx={1}
-                            tabIndex={0}
-                          >
-                            1
-                          </a>
-                        </li>
-                        <li
-                          className="paginate_button next disabled"
-                          id="manageTable_next"
-                        >
-                          <a
-                            href="#"
-                            aria-controls="manageTable"
-                            data-dt-idx={2}
-                            tabIndex={0}
-                          >
-                            Next
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
+                      ))}
+                    </ul>
                   </div>
                 </div>
+
               </div>
             </div>
-            {/* /.box-body */}
           </div>
-          {/* /.box */}
         </div>
-        {/* col-md-12 */}
-      </div>
-      {/* /.row */}
-    </section>
-    {/* /.content */}
-  </div>
-  
+      </section>
+    </div>
   )
 }
 
-export default Itypes
+export default Itypes;

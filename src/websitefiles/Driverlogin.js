@@ -1,0 +1,106 @@
+import axios from 'axios';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const DriverLogin = () => {
+  const [Email, setEmail] = useState('');
+  const [Password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  let navigate = useNavigate();
+  const handleOnSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("email", Email);
+    formData.append("password", Password);
+
+    axios.post('https://isovia.ca/fms_api/api/driver_login', formData)
+      .then(res => {
+        let loginRes = res.data;
+        console.log(loginRes);
+        if (loginRes.status === "success") {
+          let data = {
+            name: loginRes.username,
+            id: loginRes.user_id,
+            email: loginRes.email,
+            role: loginRes.role // Assuming the response contains a 'role' field
+          };
+          localStorage.setItem("logindetail", JSON.stringify(data));
+          
+          // Navigate based on user role
+          if (loginRes.role === "driver") {
+            navigate('/driverdashboard');
+          }
+        } else if (loginRes.status === "error") {
+          setError(loginRes.message);
+        }
+      })
+      .catch(err => setError(err.message));
+  };
+
+  return (
+    <><div className="login-box">
+      <div className="login-logo">
+        <a href="">
+          <b>Driver Login</b>
+        </a>
+      </div>
+
+      <div className="login-box-body">
+        <p className="login-box-msg">Sign in to start your session</p>
+        {error && <div className="alert alert-danger" role="alert">
+          {error}
+        </div>}
+        
+        <form onSubmit={handleOnSubmit} >
+          <div className="form-group has-feedback">
+            <input
+              type="email"
+              className="form-control"
+              name="email"
+              id="email"
+              placeholder="Email"
+              value={Email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="off"
+            />
+            <span className="glyphicon glyphicon-envelope form-control-feedback" />
+          </div>
+          <div className="form-group has-feedback">
+            <input
+              type="password"
+              className="form-control"
+              name="password"
+              id="password"
+              placeholder="Password"
+              autoComplete="off"
+              value={Password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <span className="glyphicon glyphicon-lock form-control-feedback" />
+          </div>
+          <div className="row">
+            <div className="col-xs-8">
+              <div className="checkbox icheck">
+                <label>
+                  <input type="checkbox" /> Remember Me
+                </label>
+              </div>
+            </div>
+            {/* /.col */}
+            <div className="col-xs-4">
+              <button type="submit" className="btn btn-primary btn-block btn-flat">
+                Sign In
+              </button>
+            </div>
+            {/* /.col */}
+          </div>
+        </form>
+      </div>
+      {/* /.login-box-body */}
+    </div>
+    </>
+  )
+}
+
+export default DriverLogin;

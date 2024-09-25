@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, { useEffect, useRef, useState } from 'react';
 
 const Createlocation = () => {
@@ -57,19 +58,26 @@ const Createlocation = () => {
     }
   }, []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle form submission logic
-    console.log({
-      address1,
-      address2,
-      lat,
-      lng,
-      country,
-      state,
-      city,
-      zip,
-    });
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const formData = new FormData();
+    formData.append('name', nameRef.current?.value);
+    formData.append('address1', address1);
+    formData.append('address2', address2);
+    formData.append('lat', lat);
+    formData.append('long', lng);
+    formData.append('country', country);
+    formData.append('state', state);
+    formData.append('city', city);
+    formData.append('zip', zip);
+    try {
+      const response = await axios.post('https://isovia.ca/fms_api/api/createlocation', formData);
+      alert('Successfully created');
+     
+    } catch (error) {
+      console.error('Error creating location', error);
+      alert('Error occurred!!');
+    }
   };
 
   return (
@@ -246,7 +254,7 @@ const Createlocation = () => {
                     Save Changes
                   </button>
                   <a
-                    href="http://localhost/fms/locations/"
+                    href="/locations/"
                     className="btn btn-warning"
                   >
                     Back

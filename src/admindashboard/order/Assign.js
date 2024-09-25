@@ -1,337 +1,261 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useParams } from 'react-router-dom';
 
-const Assign = () => {
+const Assignorder = () => {
+  // Initial state for the form
+  const { id } = useParams();
+  const [formData, setFormData] = useState({
+    mode: '',
+    carriers: '',
+    remarks: 'na',
+    msg: 'na',
+    rate: 5200,
+    cur: 'USD',
+    scaleticketno: 'ISV-ORD1042',
+    pickupLocation: '8008 Herb Kelleher Way, Dallas, TX 75235, USA',
+    deliveryLocation: '815 Gana Ct, Mississauga, ON L5S 1P2, Canada',
+    pickupDate: '07/25/2023',
+    deliveryDate: '07/28/2023',
+  });
+
+  const [carriersList, setCarriersList] = useState([]);
+  const [showCarriers, setShowCarriers] = useState(false);
+
+  // Handle change function for form inputs
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+
+    // If 'CARRIER' is selected as transport mode, fetch carriers
+    if (name === 'mode' && value === 'CARRIER') {
+      setShowCarriers(true);
+      fetchCarriers(); // Fetch carriers when "CARRIER" mode is selected
+    } else if (name === 'mode') {
+      setShowCarriers(false);
+    }
+  };
+
+  // Function to fetch carriers from API
+  const fetchCarriers = async () => {
+    try {
+      const response = await axios.get('https://isovia.ca/fms_api/api/getOrderData');
+      const carriersData = response.data; // Assuming the API returns the list of carriers
+     
+      setCarriersList(carriersData.carriers);
+    } catch (error) {
+      console.error('Error fetching carriers:', error);
+    }
+  };
+
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    // Prepare the form data to send via axios
+    const dataToSend = new FormData();
+    dataToSend.append('mode', formData.mode);
+    dataToSend.append('carriers', formData.carriers);
+    dataToSend.append('remarks', formData.remarks);
+    dataToSend.append('msg', formData.msg);
+    dataToSend.append('rate', formData.rate);
+    dataToSend.append('cur', formData.cur);
+
+    axios.post(`https://isovia.ca/fms_api/api/assign/${id}`, dataToSend)
+      .then((response) => {
+        console.log('Order successfully submitted:', response.data);
+      })
+      .catch((error) => {
+        console.error('Error submitting the order:', error);
+      });
+  };
+
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
-    {/* Content Header (Page header) */}
-    <section className="content-header">
-      <h1>
-        Assign
-        <small>Carriers</small>
-      </h1>
-      <ol className="breadcrumb">
-        <li>
-          <a href="#">
-            <i className="fa fa-dashboard" /> Home
-          </a>
-        </li>
-        <li className="active">Crriers</li>
-      </ol>
-    </section>
-    {/* Main content */}
-    <section className="content">
-      {/* Small boxes (Stat box) */}
-      <div className="row">
-        <div className="col-md-12 col-xs-12">
-          <div id="messages" />
-          <div className="box">
-            <div className="box-header"></div>
-            {/* /.box-header */}
-            <form
-              role="form"
-              action=""
-              method="post"
-              encType="multipart/form-data"
-            >
-              <div className="box-body">
-                <div className="col-md-6 col-xs-12 pull pull-left">
+      <section className="content-header">
+        <h1>
+          Assign <small>Carriers</small>
+        </h1>
+        <ol className="breadcrumb">
+          <li>
+            <a href="#"><i className="fa fa-dashboard" /> Home</a>
+          </li>
+          <li className="active">Carriers</li>
+        </ol>
+      </section>
+
+      <section className="content">
+        <div className="row">
+          <div className="col-md-12 col-xs-12">
+            <div className="box">
+              <form role="form" onSubmit={handleSubmit}>
+                <div className="box-body">
                   <div className="col-md-6 col-xs-12 pull pull-left">
                     <div className="form-group">
-                      <label htmlFor="store">Select Trasnport Mode</label>
+                      <label htmlFor="mode">Select Transport Mode</label>
                       <select
                         className="form-control"
                         id="mode"
-                        onchange="change();"
                         name="mode"
+                        value={formData.mode}
+                        onChange={handleChange}
                       >
-                        <option value="" disabled="" selected="">
-                          --Select Mode--
-                        </option>
+                        <option value="" disabled>--Select Mode--</option>
                         <option value="CARRIER">Carrier</option>
                         <option value="LOG">Logistics</option>
                       </select>
                     </div>
-                  </div>
-                  <div id="result-display" />
-                  <div className="col-md-12 col-xs-12 pull pull-left">
+
+                    {/* Conditionally render the carrier dropdown */}
+                    {showCarriers && (
+                      <div className="form-group">
+                        <label htmlFor="carriers">Select Carrier</label>
+                        <select
+                          className="form-control"
+                          id="carriers"
+                          name="carriers"
+                          value={formData.carriers}
+                          onChange={handleChange}
+                        >
+                          <option value="" disabled>--Select Carrier--</option>
+                          {carriersList&&carriersList.map((carrier) => (
+                            <option key={carrier.id} value={carrier.id}>
+                              {carrier.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     <div className="form-group">
-                      <select
-                        className="form-control"
-                        id="carriers"
-                        name="carriers"
-                        style={{ visibility: "hidden" }}
-                      >
-                        <option value="" disabled="" selected="">
-                          --Select Carrier--
-                        </option>
-                        <option value={23}>
-                          MARVEL TRUCKING INC 23 MARVEL TRUCKING INC
-                        </option>
-                        <option value={22}>
-                          MARJAN ENTERPRISE INC 22 MARJAN ENTERPRISE INC
-                        </option>
-                        <option value={21}>
-                          BALRAM BROTHER'S LOGISTICS INC 21 BALRAM BROTHER'S
-                          LOGISTICS INC
-                        </option>
-                        <option value={20}>
-                          BALRAM BROTHER'S LOGISTICS INC 20 BALRAM BROTHER'S
-                          LOGISTICS INC
-                        </option>
-                        <option value={19}>
-                          TRUE NORTH FREIGHT SOLUTIONS INC 19 TRUE NORTH FREIGHT
-                          SOLUTIONS INC
-                        </option>
-                        <option value={6}>
-                          Marvel Trucking inc. 6 Marvel Trucking inc.
-                        </option>
-                        <option value={5}>Ace City Inc. 5 Ace City Inc.</option>
-                        <option value={4}>
-                          Rollx carrier Inc. 4 Rollx carrier Inc.
-                        </option>
-                        <option value={3}>
-                          6722920 Canada Ltd./kk transport 3 6722920 Canada
-                          Ltd./kk transport
-                        </option>
-                        <option value={2}>Virk Transport 2 Virk Transport</option>
-                        <option value={1}>Ranbaxy 1 Ranbaxy</option>
-                      </select>
-                    </div>
-                  </div>
-                  {/*   
-                        <div class="col-md-12 col-xs-12 pull pull-left">
-                        <div class="form-group">
-                        
-                        <select class="form-control" id="log" name="log">
-                        <option value="" disabled selected>--Assign to Logistic--</option>
-                        
-                                                    
-                        <option value="6">FS120 L5874K Dry VAN 53"</option>  
-                                                    
-                        <option value="5">FS120 L5874K Dry VAN 53"</option>  
-                                                    
-                        <option value="4">ZR101 6EW880 Auto Carrier Trailer</option>  
-                                                    
-                        <option value="3">PB34 5678 PB4567 Beverage Rack Trailer</option>  
-                                                    
-                        <option value="2">trailor singh plate# 20 feet sea container(closed top)</option>  
-                                                    </select>
-                        </div>
-                        </div>
-                        */}
-                  <div className="col-md-12 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="description">Description</label>
+                      <label htmlFor="remarks">Description</label>
                       <textarea
-                        type="text"
                         className="form-control"
                         id="remarks"
                         name="remarks"
-                        placeholder="Enter 
-                        description"
-                        autoComplete="off"
-                        defaultValue={"na"}
+                        value={formData.remarks}
+                        onChange={handleChange}
+                        placeholder="Enter description"
                       />
                     </div>
-                  </div>
-                  <div className="col-md-12 col-xs-12 pull pull-left">
+
                     <div className="form-group">
-                      <label htmlFor="description">Message for Carrier</label>
+                      <label htmlFor="msg">Message for Carrier</label>
                       <textarea
-                        type="text"
                         className="form-control"
                         id="msg"
                         name="msg"
+                        value={formData.msg}
+                        onChange={handleChange}
                         placeholder="Enter Message for Carrier"
-                        autoComplete="off"
-                        defaultValue={"na"}
                       />
                     </div>
-                  </div>
-                  <div className="col-md-3 col-xs-12 pull pull-left">
+
                     <div className="form-group">
-                      <label id="rrate" htmlFor="username">
-                        Rate
-                      </label>
+                      <label htmlFor="rate">Rate</label>
                       <input
                         type="number"
                         className="form-control"
                         id="rate"
                         name="rate"
-                        defaultValue={5200}
+                        value={formData.rate}
+                        onChange={handleChange}
                         placeholder="Enter Rate"
-                        autoComplete="off"
                       />
                     </div>
-                  </div>
-                  <div className="col-md-3 col-xs-12 pull pull-left">
+
                     <div className="form-group">
-                      <label id="ccur" htmlFor="store">
-                        Currency
-                      </label>
-                      <select className="form-control" id="cur" name="cur">
+                      <label htmlFor="cur">Currency</label>
+                      <select
+                        className="form-control"
+                        id="cur"
+                        name="cur"
+                        value={formData.cur}
+                        onChange={handleChange}
+                      >
                         <option value="USD">USD</option>
                         <option value="CAD">CAD</option>
                       </select>
                     </div>
                   </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="col-md-4 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Order #</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="scaleticketno"
-                        name="scaleticketno"
-                        defaultValue="ISV-ORD1042"
-                        placeholder="Enter Rate"
-                        autoComplete="off"
-                        disabled=""
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Shipment ype</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="scaleticketno"
-                        name="scaleticketno"
-                        defaultValue="Regular"
-                        placeholder="Enter Rate"
-                        autoComplete="off"
-                        disabled=""
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Load Type</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="scaleticketno"
-                        name="scaleticketno"
-                        defaultValue="FTL"
-                        placeholder="Enter Rate"
-                        autoComplete="off"
-                        disabled=""
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Commodity</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="scaleticketno"
-                        name="scaleticketno"
-                        defaultValue=""
-                        placeholder="Enter Rate"
-                        autoComplete="off"
-                        disabled=""
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Measurement</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="scaleticketno"
-                        name="scaleticketno"
-                        defaultValue=""
-                        placeholder="Enter Rate"
-                        autoComplete="off"
-                        disabled=""
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-12 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Pickup Location</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="scaleticketno"
-                        name="scaleticketno"
-                        defaultValue="8008 Herb Kelleher Way, Dallas, TX 75235, USA"
-                        placeholder="Enter Rate"
-                        autoComplete="off"
-                        disabled=""
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-12 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Delivery at</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="scaleticketno"
-                        name="scaleticketno"
-                        defaultValue="815 Gana Ct, Mississauga, ON L5S 1P2, Canada"
-                        placeholder="Enter Rate"
-                        autoComplete="off"
-                        disabled=""
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Pickup Date</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="scaleticketno"
-                        name="scaleticketno"
-                        defaultValue="07/25/2023"
-                        disabled=""
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Delivery Date</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="scaleticketno"
-                        name="scaleticketno"
-                        defaultValue="07/28/2023"
-                        disabled=""
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* /.box-body */}
-              <div className="box-footer">
-                <button type="submit" className="btn btn-primary">
-                  Confirm Order
-                </button>
-                <a href="http://localhost/fms/trips/" className="btn btn-warning">
-                  Cancel Order
-                </a>
-              </div>
-            </form>
-            {/* /.box-body */}
-          </div>
-          {/* /.box */}
-        </div>
-        {/* col-md-12 */}
-      </div>
-      {/* /.row */}
-    </section>
-    {/* /.content */}
-  </div>
-  
-  )
-}
 
-export default Assign
+                  <div className="col-md-6 col-xs-12 pull pull-left">
+                    <div className="form-group">
+                      <label htmlFor="scaleticketno">Order #</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="scaleticketno"
+                        name="scaleticketno"
+                        value={formData.scaleticketno}
+                        disabled
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="pickupLocation">Pickup Location</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="pickupLocation"
+                        name="pickupLocation"
+                        value={formData.pickupLocation}
+                        disabled
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="deliveryLocation">Delivery at</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="deliveryLocation"
+                        name="deliveryLocation"
+                        value={formData.deliveryLocation}
+                        disabled
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="pickupDate">Pickup Date</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="pickupDate"
+                        name="pickupDate"
+                        value={formData.pickupDate}
+                        disabled
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="deliveryDate">Delivery Date</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="deliveryDate"
+                        name="deliveryDate"
+                        value={formData.deliveryDate}
+                        disabled
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="box-footer">
+                  <button type="submit" className="btn btn-primary">Confirm Order</button>
+                  <a href="/trips/" className="btn btn-warning">Cancel Order</a>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default Assignorder;

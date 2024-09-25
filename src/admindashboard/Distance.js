@@ -106,7 +106,7 @@ const Distance = () => {
       const routeDistance = await fetchRouteDistance(coords1.lat, coords1.lon, coords2.lat, coords2.lon);
       if (routeDistance) {
         setDistance(routeDistance);
-
+console.log(routeDistance)
         if (map) {
           const TrimbleMaps = window.TrimbleMaps;
           if (route) {
