@@ -104,13 +104,13 @@ const Header = () => {
                     <div>
                       <img src="images/phone.png" alt="" />
                     </div>
-                    <span>(+71)258964785</span>
+                    <span>+16472415999</span>
                   </a>
                   <a href="" className="ml-4">
                     <div>
                       <img src="images/mail.png" alt="" />
                     </div>
-                    <span>transportz@gmail.com</span>
+                    <span>Isoviafreightmanagement@gmail.com</span>
                   </a>
                 </div>
                 <div className="header_top-social">

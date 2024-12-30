@@ -238,7 +238,7 @@ const Trucks = () => {
                             <tr role="row" className="odd" key={item.id}>
                               <td>
                                 <img
-                                  src={`https://isovia.ca/fms/${item.image}`}
+                                  src={`https://isovia.ca/fms_api/${item.image}`}
                                   alt={item.id}
                                   className="img-circle"
                                   width={50}

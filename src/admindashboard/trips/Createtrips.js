@@ -1,10 +1,14 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
+import DistanceModal from '../Distancepopup'
+import Distancepopup from '../Distancepopup'
 
 const Createtrips = () => {
   const[data,setdata]=useState([])
   const[error,seterror]=useState([])
+  let userdata = JSON.parse(localStorage.getItem('logindetail'));
   const [formData, setFormData] = useState({
+     mode:'LOG',
     company: "",
     customerorderno: "",
     shipmenttype: "",
@@ -42,8 +46,8 @@ const Createtrips = () => {
     appt: "",
     pip: "",
     ctpat: "",
-    rate: [""],
-    ratevalue: [""],
+    rate: "",
+    ratevalue: "",
     gross_amount: "",
     hst: "",
     hstamount: "",
@@ -53,6 +57,7 @@ const Createtrips = () => {
   });
 
 const[messageres,setmessage]=useState()
+const[popup,setpopup]=useState(false)
 const handleInputChange = (e) => {
   const { name, value } = e.target;
 
@@ -82,8 +87,39 @@ const handleInputChange = (e) => {
       [name]: value,
     });
   }
+      // Perform calculations if relevant fields change
+      if (["gross_amount", "hst", "cst","rate","ratevalue"].includes(name)) {
+        calculateAmounts(name, value);
+      }
 };
 
+
+const calculateAmounts = (name, value) => {
+  const rate = parseFloat(name === "rate" ? value : formData.rate) || 0;
+  const rateValue = parseFloat(name === "ratevalue" ? value : formData.ratevalue) || 0;
+  
+  // Calculate gross amount dynamically
+  const gross = name === "rate" || name === "ratevalue" ? rate * rateValue : parseFloat(formData.gross_amount) || 0;
+  
+  const hst = parseFloat(name === "hst" ? value : formData.hst) || 0;
+  const cst = parseFloat(name === "cst" ? value : formData.cst) || 0;
+
+  // Calculate HST and CST amounts
+  const hstAmount = (gross * hst) / 100;
+  const cstAmount = (gross * cst) / 100;
+
+  // Calculate Net Amount
+  const netAmount = gross + hstAmount + cstAmount;
+
+  // Update formData with calculated values
+  setFormData((prev) => ({
+    ...prev,
+    gross_amount: gross.toFixed(2),
+    hstamount: hstAmount.toFixed(2),
+    cstamount: cstAmount.toFixed(2),
+    net_amount: netAmount.toFixed(2),
+  }));
+};
   const handleInputChange2 = (e, index, field) => {
     const { value } = e.target;
 
@@ -128,6 +164,8 @@ let handleonSubmit = async (e) => {
         form.append(key, formData[key]);
       }
     });
+    form.append('userid', userdata.id);
+    form.append('mode', "LOG");
 
   try {
     const response = await axios.post('https://isovia.ca/fms_api/api/create', form);
@@ -1186,8 +1224,8 @@ const handleRemoveRow = (index) => {
 						  </select> </td> */}
                 <td>
                   <input
-                    type="text"
-                    name="rate[]"
+                    type="number"
+                    name="rate"
                     placeholder="Enter Rate (0.00)"
                     className="form-control name_list"
                     required=""
@@ -1196,8 +1234,8 @@ const handleRemoveRow = (index) => {
                 </td>
                 <td>
                   <input
-                    type="text"
-                    name="ratevalue[]"
+                    type="number"
+                    name="ratevalue"
                     onkeyup="sum();"
                     placeholder="Enter Qty"
                     className="form-control name_list"
@@ -1230,7 +1268,7 @@ const handleRemoveRow = (index) => {
                 <td className="text-right">
                   {" "}
                   <input
-                    type="text"
+                    type="number"
                     className="form-control"
                     id="gross_amount"
                     name="gross_amount"
@@ -1246,7 +1284,7 @@ const handleRemoveRow = (index) => {
                 <td>HST(%)</td>
                 <td>
                   <input
-                    type="text"
+                    type="number"
                     className="form-control"
                     id="hst"
                     name="hst"
@@ -1258,7 +1296,7 @@ const handleRemoveRow = (index) => {
                 <td>
                   {" "}
                   <input
-                    type="text"
+                    type="number"
                     className="form-control"
                     id="hstamount"
                     name="hstamount"
@@ -1275,7 +1313,7 @@ const handleRemoveRow = (index) => {
                 <td>
                   {" "}
                   <input
-                    type="text"
+                    type="number"
                     className="form-control"
                     id="cst"
                     name="cst"
@@ -1286,7 +1324,7 @@ const handleRemoveRow = (index) => {
                 </td>
                 <td>
                   <input
-                    type="text"
+                    type="number"
                     className="form-control"
                     id="cstamount"
                     name="cstamount"
@@ -1304,7 +1342,7 @@ const handleRemoveRow = (index) => {
                 <td>
                   {" "}
                   <input
-                    type="text"
+                    type="number"
                     className="form-control"
                     id="net_amount"
                     name="net_amount"
@@ -1324,8 +1362,8 @@ const handleRemoveRow = (index) => {
   </div>
   {/* /.box */}
   <div className="text-center">
-    <button type="submit" className="btn btn-primary" onClick={handleonSubmit}>
-      CREATE TRIP
+    <button type="submit" className="btn btn-primary" onClick={()=>setpopup(!popup)}>
+    Create Estimate
     </button>
     <a href="/orders/" className="btn btn-warning">
       Back
@@ -1333,6 +1371,45 @@ const handleRemoveRow = (index) => {
   </div>
 </section>
 
+
+{popup &&<div className="modal show" tabIndex={-1} role="dialog">
+  <div className="modal-dialog custom-modal" role="document" style={{
+        width: "100%", // Adjust width
+        height: "700px", // Adjust height
+        maxWidth: "100%", // Ensure responsiveness
+      }}>
+    <div className="modal-content">
+      <div className="modal-header">
+        <h5 className="modal-title">Modal title</h5>
+        <button
+          type="button"
+          className="close"
+          data-dismiss="modal"
+          aria-label="Close"
+          onClick={()=>setpopup(false)}
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <div className="modal-body">
+      <Distancepopup closePopup={() => setpopup(false)}  places1={formData.pickup_address} places2={formData.delivery_address}/>
+      </div>
+      <div className="modal-footer">
+        <button type="button" className="btn btn-primary" onClick={ handleonSubmit}>
+          Save Trip
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          data-dismiss="modal"
+          onClick={()=>setpopup(false)}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>}
   </div>
   )
 }

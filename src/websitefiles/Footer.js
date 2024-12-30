@@ -41,10 +41,10 @@ const Footer = () => {
             <div className="col-md-3 info_address">
               <h5>Address</h5>
               <p>33 Sir Jacobs Crescent, Brampton, ON L7A 3V2</p>
-              <p>Phone 4375337602</p>
+              <p>Phone +16472415999</p>
               {/* <p>(+71) 8522369417</p> */}
               <p>
-                {/* <a href="">transportz@gmail.com</a> */}
+                <a href="">info@isovia.ca</a>
               </p>
             </div>
             <div className="col-md-3 info_links">

@@ -56,7 +56,7 @@ const handleSubmit = (e) => {
         data.append(key, formData[key]);
     }
 
-    axios.post('https://isovia.ca/fms_api/trucks/create', data)
+    axios.post('https://isovia.ca/fms_api/api/createtrucks', data)
         .then(response => {
             console.log('Success:', response.data);
             // Handle success response

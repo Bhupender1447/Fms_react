@@ -30,7 +30,7 @@ const handleonSubmit = (e) => {
         
         // Navigate based on user role
         if (loginres.role === "admin") {
-          navigate('/admin');
+          navigate('/accounting');
         } else if (loginres.role === "user") {
           navigate('/user'); // Change '/user' to the appropriate route for regular users
         }

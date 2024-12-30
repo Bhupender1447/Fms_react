@@ -22,14 +22,13 @@ const Home = () => {
             </div>
             <div className="col-md-6 about_detail-container">
               <div className="about_detail-box">
-                <h3>ISOVIA INC</h3>
+                <h3>Arshdeep Singh Chatha – CEO and Founder of Isovia Inc.</h3>
                 <p>
-                  Dispatching. Fleet Management. Load Board Customer is the
-                  priority of a service-oriented business like freight
-                  forwarding. With INSOVIA’s all-in-one suite of tools and
-                  features, you’re providing premium services that would save a
-                  large amount of your client’s time and money, and build
-                  loyalty to your brand.
+
+
+                  Since 2015, Arshdeep Singh Chatha has nurtured a vision of transforming the freight industry through advanced technology. His journey began with hands-on experience as a dispatcher and freight broker for various companies, giving him a deep understanding of the logistics sector's challenges and complexities. This experience inspired the creation of Isovia Inc., a company committed to delivering a one-stop, AI-assisted Freight Management System designed to streamline operations for businesses of any scale.
+</p><p>
+                  At Isovia Inc., Arshdeep leads the development of cutting-edge software solutions that empower companies to optimize supply chain efficiency, enhance productivity, and achieve real-time visibility. With his expertise in software development and logistics, he brings a unique blend of industry insight and technical innovation, making Isovia Inc. a trusted partner for modern freight solutions.
                 </p>
                 <div className="d-flex  justify-content-end">
                   <a href="" className="quote-btn about-btn">
@@ -132,7 +131,7 @@ const Home = () => {
             </div>
             <div className="col-md-6">
               <div className="shop_img-box">
-                <img src="images/fronttruckpic.gif" alt="" className="img-fluid" />
+                <img src="images/2image.jpg" alt="" className="img-fluid" />
               </div>
             </div>
           </div>
@@ -373,14 +372,14 @@ const Home = () => {
             <div className="col-md-6">
               {/* <div id="map" className="h-100 w-100" /> */}
               <iframe
-  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2883.987103940619!2d-79.83063792399456!3d43.710817071099505!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x882b1407a332ea77%3A0x2c6bf2883e944c9a!2s33%20Sir%20Jacobs%20Crescent%2C%20Brampton%2C%20ON%20L7A%203V2%2C%20Canada!5e0!3m2!1sen!2sin!4v1711268425694!5m2!1sen!2sin"
-  width={600}
-  height={450}
-  style={{ border: 0 }}
-  allowFullScreen=""
-  loading="lazy"
-  referrerPolicy="no-referrer-when-downgrade"
-/>
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2883.987103940619!2d-79.83063792399456!3d43.710817071099505!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x882b1407a332ea77%3A0x2c6bf2883e944c9a!2s33%20Sir%20Jacobs%20Crescent%2C%20Brampton%2C%20ON%20L7A%203V2%2C%20Canada!5e0!3m2!1sen!2sin!4v1711268425694!5m2!1sen!2sin"
+                width={600}
+                height={450}
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
 
             </div>
             <div className="col-md-6">

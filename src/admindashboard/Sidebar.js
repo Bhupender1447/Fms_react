@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 const Sidebar = () => {
   let navigate = useNavigate();
   const [update, setUpdate] = useState(0);
-
+  const loginData = JSON.parse(localStorage.getItem('logindetail'));
   useEffect(() => {
     const handleMenuClick = (event) => {
       const target = event.currentTarget;
@@ -36,7 +36,7 @@ const Sidebar = () => {
   useEffect(() => {
     const loginData = JSON.parse(localStorage.getItem('logindetail'));
 
-    if (loginData && loginData.role === 'admin') {
+    if (loginData && loginData?.role === 'admin'|| loginData?.role === 'agent') {
       // User is admin
     } else {
       navigate('/login');
@@ -52,7 +52,11 @@ const Sidebar = () => {
     <aside className="main-sidebar">
       <section className="sidebar" style={{ height: 'auto' }}>
         <ul className="sidebar-menu tree" data-widget="tree">
-          
+        <li id="dashboardMainMenu">
+            <Link to="/accounting">
+              <i className="fa fa-dashboard" /> <span>Dashboard</span>
+            </Link>
+          </li>
           <li id="dashboardMainMenu">
             <Link to="/admin">
               <i className="fa fa-dashboard" /> <span>Control Panel</span>
@@ -121,6 +125,54 @@ const Sidebar = () => {
               </li>
             </ul>
           </li>
+          <li className="dropdown" id="InvoiceMainNav">
+            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+              <i className="fa fa-files-o" />
+              <span>Go Motive Data</span>
+        
+            </a>
+            <ul className="dropdown-menu bg-dark text-light">
+              <li id="manageInvoiceSubMenu">
+                <Link to={'/gomotive/vehicletable'}>
+                  <i className="fa fa-circle-o" /> Manage Vehicle Data
+                </Link>
+              </li>
+              <li id="manageInvoiceSubMenu">
+                <Link to={'/gomotive/gomotiveusers'}>
+                  <i className="fa fa-circle-o" /> Manage Driver Behavior
+                </Link>
+              </li>
+              <li id="manageInvoiceSubMenu">
+                <Link to={'/gomotive/logtable'}>
+                  <i className="fa fa-circle-o" /> Manage Log Table
+                </Link>
+              </li>
+            </ul>
+          </li>
+          <li className="dropdown" id="InvoiceMainNav">
+            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+              <i className="fa fa-files-o" />
+              <span>Samsara Data</span>
+        
+            </a>
+            <ul className="dropdown-menu bg-dark text-light">
+              {/* <li id="manageInvoiceSubMenu">
+                <Link to={'/gomotive/vehicletable'}>
+                  <i className="fa fa-circle-o" /> Manage Vehicle Data
+                </Link>
+              </li> */}
+              <li id="manageInvoiceSubMenu">
+                <Link to={'/samsara/samsarausers'}>
+                  <i className="fa fa-circle-o" /> Manage Driver Behavior
+                </Link>
+              </li>
+              {/* <li id="manageInvoiceSubMenu">
+                <Link to={'/gomotive/logtable'}>
+                  <i className="fa fa-circle-o" /> Manage Log Table
+                </Link>
+              </li> */}
+            </ul>
+          </li>
           <li className="dropdown" id="ReportMainNav">
             <a href="#" className="dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-files-o" />
@@ -140,6 +192,7 @@ const Sidebar = () => {
               </li>
             </ul>
           </li>
+          {loginData?.role === 'admin'&&<>
             <li id="companyMainNav">
               <a href="#">
                 <i className="fa fa-files-o" /> <span>Company Info</span>
@@ -156,11 +209,18 @@ const Sidebar = () => {
             </Link>
           </li>
           <li id="settingMainNav">
-            <a href="#">
+            <Link to={"/configurations"}>
               <i className="fa fa-circle-o" />
               Configurations
-            </a>
+            </Link>
           </li>
+          <li id="">
+            <Link to={'/orderhistory'}>
+              <i className="fa fa-circle-o" />
+              Order History
+            </Link>
+          </li>
+          </>}
           <li>
             <a onClick={logout}>
               <i className="glyphicon glyphicon-log-out" /> <span>Logout</span>
