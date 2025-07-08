@@ -13,7 +13,7 @@ const Triplist = () => {
       .then(res => setList(res.data))
       .catch(err => console.log(err));
   }, []);
-
+console.log(list)
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
   };
@@ -116,16 +116,17 @@ const Triplist = () => {
                               <td>{item.pickup_address}</td>
                               <td>{item.delivery_address}</td>
                               <td>
-                                <button
+                                <Link
                                   type="button"
                                   className="btn btn-info btn-xs"
                                   // onClick={() => removeFunc2(item.id)}
                                   data-id={item.id}
                                   data-toggle="modal"
                                   data-target="#removeModal2"
+                                  to={`/tripsplit/${item.id}`}
                                 >
                                   Split
-                                </button>
+                                </Link>
                                 <Link to={`/trips/update/${item.id}`} className="btn btn-default btn-xs">
                                   <i className="fa fa-pencil" />
                                 </Link>
@@ -136,6 +137,9 @@ const Triplist = () => {
                                 >
                                   Dispatch
                                 </a>
+                                {item.tmsTriptId&&<Link to={`/tripviewer/${item.tmsTriptId}`} className="btn btn-default btn-xs">
+                                  Map
+                                </Link>}
                                 <a
                                   target="_blank"
                                   href={`https://isovia.ca/fms_api/pdf/invoice_orders.php?id=${item.id}`}

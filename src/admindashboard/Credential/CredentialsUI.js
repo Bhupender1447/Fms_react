@@ -7,6 +7,7 @@ const CredentialsUI = () => {
   };
 
   return (
+    <div className="content-wrapper" style={{ minHeight: 440 }}>
     <div className="container mt-5">
       <div className="card shadow-sm">
         <div className="card-body">
@@ -99,6 +100,7 @@ const CredentialsUI = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import TaskReminder from './Tasks/TaskReminder'
 
 
 const Dashboard = () => {
@@ -14,6 +15,7 @@ const Dashboard = () => {
 
   return (<>
    <div className="content-wrapper">
+      <TaskReminder/>
      <section className="content-header">
     <h1 align="center">
       <b>Fleet</b>
@@ -117,9 +119,11 @@ const Dashboard = () => {
           <div className="col-lg-3 col-xs-6">
 
             <div className="small-box ">
+            <Link to={'/drivers'}>  
               <div className="inner">
-                <h4>({data.total_drivers}) Drivers</h4>
+              <h4>({data.total_drivers}) Drivers</h4>
               </div>
+              </Link>
               <div className="icon">
              
                   <Link to={'/drivers'}>  <i className="fa fa-address-book-o" aria-hidden="true"></i></Link>

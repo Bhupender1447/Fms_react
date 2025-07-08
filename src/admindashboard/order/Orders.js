@@ -5,14 +5,36 @@ import ReactPaginate from 'react-paginate';
 
 const Orders = () => {
   const [list, setList] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currency, setCurrency] = useState('');
+  const [pickupDate, setPickupDate] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
 
   useEffect(() => {
     axios.get('https://isovia.ca/fms_api/api/orderlist')
-      .then(res => setList(res.data))
+      .then(res => {
+        setList(res.data);
+        setFilteredOrders(res.data);
+      })
       .catch(err => console.log(err));
   }, []);
+
+  useEffect(() => {
+    let filtered = list;
+    if (currency) {
+      filtered = filtered.filter(order => order.currency === currency);
+      console.log(filtered)
+    }
+    if (pickupDate) {
+      filtered = filtered.filter(order => order.pickup_date === pickupDate);
+    }
+    if (deliveryDate) {
+      filtered = filtered.filter(order => order.delivery_date === deliveryDate);
+    }
+    setFilteredOrders(filtered);
+  }, [currency, pickupDate, deliveryDate, list]);
 
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
@@ -24,101 +46,65 @@ const Orders = () => {
   };
 
   const offset = currentPage * itemsPerPage;
-  const currentItems = list.slice(offset, offset + itemsPerPage);
-  const pageCount = Math.ceil(list.length / itemsPerPage);
+  const currentItems = filteredOrders.slice(offset, offset + itemsPerPage);
+  const pageCount = Math.ceil(filteredOrders.length / itemsPerPage);
 
   return (
     <div className='content-wrapper'>
       <section className="content-header">
-        <h1>
-          Manage
-          <small>orders</small>
-        </h1>
-        <ol className="breadcrumb">
-          <li><a href="#"><i className="fa fa-dashboard"></i> Home</a></li>
-          <li className="active">Orders</li>
-        </ol>
+        <h1>Manage <small>orders</small></h1>
       </section>
       <section className="content">
         <div className="row">
           <div className="col-md-12 col-xs-12">
-            <div id="messages" />
-            <Link to={"/createorder"} className="btn btn-primary">
-              Add orders
-            </Link>
-            <br /> <br />
+            <Link to={"/createorder"} className="btn btn-primary">Add orders</Link>
+            <br /><br />
             <div className="box">
               <div className="box-header">
                 <h3 className="box-title">Manage Orders</h3>
               </div>
               <div className="box-body">
-                <div
-                  id="manageTable_wrapper"
-                  className="dataTables_wrapper form-inline dt-bootstrap no-footer"
-                >
-                  <div className="row">
-                    <div className="col-sm-6">
-                      <div className="dataTables_length" id="manageTable_length">
-                        <label>
-                          Show{" "}
-                          <select
-                            name="manageTable_length"
-                            aria-controls="manageTable"
-                            className="form-control input-sm"
-                            value={itemsPerPage}
-                            onChange={handleItemsPerPageChange}
-                          >
-                            <option value={10}>10</option>
-                            <option value={25}>25</option>
-                            <option value={50}>50</option>
-                            <option value={100}>100</option>
-                          </select>{" "}
-                          entries
-                        </label>
-                      </div>
-                    </div>
-                    <div className="col-sm-6">
-                      <div id="manageTable_filter" className="dataTables_filter">
-                        <label>
-                          Search:
-                          <input
-                            type="search"
-                            className="form-control input-sm"
-                            placeholder=""
-                            aria-controls="manageTable"
-                          />
-                        </label>
-                      </div>
-                    </div>
+                <div className="row">
+                  <div className="col-md-3">
+                    <label>Currency:</label>
+                    <select className="form-control" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                      <option value="">All</option>
+                      <option value="CAD">CAD</option>
+                      <option value="USD">USD</option>
+                    </select>
                   </div>
-                  <div className="row">
-                    <div className="col-sm-12">
-                      <table
-                        id="manageTable"
-                        className="table table-bordered table-striped dataTable no-footer"
-                        role="grid"
-                        aria-describedby="manageTable_info"
-                        style={{ width: 1241 }}
-                      >
-                        <thead>
-                          <tr role="row">
-                            <th style={{ width: "55.2px" }}>Invoice #</th>
-                            <th style={{ width: "75.2px" }}>Company</th>
-                            <th style={{ width: "77.2px" }}>Shipment Type</th>
-                            <th style={{ width: "348.2px" }}>Pickup</th>
-                            <th style={{ width: "323.2px" }}>Delivery</th>
-                            <th style={{ width: 130 }}>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentItems.map((item, index) => (
-                            <tr role="row" className={index % 2 === 0 ? 'even' : 'odd'} key={index}>
-                              <td>{item.customer_orderno}</td>
-                              <td>{item.company}</td>
-                              <td>{item.shipment_type}</td>
-                              <td>{item.pickup_address}</td>
-                              <td>{item.delivery_address}</td>
-                              <td>
+                  <div className="col-md-3">
+                    <label>Pickup Date:</label>
+                    <input type="date" className="form-control" value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} />
+                  </div>
+                  <div className="col-md-3">
+                    <label>Delivery Date:</label>
+                    <input type="date" className="form-control" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} />
+                  </div>
+                </div>
+                <br />
+                <table className="table table-bordered table-striped">
+                  <thead>
+                    <tr>
+                      <th>Invoice #</th>
+                      <th>Company</th>
+                      <th>Shipment Type</th>
+                      <th>Pickup</th>
+                      <th>Delivery</th>
+                      <th>Currency</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentItems.map((item, index) => (
+                      <tr key={index}>
+                        <td>{item.customer_orderno}</td>
+                        <td>{item.company}</td>
+                        <td>{item.shipment_type}</td>
+                        <td>{item.pickup_address}</td>
+                        <td>{item.delivery_address}</td>
+                        <td>{item.currency}</td>
+                        <td>
                                 <a
                                   target="_blank"
                                   href={`https://isovia.ca/fms_api/pdf/invoice.php?id=${item.id}`}
@@ -126,6 +112,9 @@ const Orders = () => {
                                 >
                                   Confirmation
                                 </a>
+                                {item.tmsTriptId&&<Link to={`/tripviewer/${item.tmsTriptId}`} className="btn btn-default btn-xs">
+                                  Map
+                                </Link>}
                                 <a
                                   target="_blank"
                                   href={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
@@ -155,43 +144,23 @@ const Orders = () => {
                                   <i className="fa fa-trash" />
                                 </button>
                               </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-sm-5">
-                      <div className="dataTables_info" id="manageTable_info" role="status" aria-live="polite">
-                        Showing {offset + 1} to {Math.min(offset + itemsPerPage, list.length)} of {list.length} entries
-                      </div>
-                    </div>
-                    <div className="col-sm-7">
-                      <ReactPaginate
-                        previousLabel={'Previous'}
-                        nextLabel={'Next'}
-                        breakLabel={'...'}
-                        breakClassName={'break-me'}
-                        pageCount={pageCount}
-                        marginPagesDisplayed={2}
-                        pageRangeDisplayed={5}
-                        onPageChange={handlePageClick}
-                        containerClassName={'pagination'}
-                        subContainerClassName={'pages pagination'}
-                        activeClassName={'active'}
-                      />
-                    </div>
-                  </div>
-                </div>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <ReactPaginate
+                  previousLabel={'Previous'}
+                  nextLabel={'Next'}
+                  breakLabel={'...'}
+                  pageCount={pageCount}
+                  onPageChange={handlePageClick}
+                  containerClassName={'pagination'}
+                  activeClassName={'active'}
+                />
               </div>
-              {/* /.box-body */}
             </div>
-            {/* /.box */}
           </div>
-          {/* col-md-12 */}
         </div>
-        {/* /.row */}
       </section>
     </div>
   );

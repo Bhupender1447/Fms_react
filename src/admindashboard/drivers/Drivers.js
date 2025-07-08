@@ -265,50 +265,57 @@ const Drivers = () => {
                               <td>{item.state}</td>
                               <td>{item.city}</td>
                               <td>{item.zip}</td>
-                              <td>
-                                <button
-                                  type="button"
-                                  className="btn btn-default btn-xs"
-                                  onClick={() => console.log("Default Charges")}
-                                  data-toggle="modal"
-                                  data-target="#defaultModal"
-                                >
-                                  Default Charges
-                                </button>{" "}
-                                <button
-                                  type="button"
-                                  className="btn btn-success btn-xs"
-                                  onClick={() => console.log("Travel Docs.")}
-                                  data-toggle="modal"
-                                  data-target="#travelModal"
-                                >
-                                  Travel Docs.
-                                </button>{" "}
-                                <button
-                                  type="button"
-                                  className="btn btn-info btn-xs"
-                                  onClick={() => console.log("Payment Prof.")}
-                                  data-toggle="modal"
-                                  data-target="#paymentModal"
-                                >
-                                  Payment Prof.
-                                </button>
-                                <Link
-                                  to={`/drivers/update/${item.id}`}
-                                  className="btn btn-default btn-xs"
-                                >
-                                  <i className="fa fa-pencil" />
-                                </Link>{" "}
-                                <button
-                                  type="button"
-                                  className="btn btn-default btn-xs"
-                                  onClick={() => handleRemove(item.id)}
-                                  data-toggle="modal"
-                                  data-target="#removeModal"
-                                >
-                                  <i className="fa fa-trash" />
-                                </button>
-                              </td>
+                            <td>
+  <button
+    type="button"
+    className="btn btn-default btn-xs"
+    onClick={() => console.log("Default Charges")}
+    data-toggle="modal"
+    data-target="#defaultModal"
+  >
+    Default Charges
+  </button>{" "}
+  <button
+    type="button"
+    className="btn btn-success btn-xs"
+    onClick={() => console.log("Travel Docs.")}
+    data-toggle="modal"
+    data-target="#travelModal"
+  >
+    Travel Docs.
+  </button>{" "}
+  <button
+    type="button"
+    className="btn btn-info btn-xs"
+    onClick={() => console.log("Payment Prof.")}
+    data-toggle="modal"
+    data-target="#paymentModal"
+  >
+    Payment Prof.
+  </button>{" "}
+  <Link
+    to={`/drivers/update/${item.id}`}
+    className="btn btn-default btn-xs"
+  >
+    <i className="fa fa-pencil" />
+  </Link>{" "}
+  <button
+    type="button"
+    className="btn btn-default btn-xs"
+    onClick={() => handleRemove(item.id)}
+    data-toggle="modal"
+    data-target="#removeModal"
+  >
+    <i className="fa fa-trash" />
+  </button>{" "}
+  <Link
+    to={`/drivers/hos/${item.id}`}
+    className="btn btn-warning btn-xs"
+  >
+    View HOS
+  </Link>
+</td>
+
                             </tr>
                           ))}
                         </tbody>

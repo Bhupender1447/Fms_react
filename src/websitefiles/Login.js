@@ -42,7 +42,77 @@ const handleonSubmit = (e) => {
 };
 
   return (
-    <><div className="login-box">
+    <>
+
+<section className="login_form">
+  <div className="container">
+    <div className="row">
+      <div className="col-md-6 col-xs-12 login-box">
+        <div className="login-logo">
+          <a href="">
+            <b>Login</b>
+          </a>
+        </div>
+        <div className="login-box-body">
+          <p className="login-box-msg">Sign in to start your session</p>
+          {error && <div className="alert alert-danger" role="alert">
+          {error}
+        </div>}
+          <form onSubmit={handleonSubmit}>
+            <div className="form-group has-feedback">
+              <input
+                type="email"
+                className="form-control"
+                name="email"
+                id="email"
+                placeholder="Email"
+                autoComplete="off"
+                defaultValue="admin@admin.com"
+                value={Email}
+                onChange={(e)=>setEmail(e.target.value)}
+              />
+              <span className="glyphicon glyphicon-envelope form-control-feedback" />
+            </div>
+            <div className="form-group has-feedback">
+              <input
+                type="password"
+                className="form-control"
+                name="password"
+                id="password"
+                placeholder="Password"
+                autoComplete="off"
+                defaultValue="admin"
+                value={Password}
+                onChange={(e)=>setPassword(e.target.value)}
+              />
+              <span className="glyphicon glyphicon-lock form-control-feedback" />
+            </div>
+            <div className="row">
+              <div className="col-xs-8">
+                <div className="checkbox icheck">
+                  <label>
+                    <input type="checkbox" /> Remember Me
+                  </label>
+                </div>
+              </div>
+              <div className="col-xs-4">
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-block btn-flat"
+                >
+                  Sign In
+                </button>
+                <a href="">Forgot Password</a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+    {/* <div className="login-box">
     <div className="login-logo">
       <a href="">
         <b>Login</b>
@@ -91,17 +161,17 @@ const handleonSubmit = (e) => {
             </div>
           </div>
           {/* /.col */}
-          <div className="col-xs-4">
+          {/* <div className="col-xs-4">
             <button type="submit" className="btn btn-primary btn-block btn-flat">
               Sign In
             </button>
-          </div>
+          </div> */}
           {/* /.col */}
-        </div>
+        {/* </div>
       </form>
-    </div>
+    </div> */}
     {/* /.login-box-body */}
-  </div>
+ {/* </div> */}
   </>
   )
 }

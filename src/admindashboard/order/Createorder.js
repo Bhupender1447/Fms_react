@@ -2,9 +2,12 @@ import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import DistanceModal from '../Distancepopup'
 import Distancepopup from '../Distancepopup'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 
 const Createorder = () => {
+  
+  const navigate= useNavigate();
   const[data,setdata]=useState([])
   const[error,seterror]=useState([])
   const[getdataid,setgetdataid]=useState(0)
@@ -14,10 +17,10 @@ const Createorder = () => {
     customerorderno: "",
     shipmenttype: "",
     loadtype: "",
+    loadno: "",
     pickupnote: "",
     customer_id: "",
     salesman: "",
-    loadno: "",
     commodity: [],
     weight: [],
     unit: [],
@@ -53,7 +56,21 @@ const Createorder = () => {
     cstamount: "",
     net_amount: ""
   });
+ const [stops, setStops] = useState([]);
+  const addStop = () => {
+    const newStop = {
+      stoptype: 'Delivery', // Default value
+      location: '', // Default value
+    };
+    setStops([...stops, newStop]);
+  };
 
+  const handleStopChange = (index, field, value) => {
+    
+    const updatedStops = [...stops];
+    updatedStops[index][field] = value;
+    setStops(updatedStops);
+  };
 const[messageres,setmessage]=useState()
 const[popup,setpopup]=useState(false)
 const handleInputChange = (e) => {
@@ -179,6 +196,7 @@ let handleonSubmit = async (e) => {
   form.append('pickuptime', formData.pickuptime);
   form.append('pickup_refno', formData.pickup_refno);
   form.append('pickup_desc', formData.pickup_desc);
+  form.append('Location12',JSON.stringify(stops));
   form.append('manageTablestops_length', formData.manageTablestops_length);
   form.append('delivery', formData.delivery);
   form.append('delivery_address', formData.delivery_address);
@@ -202,16 +220,41 @@ let handleonSubmit = async (e) => {
     const response = await axios.post('https://isovia.ca/fms_api/api/create', form);
     setmessage(response.data.message);
     setFormData({})
-    alert('Order Create')
+ 
     setgetdataid(response.data.id);
-    return response.data;
+     toast.success('Successfully created', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
+       
+      
+        navigate(-1)
+
   } catch (error) {
     console.error('Error:', error);
-    throw error; // Rethrow the error to handle it in the calling code
+   toast.error(error, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+     
+    
+      navigate(-1)
   }
 }
 
-{console.log(formData?.commodity)}
+
 const handleAddRow = () => {
   setRows(prevRows => [
     ...prevRows,
@@ -406,8 +449,11 @@ const handleRemoveRow = (index) => {
                     name="loadtype"
                     value={formData.loadtype} onChange={handleInputChange}
                   >
+                    <option> Select Load type</option>
                     <option value="FTL">FTL</option>
                     <option value="LTL">LTL</option>
+                    <option value="single">Single </option>
+                    <option value="team">Team (Option)</option>
                   </select>
                 </div>
               </div>
@@ -452,6 +498,22 @@ const handleRemoveRow = (index) => {
                     placeholder="Enter Scale Ticket #"
                     autoComplete="off"
                     value={formData.scaleticketno?formData.scaleticketno:data&&data.triprno} onChange={handleInputChange}
+
+                  />
+                </div>
+              </div>
+              <div className="col-md-3 col-xs-12 pull pull-left">
+                <div className="form-group">
+                  <label htmlFor="username">Load no #</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="scaleticketno"
+                    name="scaleticketno"
+                    defaultValue={data&&data.loadno}
+                    placeholder="Enter Scale Ticket #"
+                    autoComplete="off"
+                    value={formData.loadno?formData.loadno:data&&data.loadno} onChange={handleInputChange}
 
                   />
                 </div>
@@ -637,7 +699,7 @@ const handleRemoveRow = (index) => {
           <div className="form-group">
             <label htmlFor="store">
               Pickup From |{" "}
-              <a href="/locations/create">Add Location</a>{" "}
+              <Link to="/locations/create">Add Location</Link>{" "}
             </label>
             <select
               className="form-control"
@@ -645,6 +707,7 @@ const handleRemoveRow = (index) => {
               value={formData.pickup_from} onChange={handleInputChange}
               name="pickup_from"
             >
+              <option>Select Pickup Location</option>
                  {data.locations?.map(item=>( <option value={item.id}>{item.name}</option>))}
             </select>
           </div>
@@ -664,9 +727,9 @@ const handleRemoveRow = (index) => {
         </div>
         <div className="col-md-4 col-xs-12 pull pull-left">
           <label htmlFor="store">Pickup Date</label>
-          <div className="input-group date" data-provide="datepicker">
+          <div className="input-group date">
             <input
-              type="text"
+              type="date"
               name="pickupdate"
               id="pickupdate"
               className="form-control"
@@ -678,7 +741,7 @@ const handleRemoveRow = (index) => {
           </div>
           <input
             className="form-control"
-            type="text"
+            type="time"
             id="pickuptime"
             placeholder="Set Time"
             name="pickuptime"
@@ -744,6 +807,7 @@ const handleRemoveRow = (index) => {
               name="delivery"
               value={formData.delivery} onChange={handleInputChange}
             >
+              <option>Select Drop Location</option>
                 {data.locations?.map(item=>( <option value={item.id}>{item.name}</option>))}
             </select>
           </div>
@@ -763,9 +827,9 @@ const handleRemoveRow = (index) => {
         </div>
         <div className="col-md-4 col-xs-12 pull pull-left">
           <label htmlFor="store">Delivery Date</label>
-          <div className="input-group date" data-provide="datepicker">
+          <div className="input-group date">
             <input
-              type="text"
+              type="date"
               name="deliverydate"
               id="deliverydate"
               className="form-control"
@@ -777,7 +841,7 @@ const handleRemoveRow = (index) => {
           </div>
           <input
             className="form-control"
-            type="text"
+            type="time"
             id="deliverytime"
             placeholder="Set Time"
             name="deliverytime"
@@ -897,19 +961,50 @@ const handleRemoveRow = (index) => {
                     
                  */}
     </div>
-    <div className="col-md-12 col-xs-12 pull pull-left">
-      <div className="form-group">
-        <button
-          type="button"
-          className="btn btn-info btn-sm"
-          data-id='"ISV_TRIP-1230"'
-          data-toggle="modal"
-          data-target="#removeModal2"
-        >
-          Add Pickup/Delivery Stops
-        </button>
-      </div>
-    </div>
+     {/* Add Pickup/Delivery Stops Button */}
+     <div className="col-md-12 col-xs-12 pull pull-left">
+          <div className="form-group">
+            <button
+              type="button"
+              className="btn btn-info btn-sm"
+              onClick={addStop}
+            >
+              Add Pickup/Delivery Stops
+            </button>
+          </div>
+        </div>
+
+        {/* Render Stops Dynamically */}
+        {stops.map((stop, index) => (
+          <div key={index} style={{ marginTop: '15px' }}>
+            <div className="form-group">
+              <label>Stop Type</label>
+              <select
+                className="form-control"
+                value={stop.stoptype}
+                onChange={(e) => handleStopChange(index, 'stoptype', e.target.value)}
+              >
+                <option value="Delivery">Delivery</option>
+                <option value="Pickup">Pickup</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Location</label>
+              <select
+                className="form-control"
+                value={stop.location}
+                onChange={(e) => handleStopChange(index, 'location', e.target.value)}
+              >
+                <option value="">Select Location</option>
+                {data.locations?.map((item) => (
+                  <option key={item.id} value={item.address1}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ))}
     <div className="col-md-12 col-xs-12 pull pull-left">
       <div
         id="manageTablestops_wrapper"
@@ -1396,53 +1491,64 @@ const handleRemoveRow = (index) => {
   </div>
   {/* /.box */}
   <div className="text-center">
-    <button type="submit" className="btn btn-primary" onClick={()=>setpopup(!popup)}>
+    <button type="button" className="btn btn-primary" onClick={()=>setpopup(!popup)}>
     Create Estimate
     </button>
-    <a href="/orders/" className="btn btn-warning">
+    <button onClick={()=>navigate(-1)} className="btn btn-warning">
       Back
-    </a>
+    </button>
   </div>
 </section>
 
 
-{popup &&<div className="modal show" tabIndex={-1} role="dialog">
-  <div className="modal-dialog" role="document"  style={{
-        width: "100%", // Adjust width
-        height: "700px", // Adjust height
-        maxWidth: "100%", // Ensure responsiveness
-      }}>
-    <div className="modal-content">
-      <div className="modal-header">
-        <h5 className="modal-title">Modal title</h5>
-        <button
-          type="button"
-          className="close"
-          data-dismiss="modal"
-          aria-label="Close"
-          onClick={()=>setpopup(false)}
-        >
-          <span aria-hidden="true">×</span>
-        </button>
-      </div>
-      <div className="modal-body">
-      <Distancepopup closePopup={() => setpopup(false)}  places1={formData.pickup_address} places2={formData.delivery_address}/>
-      </div>
-      <div className="modal-footer">
+{popup && (
+  <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+    <div className="modal-dialog modal-lg" style={{ maxWidth: '90%' }}>
+      <div className="modal-content">
+        <div className="modal-header">
+          <h5 className="modal-title">Distance Calculator</h5>
+          <button
+            type="button"
+            className="close"
+            onClick={() => setpopup(false)}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div className="modal-body" style={{ height: '500px', overflow: 'auto' }}>
+          <Distancepopup 
+            closePopup={() => setpopup(false)}  
+            places1={formData.pickup_address} 
+            places2={formData.delivery_address}
+            places3={stops}
+          />
+        </div>
+        <div className="modal-footer">
         <button type="button" className="btn btn-primary" onClick={ handleonSubmit}>
           Save  Order
         </button>
-        {getdataid ? (
+        {getdataid ? (<>
   <Link
     to={"/assign/" + getdataid}
     className="btn btn-success btn-sm"
   >
     Assign
   </Link>
-) : (
+  <a  target="_blank"
+                                  href={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${getdataid}`}
+                                  className="btn btn-danger btn-xs"
+                                >
+                                  Dispatch
+                                </a>
+  </>
+) : (<>
   <button className="btn btn-success btn-sm" disabled>
     Assign
   </button>
+  <button    className="btn btn-danger btn-xs" disabled>
+    Dispatch
+  </button>
+  </>
 )}
 
         <button
@@ -1453,10 +1559,12 @@ const handleRemoveRow = (index) => {
         >
           Close
         </button>
+          {/* Rest of your footer buttons */}
+        </div>
       </div>
     </div>
   </div>
-</div>}
+)}
   </div>
   )
 }

@@ -3,9 +3,10 @@ import React, { useState, useEffect, useRef } from "react";
 
 const api_key = "D487078091664D428AA781953AE84DF1";
 
-const Distancepopup = ({ places1, places2 }) => {
-  const [place1, setPlace1] = useState(places1 || ""); // Default to props or empty string
+const Distancepopup = ({ places1, places2, places3 = [] }) => {
+  const [place1, setPlace1] = useState(places1 || "");
   const [place2, setPlace2] = useState(places2 || "");
+  const [place3, setPlace3] = useState(Array.isArray(places3) ? places3 : []);
   const [distance, setDistance] = useState(null);
   const [error, setError] = useState(null);
   const [map, setMap] = useState(null);
@@ -42,61 +43,24 @@ const Distancepopup = ({ places1, places2 }) => {
   }, []);
 
   const searchPlace = async (query) => {
-    const searchEndpoint = `https://singlesearch.alk.com/NA/api/search?query=${encodeURIComponent(
-      query
-    )}`;
+    const searchEndpoint = `https://singlesearch.alk.com/NA/api/search?query=${encodeURIComponent(query)}`;
 
     try {
       const response = await axios.get(searchEndpoint, {
         headers: {
-          accept: "*/*",
-          "accept-language": "en-US,en;q=0.9",
           authorization: api_key,
-          "content-type": "application/json",
+          accept: "application/json",
         },
       });
 
-      if (
-        response.status === 200 &&
-        response.data.Locations &&
-        response.data.Locations.length > 0
-      ) {
-        const location = response.data.Locations[0];
-        const { Lat, Lon } = location.Coords;
+      if (response.status === 200 && response.data.Locations?.length > 0) {
+        const { Lat, Lon } = response.data.Locations[0].Coords;
         return { lat: Lat, lon: Lon };
       } else {
         throw new Error(`No valid locations found for ${query}`);
       }
     } catch (error) {
-      console.error(error);
       setError(`Failed to fetch coordinates for ${query}`);
-      return null;
-    }
-  };
-
-  const fetchRouteDistance = async (lat1, lon1, lat2, lon2) => {
-    const url = `https://pcmiler.alk.com/apis/rest/v1.0/Service.svc/route/routeReports?stops=${lon1}%2C${lat1}%3B${lon2}%2C${lat2}&reports=Mileage`;
-
-    try {
-      const response = await axios.get(url, {
-        headers: {
-          accept: "*/*",
-          "accept-language": "en-US,en;q=0.9",
-          authorization: api_key,
-          "content-type": "application/json",
-          origin: "https://developer.trimblemaps.com",
-          "sec-fetch-mode": "cors",
-        },
-      });
-
-      if (response.status === 200) {
-        return response.data;
-      } else {
-        throw new Error("Failed to fetch route distance");
-      }
-    } catch (error) {
-      console.error(error);
-      setError("Failed to fetch route distance");
       return null;
     }
   };
@@ -107,32 +71,52 @@ const Distancepopup = ({ places1, places2 }) => {
 
     const coords1 = await searchPlace(place1);
     const coords2 = await searchPlace(place2);
+    const coords3 = await Promise.all(
+      place3.map(async (stop) => await searchPlace(stop.location))
+    );
 
     if (coords1 && coords2) {
-      const routeDistance = await fetchRouteDistance(
-        coords1.lat,
-        coords1.lon,
-        coords2.lat,
-        coords2.lon
-      );
-      if (routeDistance) {
-        setDistance(routeDistance);
+      let stops = `${coords1.lon},${coords1.lat};`;
 
-        if (map) {
-          const TrimbleMaps = window.TrimbleMaps;
-          if (route) {
-            route.remove(); // Remove the existing route if any
+      if (coords3.length > 0) {
+        stops += coords3.map((c) => `${c.lon},${c.lat}`).join(";") + ";";
+      }
+
+      stops += `${coords2.lon},${coords2.lat}`;
+
+      const url = `https://pcmiler.alk.com/apis/rest/v1.0/Service.svc/route/routeReports?stops=${stops}&reports=Mileage&openBorders=true`;
+
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            authorization: api_key,
+            accept: "application/json",
+          },
+        });
+
+        if (response.status === 200) {
+          console.log(response.data)
+          setDistance(response.data);
+
+          if (map) {
+            const TrimbleMaps = window.TrimbleMaps;
+            if (route) route.remove();
+
+            const newRoute = new TrimbleMaps.Route({
+              routeId: "myRoute",
+              stops: [
+                new TrimbleMaps.LngLat(coords1.lon, coords1.lat),
+                ...coords3.map((c) => new TrimbleMaps.LngLat(c.lon, c.lat)),
+                new TrimbleMaps.LngLat(coords2.lon, coords2.lat),
+              ],
+            });
+
+            newRoute.addTo(map);
+            setRoute(newRoute);
           }
-          const newRoute = new TrimbleMaps.Route({
-            routeId: "myRoute",
-            stops: [
-              new TrimbleMaps.LngLat(coords1.lon, coords1.lat),
-              new TrimbleMaps.LngLat(coords2.lon, coords2.lat),
-            ],
-          });
-          newRoute.addTo(map);
-          setRoute(newRoute);
         }
+      } catch (error) {
+        setError("Failed to fetch route distance");
       }
     }
   };
@@ -141,18 +125,21 @@ const Distancepopup = ({ places1, places2 }) => {
     if (places1 && places2 && map) {
       const timeoutId = setTimeout(() => {
         calculateDistance();
-      }, 900); 
-  
-   
+      }, 900);
       return () => clearTimeout(timeoutId);
     }
   }, [places1, places2, map]);
-  
 
   return (
     <div>
-      <h1>Distance</h1>
-      <div>
+      <h1>Distance Calculator</h1>
+     
+      <button onClick={calculateDistance} className="btn btn-primary">
+        Calculate Distance
+      </button>
+      <div className="row">
+        <div className="col-md-3">
+        <div>
         <label>
           To place:
           <input
@@ -174,30 +161,64 @@ const Distancepopup = ({ places1, places2 }) => {
           />
         </label>
       </div>
-      <button onClick={calculateDistance} className="btn btn-primary" type="button">
-        Calculate Distance
-      </button>
-      <div className="row">
-        <div className="col-md-4">
-      {distance ? (
-        <div>
-            {console.log(distance)}
-          <h2>Distance Results</h2>
-          <pre>Total Distance: {distance[0].ReportLines[1].TMiles} Miles</pre>
-          <pre>
-            Total Cost per Mile: ${distance[0].ReportLines[1].TCostMile}
-          </pre>
-          <pre>Total Hours: {distance[0].ReportLines[1].THours} Hrs</pre>
+      <div>
+        <label>
+          Additional Stops (Optional):
+          {place3.map((stop, index) => (
+            <div key={index} className="mb-2">
+              <input
+                type="text"
+                className="form-control"
+                value={stop.location}
+                onChange={(e) => {
+                  const newStops = [...place3];
+                  newStops[index].location = e.target.value;
+                  setPlace3(newStops);
+                }}
+              />
+            </div>
+          ))}
+          <button
+            className="btn btn-success btn-sm"
+            onClick={() =>
+              setPlace3([...place3, { stoptype: "Intermediate", location: "" }])
+            }
+          >
+            Add Stop
+          </button>
+        </label>
+      </div>
+{distance ? (
+  (() => {
+    const lastReportLine = distance[0]?.ReportLines?.[distance[0].ReportLines.length - 1];
+
+    if (!lastReportLine) return <p>No valid distance data found.</p>;
+
+    const miles = parseFloat(lastReportLine.TMiles);
+    const cost = parseFloat(lastReportLine.TCostMile);
+    const perMileCost = miles > 0 ? (cost / miles).toFixed(2) : "0.00";
+
+    return (
+      <div>
+        <h2>Distance Results</h2>
+        <pre>Total Distance: {miles} Miles</pre>
+        <pre>Total Cost: ${cost}</pre>
+        <pre>Total Hours: {lastReportLine.THours} Hrs</pre>
+        <pre>Per Mile Cost: ${perMileCost}</pre>
+      </div>
+    );
+  })()
+) : (
+  "Progress..."
+)}
+
+
+
+          {error && <p style={{ color: "red" }}>{error}</p>}
         </div>
-      ):"Progress................................................................"}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      </div>
-      <div className="col-md-8">
-      <div
-        ref={mapContainerRef}
-        style={{ width: "100%", height: "400px" }}
-      ></div>
-      </div>
+        <div className="col-md-9">
+          <div ref={mapContainerRef} style={{ width: "100%", height: "400px" }}></div>
+        </div>
       </div>
     </div>
   );

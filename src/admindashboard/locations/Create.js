@@ -1,5 +1,7 @@
 import axios from 'axios';
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const Createlocation = () => {
   const nameRef = useRef(null);
@@ -11,6 +13,7 @@ const Createlocation = () => {
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   const [country, setCountry] = useState('');
+  const navigate = useNavigate()
 
   useEffect(() => {
     const initialize = () => {
@@ -19,7 +22,7 @@ const Createlocation = () => {
 
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
-
+console.log(place)
         place.address_components.forEach(component => {
           const types = component.types;
           types.forEach(type => {
@@ -51,7 +54,7 @@ const Createlocation = () => {
       initialize();
     } else {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDiMQK2Czy_Dqw8lymFu8wCzVuLh27fRwA&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBM3VgKsX8mEGsVYpSic7VLNKwEmZ7IABc&libraries=places`;
       script.async = true;
       script.onload = () => initialize();
       document.body.appendChild(script);
@@ -72,11 +75,31 @@ const Createlocation = () => {
     formData.append('zip', zip);
     try {
       const response = await axios.post('https://isovia.ca/fms_api/api/createlocation', formData);
-      alert('Successfully created');
+      toast.success('Successfully created', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+     
+      navigate(-1)
      
     } catch (error) {
       console.error('Error creating location', error);
-      alert('Error occurred!!');
+      toast.error('error', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
     }
   };
 

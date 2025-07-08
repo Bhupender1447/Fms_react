@@ -5,6 +5,7 @@ const Sidebar = () => {
   let navigate = useNavigate();
   const [update, setUpdate] = useState(0);
   const loginData = JSON.parse(localStorage.getItem('logindetail'));
+  
   useEffect(() => {
     const handleMenuClick = (event) => {
       const target = event.currentTarget;
@@ -14,31 +15,19 @@ const Sidebar = () => {
       }
     };
 
-    const attachEventListeners = () => {
-      document.querySelectorAll('.dropdown').forEach((item) => {
-        item.addEventListener('click', handleMenuClick);
-      });
-    };
+    document.querySelectorAll('.dropdown').forEach((item) => {
+      item.addEventListener('click', handleMenuClick);
+    });
 
-    const detachEventListeners = () => {
+    return () => {
       document.querySelectorAll('.dropdown').forEach((item) => {
         item.removeEventListener('click', handleMenuClick);
       });
     };
-
-    attachEventListeners();
-
-    return () => {
-      detachEventListeners();
-    };
   }, []);
 
   useEffect(() => {
-    const loginData = JSON.parse(localStorage.getItem('logindetail'));
-
-    if (loginData && loginData?.role === 'admin'|| loginData?.role === 'agent') {
-      // User is admin
-    } else {
+    if (!loginData || (loginData.role !== 'admin' && loginData.role !== 'agent')) {
       navigate('/login');
     }
   }, [update, navigate]);
@@ -52,65 +41,26 @@ const Sidebar = () => {
     <aside className="main-sidebar">
       <section className="sidebar" style={{ height: 'auto' }}>
         <ul className="sidebar-menu tree" data-widget="tree">
-        <li id="dashboardMainMenu">
-            <Link to="/accounting">
+          {/* Dashboard */}
+          <li className="dropdown" id="dashboardMainMenu">
+            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-dashboard" /> <span>Dashboard</span>
-            </Link>
-          </li>
-          <li id="dashboardMainMenu">
-            <Link to="/admin">
-              <i className="fa fa-dashboard" /> <span>Control Panel</span>
-            </Link>
-          </li>
-          <li id="dashboardMainMenu">
-            <Link to="/createagent">
-              <i className="fa fa-user" /> <span>Create  Agent</span>
-            </Link>
-          </li>
-          <li id="dashboardMainMenu">
-            <Link to="/agentlist">
-              <i className="fa fa-user" /> <span> Agent List</span>
-            </Link>
-          </li>
-
-          <li className="dropdown" id="OrderMainNav">
-            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
-              <i className="fa fa-files-o" />
-              <span>Orders</span>
-     
             </a>
             <ul className="dropdown-menu bg-dark text-light">
-              <li id="createOrderSubMenu">
-                <Link to={'/createorder'}>
-                  <i className="fa fa-circle-o" /> Create Orders
-                </Link>
-              </li>
-              <li id="manageOrderSubMenu">
-                <Link to={'/orderlist'}>
-                  <i className="fa fa-circle-o" /> Manage Orders
-                </Link>
-              </li>
+              <li><Link to="/accounting"><i className="fa fa-circle-o" /> Accounting</Link></li>
+              <li><Link to="/admin"><i className="fa fa-circle-o" /> Control Panel</Link></li>
             </ul>
           </li>
-          <li className="dropdown" id="TripMainNav">
-            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
-              <i className="fa fa-files-o" />
-              <span>Trips</span>
-        
-            </a>
-            <ul className="dropdown-menu bg-dark text-light">
-              <li id="createTripSubMenu">
-                <Link to={'/createtrips'}>
-                  <i className="fa fa-circle-o" /> Create Trips
-                </Link>
-              </li>
-              <li id="manageTripSubMenu">
-                <Link to={'/triplist'}>
-                  <i className="fa fa-circle-o" /> Manage Trips
-                </Link>
-              </li>
-            </ul>
+          <li><Link to="/driverpaylist"><i className="fa fa-user" /> <span>Driver pay list</span></Link></li>
+              <li><Link to="/netincometable"><i className="fa fa-user" /> <span>Net Income by Location</span></Link></li>
+          <li><Link to="/tripsmap"><i className="fa fa-circle-o" /> Live Update Map</Link></li>
+          <li><Link to={'/DispatchBoard'}><i className="fa fa-circle-o" />Dispatch Board /<br/> Freight board </Link></li>
+          <li id="iftaMenu">
+            <Link to="/ifta">
+              <i className="fa fa-file-text" /> <span>IFTA eManifest Portal</span>
+            </Link>
           </li>
+         
           <li className="dropdown" id="InvoiceMainNav">
             <a href="#" className="dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-files-o" />
@@ -173,58 +123,68 @@ const Sidebar = () => {
               </li> */}
             </ul>
           </li>
-          <li className="dropdown" id="ReportMainNav">
+
+          {/* Agents */}
+          <li className="dropdown" id="agentMainMenu">
             <a href="#" className="dropdown-toggle" data-toggle="dropdown">
-              <i className="fa fa-files-o" />
-              <span>Reports</span>
-     
+              <i className="fa fa-user" /> <span>Agents</span>
             </a>
             <ul className="dropdown-menu bg-dark text-light">
-              <li id="productReportSubMenu">
-                <a href="#">
-                  <i className="fa fa-circle-o" /> Product Wise
-                </a>
-              </li>
-              <li id="storeReportSubMenu">
-                <a href="#">
-                  <i className="fa fa-circle-o" /> Total Store wise
-                </a>
-              </li>
+              <li><Link to="/createagent"><i className="fa fa-circle-o" /> Create Agent</Link></li>
+              <li><Link to="/agentlist"><i className="fa fa-circle-o" /> Agent List</Link></li>
             </ul>
           </li>
-          {loginData?.role === 'admin'&&<>
-            <li id="companyMainNav">
-              <a href="#">
-                <i className="fa fa-files-o" /> <span>Company Info</span>
-              </a>
-            </li>
-          <li id="profileMainNav">
-            <Link to={"/profile"}>
-              <i className="fa fa-files-o" /> <span>Profile</span>
-            </Link>
-          </li>
-          <li id="settingMainNav">
-            <Link to="/users/setting">
-              <i className="fa fa-wrench" /> <span>Settings</span>
-            </Link>
-          </li>
-          <li id="settingMainNav">
-            <Link to={"/configurations"}>
-              <i className="fa fa-circle-o" />
-              Configurations
-            </Link>
-          </li>
-          <li id="">
-            <Link to={'/orderhistory'}>
-              <i className="fa fa-circle-o" />
-              Order History
-            </Link>
-          </li>
-          </>}
-          <li>
-            <a onClick={logout}>
-              <i className="glyphicon glyphicon-log-out" /> <span>Logout</span>
+
+          {/* Orders */}
+          <li className="dropdown" id="OrderMainNav">
+            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+              <i className="fa fa-files-o" /> <span>Orders</span>
             </a>
+            <ul className="dropdown-menu bg-dark text-light">
+              <li><Link to="/createorder"><i className="fa fa-circle-o" /> Create Orders</Link></li>
+              <li><Link to="/orderlist"><i className="fa fa-circle-o" /> Manage Orders</Link></li>
+            </ul>
+          </li>
+
+          {/* Trips */}
+          <li className="dropdown" id="TripMainNav">
+            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+              <i className="fa fa-map" /> <span>Trips</span>
+            </a>
+            <ul className="dropdown-menu bg-dark text-light">
+              <li><Link to="/tripsmap"><i className="fa fa-circle-o" /> Live Update Map</Link></li>
+              <li><Link to="/createtrips"><i className="fa fa-circle-o" /> Create Trips</Link></li>
+              <li><Link to="/triplist"><i className="fa fa-circle-o" /> Manage Trips</Link></li>
+            </ul>
+          </li>
+                        <li><Link to="/driverdutynotification"><i className="fa fa-user" /> <span>Driver Duty Notification</span></Link></li>
+
+          {/* Reports */}
+          <li className="dropdown" id="ReportMainNav">
+            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+              <i className="fa fa-files-o" /> <span>Reports</span>
+            </a>
+            <ul className="dropdown-menu bg-dark text-light">
+              <li><a href="#"><i className="fa fa-circle-o" /> Product Wise</a></li>
+              <li><a href="#"><i className="fa fa-circle-o" /> Total Store Wise</a></li>
+            </ul>
+          </li>
+
+          {/* Configurations & Profile */}
+          {loginData?.role === 'admin' && (
+            <>
+              <li><Link to="/profile"><i className="fa fa-user" /> <span>Profile</span></Link></li>
+
+              
+              <li><Link to="/users/setting"><i className="fa fa-wrench" /> <span>Settings</span></Link></li>
+              <li><Link to="/configurations"><i className="fa fa-cog" /> <span>Configurations</span></Link></li>
+              <li><Link to="/orderhistory"><i className="fa fa-history" /> <span>Order History</span></Link></li>
+            </>
+          )}
+
+          {/* Logout */}
+          <li>
+            <a onClick={logout}><i className="glyphicon glyphicon-log-out" /> <span>Logout</span></a>
           </li>
         </ul>
       </section>

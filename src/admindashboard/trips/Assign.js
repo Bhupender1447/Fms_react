@@ -26,10 +26,11 @@ const Assigntrip = () => {
     Object.keys(formData).forEach(key => data.append(key, formData[key]));
 
     try {
-      const response = await axios.post('https://isovia.ca/fms_api/api/tripassign/264/1', data);
+      const response = await axios.post(`https://isovia.ca/fms_api/api/tripassign/${id}/1`, data);
 
       console.log('Response:', response.data);
       if (response.data.redirect_url) {
+        alert()
         window.location.href = response.data.redirect_url;
       }
     } catch (error) {
@@ -187,7 +188,7 @@ console.log(data)
           </div>
 
           {/* Rate and Currency */}
-          <div className="col-md-3 col-xs-12 pull pull-left">
+          {/* <div className="col-md-3 col-xs-12 pull pull-left">
             <div className="form-group">
               <label htmlFor="rate">Rate</label>
               <input type="number" className="form-control" id="rate" name="rate" placeholder="Enter Rate" autoComplete="off" onChange={handleChange} value={formData.rate} />
@@ -201,7 +202,7 @@ console.log(data)
                 <option value="CAD" selected={data.currency === 'CAD'}>CAD</option>
               </select>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Order Details */}

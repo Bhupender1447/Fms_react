@@ -46,6 +46,26 @@ let logout=()=>{
               <i className="fa fa-circle-o" /> Income 
             </Link>
           </li>
+       <li id="manageOrderSubMenu">
+            <Link to={'/startduty'}>
+              <i className="fa fa-circle-o" /> start duty 
+            </Link>
+          </li>
+       <li id="manageOrderSubMenu">
+            <Link to={'/stopduty'}>
+              <i className="fa fa-circle-o" /> stop duty
+            </Link>
+          </li>
+       <li id="manageOrderSubMenu">
+            <Link to={'/dutylist'}>
+              <i className="fa fa-circle-o" />Dutylist
+            </Link>
+          </li>
+       <li id="manageOrderSubMenu">
+            <Link to={'/logs'}>
+              <i className="fa fa-circle-o" />Logs
+            </Link>
+          </li>
           <li>
         <a onClick={logout}>
           <i className="glyphicon glyphicon-log-out" /> <span>Logout</span>

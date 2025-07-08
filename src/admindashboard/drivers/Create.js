@@ -347,14 +347,13 @@ const Createdrivers = () => {
                 </div>
                 <div className="col-md-6 col-xs-12 pull pull-left">
                   <div className="form-group">
-                    <label htmlFor="username">Incorporation</label>
+                    <label htmlFor="username">Account No</label>
                     <input
                       type="text"
                       className="form-control"
-                      id="incorporation"
-                      name="incorporation"
-                      autoComplete="off"
-                      value={formData.incorporation}
+                      id="accountno"
+                      name="accountno"
+                      value={formData.accountno}
                       onChange={handleChange}
                     />
                   </div>
@@ -364,9 +363,10 @@ const Createdrivers = () => {
                     <label htmlFor="store">Incorporation State</label>
                     <select
                       className="form-control"
-                      id="accountno"
-                      name="accountno"
-                      value={formData.accountno}
+                      id="incorporation"
+                      name="incorporation"
+                      autoComplete="off"
+                      value={formData.incorporation}
                       onChange={handleChange}
                     >
                       <option value="AB">Alberta</option>
