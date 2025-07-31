@@ -435,7 +435,7 @@ const Dutylist = () => {
                       }}
                     />
                   </td>
-                  <td><Link to={`/dutychart/${trip.driver_id}`}>View Chart</Link></td>
+                  <td><Link to={`/dutychart/${trip.trip_id}`}>View Chart</Link></td>
                   <td>
                     {locations[trip.trip_id] || (
                       trip.latitude && trip.longitude 

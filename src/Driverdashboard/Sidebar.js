@@ -66,6 +66,16 @@ let logout=()=>{
               <i className="fa fa-circle-o" />Logs
             </Link>
           </li>
+       <li id="manageOrderSubMenu">
+            <Link to={'/expense'}>
+              <i className="fa fa-circle-o" />Expense
+            </Link>
+          </li>
+       <li id="manageOrderSubMenu">
+            <Link to={'/livelocation'}>
+              <i className="fa fa-circle-o" />livelocation
+            </Link>
+          </li>
           <li>
         <a onClick={logout}>
           <i className="glyphicon glyphicon-log-out" /> <span>Logout</span>

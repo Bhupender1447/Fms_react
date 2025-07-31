@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import Sidebar from './Sidebar'
 import { Link } from 'react-router-dom';
+import AutoLiveLocationSender from './dutystatus/AutoLiveLocationSender';
 
 const Driverheader = () => {
   useEffect(() => {
@@ -25,6 +26,7 @@ const Driverheader = () => {
 
   return (<>
 <header className="main-header">
+  <AutoLiveLocationSender/>
   {/* Logo */}
   <Link to="/admin" className="logo">
     {/* mini logo for sidebar mini 50x50 pixels */}

@@ -30,7 +30,7 @@ const DriverLogin = () => {
           
           // Navigate based on user role
           if (loginRes.role === "driver") {
-            navigate('/driverdashboard');
+            navigate('/logs');
           }
         } else if (loginRes.status === "error") {
           setError(loginRes.message);

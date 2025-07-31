@@ -52,6 +52,10 @@ const Sidebar = () => {
             </ul>
           </li>
           <li><Link to="/driverpaylist"><i className="fa fa-user" /> <span>Driver pay list</span></Link></li>
+          <li><Link to="/financeManager"><i className="fa fa-user" /> <span>financeManager</span></Link></li>
+          <li><Link to="/getOrderincome"><i className="fa fa-user" /> <span>Order Income</span></Link></li>
+          <li><Link to="/ordertripIncome"><i className="fa fa-user" /> <span>Order Trip Income</span></Link></li>
+          <li><Link to="/expense"><i className="fa fa-user" /> <span>Expense</span></Link></li>
               <li><Link to="/netincometable"><i className="fa fa-user" /> <span>Net Income by Location</span></Link></li>
           <li><Link to="/tripsmap"><i className="fa fa-circle-o" /> Live Update Map</Link></li>
           <li><Link to={'/DispatchBoard'}><i className="fa fa-circle-o" />Dispatch Board /<br/> Freight board </Link></li>

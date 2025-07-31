@@ -83,6 +83,9 @@ let logout=()=>{
               <i className="fa fa-user" /> <span>Create  Agent</span>
             </Link>
           </li>
+                 <li><Link to="/agentgetOrderincome"><i className="fa fa-user" /> <span>Order Income</span></Link></li>
+                    <li><Link to="/agentordertripIncome"><i className="fa fa-user" /> <span>Order Trip Income</span></Link></li>
+                    <li><Link to="/agentexpense"><i className="fa fa-user" /> <span>Expense</span></Link></li>
           <li id="dashboardMainMenu">
             <Link to="/agentlist">
               <i className="fa fa-user" /> <span> Agent List</span>

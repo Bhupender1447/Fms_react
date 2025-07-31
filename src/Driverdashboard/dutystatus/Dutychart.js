@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import TripLogChart from './Logs';
 
 const Dutychart = () => {
-  const {did}=useParams()
+  const {tid}=useParams()
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
   const [logData, setLogData] = useState([]);
@@ -15,7 +15,7 @@ const Dutychart = () => {
       try {
         const response = await axios.get('https://isovia.ca/fms_api/api/get_duty_chart_data', {
           params: {
-            driver_id: did,
+            trip_id: tid,
         
           }
         });
@@ -31,7 +31,7 @@ const Dutychart = () => {
     };
 
     fetchChartData();
-  }, [did]);
+  }, [tid]);
 
   useEffect(() => {
     if (chartRef.current && logData.length > 0) {
