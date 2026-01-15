@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom';
 
 const IsoviaFreightManagementSystem = () => {
   return (
@@ -10,10 +11,10 @@ const IsoviaFreightManagementSystem = () => {
           <h2>Isovia Freight Management System</h2>
         </div>
         <div className="scrol-down-button">
-          <a href="#">
+          <Link to="#">
             <span> Scroll Down </span>
             <i className="fa-solid fa-angles-down" />
-          </a>
+          </Link>
         </div>
       </div>
     </div>
@@ -39,58 +40,58 @@ const IsoviaFreightManagementSystem = () => {
           <div className="key-points-section-textarea">
             <div className="key-points-section-textarea-title">
               <ul className="list-keypoints-software">
-                <a href="#">
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Efficiency Boost:</span>
                     Highlight how the system optimizes freight operations with
                     AI-powered insights.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Cost Reduction:</span>
                     Highlight how the system optimizes freight operations with
                     AI-powered insights.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Real-Time Visibility:</span>Emphasize the GPS tracking
                     and live updates for customer and stakeholder peace of mind.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Regulatory Compliance:</span>Focus on tools that
                     simplify adhering to complex transportation regulations.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>User-Friendly Interface:</span> Promote the intuitive
                     design that enables quick onboarding and usage.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Scalability:</span>Market the adaptability of the
                     system for both small businesses and large enterprises.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Integration with Industry Leaders:</span>
                     Highlight partnerships with Trimble, Samsara, and FMCSA for
                     added functionality.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Subscription Flexibility:</span>Offer different
                     pricing tiers to cater to various customer needs and
                     budgets.
                   </li>
-                </a>
+                </Link>
               </ul>
             </div>
           </div>

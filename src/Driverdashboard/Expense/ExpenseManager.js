@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import {Link } from 'react-router-dom';
 
 
 const baseURL = 'https://isovia.ca/fms_api/api';
@@ -46,7 +47,7 @@ const ExpenseManager = () => {
         .catch((err) => console.log(err));
     }
     fetchExpenses();
-  }, []);
+  }, [newExpense]);
 
   // Add Expense
   const handleAddExpense = async (e) => {
@@ -314,7 +315,7 @@ const ExpenseManager = () => {
                   <td>{exp.exp_for}</td>
                   <td>
                     {exp.any_image && (
-                      <a href={`https://${exp.any_image}`} target="_blank" rel="noreferrer">View</a>
+                      <Link to={`https://${exp.any_image}`} target="_blank" rel="noreferrer">View</Link>
                     )}
                   </td>
                   <td>

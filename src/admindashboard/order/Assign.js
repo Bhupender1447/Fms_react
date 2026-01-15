@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable jsx-a11y/no-redundant-roles */
+import  { useState } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useParams ,Link} from 'react-router-dom';
 
 const Assignorder = () => {
   // Initial state for the form
@@ -81,7 +82,7 @@ const Assignorder = () => {
         </h1>
         <ol className="breadcrumb">
           <li>
-            <a href="#"><i className="fa fa-dashboard" /> Home</a>
+            <Link to="#"><i className="fa fa-dashboard" /> Home</Link>
           </li>
           <li className="active">Carriers</li>
         </ol>
@@ -247,7 +248,7 @@ const Assignorder = () => {
 
                 <div className="box-footer">
                   <button type="submit" className="btn btn-primary">Confirm Order</button>
-                  <a href="/trips/" className="btn btn-warning">Cancel Order</a>
+                  <Link to="/trips/" className="btn btn-warning">Cancel Order</Link>
                 </div>
               </form>
             </div>

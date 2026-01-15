@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,Link } from 'react-router-dom';
 
 const Agentslogin = () => {
     const sectionRef = useRef(null);
@@ -127,9 +127,9 @@ const Agentslogin = () => {
           <input type="checkbox" id="rememberMe" />
           <label htmlFor="rememberMe">Remember Me</label>
         </div>
-        <a href="#" className="checkbox-wrapper">
+        <Link to="#" className="checkbox-wrapper">
           Forgot Password?
-        </a>
+        </Link>
       </div>
       <p>{error&&error}</p>
       <button type="submit" className="btn-login">

@@ -143,7 +143,7 @@ $.extend( $.expr[ ":" ], {
 });
 
 // support: jQuery <1.8
-if ( !$( "<a>" ).outerWidth( 1 ).jquery ) {
+if ( !$( "<Link>" ).outerWidth( 1 ).jquery ) {
 	$.each( [ "Width", "Height" ], function( i, name ) {
 		var side = name === "Width" ? [ "Left", "Right" ] : [ "Top", "Bottom" ],
 			type = name.toLowerCase(),
@@ -199,7 +199,7 @@ if ( !$.fn.addBack ) {
 }
 
 // support: jQuery 1.6.1, 1.6.2 (http://bugs.jquery.com/ticket/9413)
-if ( $( "<a>" ).data( "a-b", "a" ).removeData( "a-b" ).data( "a-b" ) ) {
+if ( $( "<Link>" ).data( "a-b", "a" ).removeData( "a-b" ).data( "a-b" ) ) {
 	$.fn.removeData = (function( removeData ) {
 		return function( key ) {
 			if ( arguments.length ) {
@@ -5425,9 +5425,9 @@ $.extend(Datepicker.prototype, {
 			this._getFormatConfig(inst)));
 
 		prev = (this._canAdjustMonth(inst, -1, drawYear, drawMonth) ?
-			"<a class='ui-datepicker-prev ui-corner-all' data-handler='prev' data-event='click'" +
-			" title='" + prevText + "'><span class='ui-icon ui-icon-circle-triangle-" + ( isRTL ? "e" : "w") + "'>" + prevText + "</span></a>" :
-			(hideIfNoPrevNext ? "" : "<a class='ui-datepicker-prev ui-corner-all ui-state-disabled' title='"+ prevText +"'><span class='ui-icon ui-icon-circle-triangle-" + ( isRTL ? "e" : "w") + "'>" + prevText + "</span></a>"));
+			"<Link class='ui-datepicker-prev ui-corner-all' data-handler='prev' data-event='click'" +
+			" title='" + prevText + "'><span class='ui-icon ui-icon-circle-triangle-" + ( isRTL ? "e" : "w") + "'>" + prevText + "</span></Link>" :
+			(hideIfNoPrevNext ? "" : "<Link class='ui-datepicker-prev ui-corner-all ui-state-disabled' title='"+ prevText +"'><span class='ui-icon ui-icon-circle-triangle-" + ( isRTL ? "e" : "w") + "'>" + prevText + "</span></Link>"));
 
 		nextText = this._get(inst, "nextText");
 		nextText = (!navigationAsDateFormat ? nextText : this.formatDate(nextText,
@@ -5435,9 +5435,9 @@ $.extend(Datepicker.prototype, {
 			this._getFormatConfig(inst)));
 
 		next = (this._canAdjustMonth(inst, +1, drawYear, drawMonth) ?
-			"<a class='ui-datepicker-next ui-corner-all' data-handler='next' data-event='click'" +
-			" title='" + nextText + "'><span class='ui-icon ui-icon-circle-triangle-" + ( isRTL ? "w" : "e") + "'>" + nextText + "</span></a>" :
-			(hideIfNoPrevNext ? "" : "<a class='ui-datepicker-next ui-corner-all ui-state-disabled' title='"+ nextText + "'><span class='ui-icon ui-icon-circle-triangle-" + ( isRTL ? "w" : "e") + "'>" + nextText + "</span></a>"));
+			"<Link class='ui-datepicker-next ui-corner-all' data-handler='next' data-event='click'" +
+			" title='" + nextText + "'><span class='ui-icon ui-icon-circle-triangle-" + ( isRTL ? "w" : "e") + "'>" + nextText + "</span></Link>" :
+			(hideIfNoPrevNext ? "" : "<Link class='ui-datepicker-next ui-corner-all ui-state-disabled' title='"+ nextText + "'><span class='ui-icon ui-icon-circle-triangle-" + ( isRTL ? "w" : "e") + "'>" + nextText + "</span></Link>"));
 
 		currentText = this._get(inst, "currentText");
 		gotoDate = (this._get(inst, "gotoCurrent") && inst.currentDay ? currentDate : today);
@@ -5532,11 +5532,11 @@ $.extend(Datepicker.prototype, {
 							((!otherMonth || showOtherMonths) && daySettings[2] ? " title='" + daySettings[2].replace(/'/g, "&#39;") + "'" : "") + // cell title
 							(unselectable ? "" : " data-handler='selectDay' data-event='click' data-month='" + printDate.getMonth() + "' data-year='" + printDate.getFullYear() + "'") + ">" + // actions
 							(otherMonth && !showOtherMonths ? "&#xa0;" : // display for other months
-							(unselectable ? "<span class='ui-state-default'>" + printDate.getDate() + "</span>" : "<a class='ui-state-default" +
+							(unselectable ? "<span class='ui-state-default'>" + printDate.getDate() + "</span>" : "<Link class='ui-state-default" +
 							(printDate.getTime() === today.getTime() ? " ui-state-highlight" : "") +
 							(printDate.getTime() === currentDate.getTime() ? " ui-state-active" : "") + // highlight selected day
 							(otherMonth ? " ui-priority-secondary" : "") + // distinguish dates from other months
-							"' href='#'>" + printDate.getDate() + "</a>")) + "</td>"; // display selectable date
+							"' to='#'>" + printDate.getDate() + "</Link>")) + "</td>"; // display selectable date
 						printDate.setDate(printDate.getDate() + 1);
 						printDate = this._daylightSavingAdjust(printDate);
 					}
@@ -15030,12 +15030,12 @@ var spinner = $.widget( "ui.spinner", {
 
 	_buttonHtml: function() {
 		return "" +
-			"<a class='ui-spinner-button ui-spinner-up ui-corner-tr'>" +
+			"<Link class='ui-spinner-button ui-spinner-up ui-corner-tr'>" +
 				"<span class='ui-icon " + this.options.icons.up + "'>&#9650;</span>" +
-			"</a>" +
-			"<a class='ui-spinner-button ui-spinner-down ui-corner-br'>" +
+			"</Link>" +
+			"<Link class='ui-spinner-button ui-spinner-down ui-corner-br'>" +
 				"<span class='ui-icon " + this.options.icons.down + "'>&#9660;</span>" +
-			"</a>";
+			"</Link>";
 	},
 
 	_start: function( event ) {
@@ -16175,7 +16175,7 @@ var tooltip = $.widget( "ui.tooltip", {
 			// .text() can't accept undefined, so coerce to a string
 			var title = $( this ).attr( "title" ) || "";
 			// Escape title, since we're going from an attribute to raw HTML
-			return $( "<a>" ).text( title ).html();
+			return $( "<Link>" ).text( title ).html();
 		},
 		hide: true,
 		// Disabled elements have inconsistent behavior across browsers (#8661)

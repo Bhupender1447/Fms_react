@@ -1,5 +1,8 @@
+/* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
 import React, { useState } from 'react'
+import {Link } from 'react-router-dom';
+
 
 const Create = () => {
   const [formData, setFormData] = useState({
@@ -904,9 +907,9 @@ const Create = () => {
                   <button type="submit" className="btn btn-primary">
                     Save Changes
                   </button>
-                  <a href="https://isovia.ca/fms/trailors/" className="btn btn-warning">
+                  <Link to="https://isovia.ca/fms/trailors/" className="btn btn-warning">
                     Back
-                  </a>
+                  </Link>
                 </div>
               </form>
             </div>

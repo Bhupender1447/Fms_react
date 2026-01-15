@@ -17,7 +17,7 @@ const WebsiteLayout = ({ children }) => {
     ];
 
     cssLinks.forEach((href) => {
-      if (!document.querySelector(`link[href="${href}"]`)) {
+      if (!document.querySelector(`link[to="${href}"]`)) {
         const link = document.createElement("link");
         link.rel = "stylesheet";
         link.href = href;

@@ -1,6 +1,7 @@
+/* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom';
+import { useParams,Link } from 'react-router-dom';
 
 const Updateterms = () => {
     const {id} = useParams();
@@ -11,7 +12,7 @@ const Updateterms = () => {
   });
 
       
-  const [file, setFile] = useState(null);
+  const [file] = useState(null);
 
   useEffect(() => {
     const fetchTrailerData = async () => {
@@ -30,9 +31,6 @@ const Updateterms = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,9 +69,9 @@ const Updateterms = () => {
     </h1>
     <ol className="breadcrumb">
       <li>
-        <a href="#">
+        <Link to="#">
           <i className="fa fa-dashboard" /> Home
-        </a>
+        </Link>
       </li>
       <li className="active">Terms</li>
     </ol>
@@ -193,12 +191,12 @@ const Updateterms = () => {
               <button type="submit" className="btn btn-primary">
                 Save Changes
               </button>
-              <a
-                href="/customers/"
+              <Link
+                to="/customers/"
                 className="btn btn-warning"
               >
                 Back
-              </a>
+              </Link>
             </div>
           </form>
           {/* /.box-body */}

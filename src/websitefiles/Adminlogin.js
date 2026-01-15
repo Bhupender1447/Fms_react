@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,Link } from 'react-router-dom';
 
 const Adminlogin = () => {
     
@@ -65,7 +65,7 @@ const Adminlogin = () => {
   }, []);
     const[Email,setEmail]=useState('');
     const[Password,setPassword]=useState('');
-    const[error,seterror]=useState('');
+    const[,seterror]=useState('');
     
     let navigate = useNavigate();
     const handleonSubmit = (e) => {
@@ -128,9 +128,9 @@ const Adminlogin = () => {
           <input type="checkbox" id="rememberMe" />
           <label htmlFor="rememberMe">Remember Me</label>
         </div>
-        <a href="#" className="checkbox-wrapper">
+        <Link to="#" className="checkbox-wrapper">
           Forgot Password?
-        </a>
+        </Link>
       </div>
       <button type="submit" className="btn-login">
         Login

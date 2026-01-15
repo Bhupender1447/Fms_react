@@ -186,12 +186,12 @@ const Mplans = () => {
                               key={number + 1}
                               className={`paginate_button ${currentPage === number + 1 ? 'active' : ''}`}
                             >
-                              <a
-                                href="#!"
+                              <Link
+                                to="#!"
                                 onClick={() => paginate(number + 1)}
                               >
                                 {number + 1}
-                              </a>
+                              </Link>
                             </li>
                           ))}
                         </ul>

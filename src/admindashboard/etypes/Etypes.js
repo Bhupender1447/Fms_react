@@ -58,9 +58,9 @@ const Etypes = () => {
         </h1>
         <ol className="breadcrumb">
           <li>
-            <a href="../cpanel/">
+            <Link to="../cpanel/">
               <i className="fa fa-dashboard" /> Home
-            </a>
+            </Link>
           </li>
           <li className="active">Expense</li>
         </ol>

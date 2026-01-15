@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react'
+import {Link } from 'react-router-dom';
+
 
 const About = () => {
   // Bubble animation function
@@ -68,10 +70,10 @@ const About = () => {
               what drives us forward.
             </p>
             <div className="scrol-down-button">
-              <a href="#our-story" onClick={handleScrollClick}>
+              <Link to="#our-story" onClick={handleScrollClick}>
                 <span> Scroll Down </span>
                 <i className="fa-solid fa-angles-down" />
-              </a>
+              </Link>
             </div>
           </div>
         </div>

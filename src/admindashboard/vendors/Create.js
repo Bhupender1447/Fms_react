@@ -1,318 +1,320 @@
-import axios from 'axios';
-import React, { useState } from 'react'
+/* eslint-disable jsx-a11y/iframe-has-title */
+/* eslint-disable jsx-a11y/no-redundant-roles */
+import axios from "axios";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Createvendors = () => {
-    const[message,setmessage]=useState();
-    const [formData, setFormData] = useState({
-        name: '',
-        address1: '',
-        address2: '',
-        country: '',
-        state: '',
-        city: '',
-        zip: '',
-        website: '',
-        port: '',
-        currency: '',
-        factoring: '',
-        payment_method: '',
-        accountno: '',
-        qb: '',
-        remarks: '',
-        company: '',
-        phone: '',
-        ext: '',
-        altphone: '',
-        altext: '',
-        fax: '',
-        email: '',
-        refno: '',
-        type: '',
-        exptype: '',
-      });
-    
-      const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prevFormData) => ({
-          ...prevFormData,
-          [name]: value,
-        }));
-      };
-    
-      const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        const data = new FormData();
-        for (const key in formData) {
-          data.append(key, formData[key]);
-        }
-        
-        try {
-          const response = await axios.post('https://isovia.ca/fms_api/api/createvendors', data );
-          setmessage(response.data.message);
-        } catch (error) {
-          console.error(error);
-        }
-      };
-    
+  const [, setmessage] = useState();
+  const [formData, setFormData] = useState({
+    name: "",
+    address1: "",
+    address2: "",
+    country: "",
+    state: "",
+    city: "",
+    zip: "",
+    website: "",
+    port: "",
+    currency: "",
+    factoring: "",
+    payment_method: "",
+    accountno: "",
+    qb: "",
+    remarks: "",
+    company: "",
+    phone: "",
+    ext: "",
+    altphone: "",
+    altext: "",
+    fax: "",
+    email: "",
+    refno: "",
+    type: "",
+    exptype: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const data = new FormData();
+    for (const key in formData) {
+      data.append(key, formData[key]);
+    }
+
+    try {
+      const response = await axios.post(
+        "https://isovia.ca/fms_api/api/createvendors",
+        data
+      );
+      setmessage(response.data.message);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
-  {/* Content Header (Page header) */}
-  <section className="content-header">
-    <h1>
-      Manage
-      <small>Vendors</small>
-    </h1>
-  </section>
-  {/* Main content */}
-  <section className="content">
-    {/* Small boxes (Stat box) */}
-    <div className="row">
-      <div className="col-md-12 col-xs-12">
-        <div id="messages" />
-        <div className="box">
-          <div className="box-header">
-            <h3 className="box-title">Add Vendors</h3>
-          </div>
-          {/* /.box-header */}
-          <form
-            role="form"
-            action=""
-            method="post"
-            encType="multipart/form-data"
-          >
-            <div className="box-body">
-              <div className="col-md-6 col-xs-12 pull pull-left">
-                <br />
-                {/*           
-    <div class="col-md-06 col-xs-12 pull pull-left">
-    
-    <label for="formFileSm" class="form-label">Upload Image</label>
-    <input class="form-control form-control-sm" name="product_image" id="product_image" type="file" />
-    <br>
-    
-    </div>
-    */}
-                <div className="col-md-12 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="name"
-                      name="name"
-                      placeholder="Name"
-                      autoComplete="off"
-                      value={formData.name}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-12 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">First Line of Address</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="address1"
-                      name="address1"
-                      placeholder="Enter Address"
-                      autoComplete="off"
-                      value={formData.address1}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-12 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Second Line of Address</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="address2"
-                      name="address2"
-                      placeholder="Enter Address"
-                      autoComplete="off"
-                      value={formData.address2}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="store">Country</label>
-                    <select
-                      className="form-control"
-                      id="country"
-                      name="country"
-                      value={formData.country}
-                      onChange={handleChange}
-                    >
-                      <option value="CA">Canada</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="store">State/Province</label>
-                    <select className="form-control" id="state" name="state"  value={formData.state}
-                      onChange={handleChange}>
-                      <option value="AB">Alberta</option>
-                      <option value="BC">British Columbia</option>
-                      <option value="MB">Manitoba</option>
-                      <option value="NB">New Brunswick</option>
-                      <option value="NF">Newfoundland</option>
-                      <option value="NT">Northwest Territories</option>
-                      <option value="NS">Nova Scotia</option>
-                      <option value="NU">Nunavut</option>
-                      <option value="ON">Ontario</option>
-                      <option value="PE">Prince Edward Island</option>
-                      <option value="QC">Quebec</option>
-                      <option value="SK">Saskatchewan</option>
-                      <option value="YT">Yukon Territory</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">City</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="city"
-                      name="city"
-                      placeholder="Enter City"
-                      autoComplete="off"
-                      value={formData.city}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Postal/Zip code</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="zip"
-                      name="zip"
-                      placeholder="Enter Postal/Zip Code"
-                      autoComplete="off"
-                      value={formData.zip}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Website</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="website"
-                      name="website"
-                      placeholder="Enter Website"
-                      autoComplete="off"
-                      value={formData.website}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Port of Entry</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="port"
-                      name="port"
-                      placeholder="Enter Port of Entry"
-                      autoComplete="off"
-                      value={formData.port}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="store">Currency</label>
-                    <select
-                      className="form-control"
-                      id="currency"
-                      name="currency"
-                      value={formData.currency}
-                      onChange={handleChange}
-                    >
-                      <option value="CAD">CAD</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="store">Factoring Company</label>
-                    <select
-                      className="form-control"
-                      id="factoring"
-                      name="factoring"
-                      value={formData.factoring}
-                      onChange={handleChange}
-                    >
-                      <option value="factoring">Factoring</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="store">Payment Method</label>
-                    <select
-                      className="form-control"
-                      id="payment_method"
-                      name="payment_method"
-                      value={formData.payment_method}
-                      onChange={handleChange}
-                    >
-                      <option value="Cash">Cash</option>
-                      <option value="Cheque">Cheque</option>
-                      <option value="DD">DD</option>
-                      <option value="NEFT">NEFT</option>
-                      <option value="RTGS">RTGS</option>
-                      <option value="IMPS">IMPS</option>
-                      <option value="eTransfer">eTransfer</option>
-                      <option value="Credit Card">Credit Card</option>
-                      <option value="Debit Card">Debit Card</option>
-                      <option value="Direct Debit">Direct Debit</option>
-                      <option value="Wire Transfer">Wire Transfer</option>
-                      <option value="ACH">ACH</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="store">Account</label>
-                    <select
-                      className="form-control"
-                      id="accountno"
-                      name="accountno"
-                      value={formData.accountno}
-                      onChange={handleChange}
-                    >
-                      <option value="AB">Alberta</option>
-                      <option value="BC">British Columbia</option>
-                      <option value="MB">Manitoba</option>
-                      <option value="NB">New Brunswick</option>
-                      <option value="NF">Newfoundland</option>
-                      <option value="NT">Northwest Territories</option>
-                      <option value="NS">Nova Scotia</option>
-                      <option value="NU">Nunavut</option>
-                      <option value="ON">Ontario</option>
-                      <option value="PE">Prince Edward Island</option>
-                      <option value="QC">Quebec</option>
-                      <option value="SK">Saskatchewan</option>
-                      <option value="YT">Yukon Territory</option>
-                    </select>
-                  </div>
-                </div>
-                {/*
+      {/* Content Header (Page header) */}
+      <section className="content-header">
+        <h1>
+          Manage
+          <small>Vendors</small>
+        </h1>
+      </section>
+      {/* Main content */}
+      <section className="content">
+        {/* Small boxes (Stat box) */}
+        <div className="row">
+          <div className="col-md-12 col-xs-12">
+            <div id="messages" />
+            <div className="box">
+              <div className="box-header">
+                <h3 className="box-title">Add Vendors</h3>
+              </div>
+              {/* /.box-header */}
+              <form
+                role="form"
+                action=""
+                method="post"
+                encType="multipart/form-data"
+              >
+                <div className="box-body">
+                  <div className="col-md-6 col-xs-12 pull pull-left">
+                    <br />
+                    <div className="col-md-12 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Name</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="name"
+                          name="name"
+                          placeholder="Name"
+                          autoComplete="off"
+                          value={formData.name}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-12 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">First Line of Address</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="address1"
+                          name="address1"
+                          placeholder="Enter Address"
+                          autoComplete="off"
+                          value={formData.address1}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-12 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Second Line of Address</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="address2"
+                          name="address2"
+                          placeholder="Enter Address"
+                          autoComplete="off"
+                          value={formData.address2}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="store">Country</label>
+                        <select
+                          className="form-control"
+                          id="country"
+                          name="country"
+                          value={formData.country}
+                          onChange={handleChange}
+                        >
+                          <option value="CA">Canada</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="store">State/Province</label>
+                        <select
+                          className="form-control"
+                          id="state"
+                          name="state"
+                          value={formData.state}
+                          onChange={handleChange}
+                        >
+                          <option value="AB">Alberta</option>
+                          <option value="BC">British Columbia</option>
+                          <option value="MB">Manitoba</option>
+                          <option value="NB">New Brunswick</option>
+                          <option value="NF">Newfoundland</option>
+                          <option value="NT">Northwest Territories</option>
+                          <option value="NS">Nova Scotia</option>
+                          <option value="NU">Nunavut</option>
+                          <option value="ON">Ontario</option>
+                          <option value="PE">Prince Edward Island</option>
+                          <option value="QC">Quebec</option>
+                          <option value="SK">Saskatchewan</option>
+                          <option value="YT">Yukon Territory</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">City</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="city"
+                          name="city"
+                          placeholder="Enter City"
+                          autoComplete="off"
+                          value={formData.city}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Postal/Zip code</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="zip"
+                          name="zip"
+                          placeholder="Enter Postal/Zip Code"
+                          autoComplete="off"
+                          value={formData.zip}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Website</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="website"
+                          name="website"
+                          placeholder="Enter Website"
+                          autoComplete="off"
+                          value={formData.website}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Port of Entry</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="port"
+                          name="port"
+                          placeholder="Enter Port of Entry"
+                          autoComplete="off"
+                          value={formData.port}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="store">Currency</label>
+                        <select
+                          className="form-control"
+                          id="currency"
+                          name="currency"
+                          value={formData.currency}
+                          onChange={handleChange}
+                        >
+                          <option value="CAD">CAD</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="store">Factoring Company</label>
+                        <select
+                          className="form-control"
+                          id="factoring"
+                          name="factoring"
+                          value={formData.factoring}
+                          onChange={handleChange}
+                        >
+                          <option value="factoring">Factoring</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="store">Payment Method</label>
+                        <select
+                          className="form-control"
+                          id="payment_method"
+                          name="payment_method"
+                          value={formData.payment_method}
+                          onChange={handleChange}
+                        >
+                          <option value="Cash">Cash</option>
+                          <option value="Cheque">Cheque</option>
+                          <option value="DD">DD</option>
+                          <option value="NEFT">NEFT</option>
+                          <option value="RTGS">RTGS</option>
+                          <option value="IMPS">IMPS</option>
+                          <option value="eTransfer">eTransfer</option>
+                          <option value="Credit Card">Credit Card</option>
+                          <option value="Debit Card">Debit Card</option>
+                          <option value="Direct Debit">Direct Debit</option>
+                          <option value="Wire Transfer">Wire Transfer</option>
+                          <option value="ACH">ACH</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="store">Account</label>
+                        <select
+                          className="form-control"
+                          id="accountno"
+                          name="accountno"
+                          value={formData.accountno}
+                          onChange={handleChange}
+                        >
+                          <option value="AB">Alberta</option>
+                          <option value="BC">British Columbia</option>
+                          <option value="MB">Manitoba</option>
+                          <option value="NB">New Brunswick</option>
+                          <option value="NF">Newfoundland</option>
+                          <option value="NT">Northwest Territories</option>
+                          <option value="NS">Nova Scotia</option>
+                          <option value="NU">Nunavut</option>
+                          <option value="ON">Ontario</option>
+                          <option value="PE">Prince Edward Island</option>
+                          <option value="QC">Quebec</option>
+                          <option value="SK">Saskatchewan</option>
+                          <option value="YT">Yukon Territory</option>
+                        </select>
+                      </div>
+                    </div>
+                    {/*
               
                <div class="col-md-6 col-xs-12 pull pull-left">
               <label for="store">Date of Birth</label>   
@@ -327,7 +329,7 @@ const Createvendors = () => {
               </div>
           
               <br>*/}
-                {/*
+                    {/*
             <div class="col-md-4 col-xs-12 pull pull-left">
               <div class="form-group">
               <label for="store">Region</label>
@@ -337,17 +339,22 @@ const Createvendors = () => {
               </select>
               </div>
               </div> */}
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="store">sync to QB</label>
-                    <select className="form-control" id="qb" name="qb"  value={formData.qb}
-                      onChange={handleChange}>
-                      <option value="YES">YES</option>
-                      <option value="NO">NO</option>
-                    </select>
-                  </div>
-                </div>
-                {/*
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="store">sync to QB</label>
+                        <select
+                          className="form-control"
+                          id="qb"
+                          name="qb"
+                          value={formData.qb}
+                          onChange={handleChange}
+                        >
+                          <option value="YES">YES</option>
+                          <option value="NO">NO</option>
+                        </select>
+                      </div>
+                    </div>
+                    {/*
               <div class="col-md-4 col-xs-12 pull pull-left">
               <label for="store">Pickup Date</label>   
                   <div class="input-group date" data-provide="datepicker">
@@ -359,541 +366,548 @@ const Createvendors = () => {
                   </div>
               </div>
         */}
-                <div className="col-md-12 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="description">Remarks</label>
-                    <ul className="wysihtml5-toolbar" style={{}}>
-                      <li className="dropdown">
-                        <a
-                          className="btn btn-default dropdown-toggle "
-                          data-toggle="dropdown"
-                        >
-                          <span className="glyphicon glyphicon-font" />
-                          <span className="current-font">Normal text</span>
-                          <b className="caret" />
-                        </a>
-                        <ul className="dropdown-menu">
-                          <li>
-                            <a
-                              data-wysihtml5-command="formatBlock"
-                              data-wysihtml5-command-value="p"
-                              tabIndex={-1}
-                              href="javascript:;"
-                              unselectable="on"
+                    <div className="col-md-12 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="description">Remarks</label>
+                        <ul className="wysihtml5-toolbar" style={{}}>
+                          <li className="dropdown">
+                            <Link
+                              className="btn btn-default dropdown-toggle "
+                              data-toggle="dropdown"
                             >
-                              Normal text
-                            </a>
+                              <span className="glyphicon glyphicon-font" />
+                              <span className="current-font">Normal text</span>
+                              <b className="caret" />
+                            </Link>
+                            <ul className="dropdown-menu">
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="p"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Normal text
+                                </Link>
+                              </li>
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="h1"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Heading 1
+                                </Link>
+                              </li>
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="h2"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Heading 2
+                                </Link>
+                              </li>
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="h3"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Heading 3
+                                </Link>
+                              </li>
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="h4"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Heading 4
+                                </Link>
+                              </li>
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="h5"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Heading 5
+                                </Link>
+                              </li>
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="h6"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Heading 6
+                                </Link>
+                              </li>
+                            </ul>
                           </li>
                           <li>
-                            <a
-                              data-wysihtml5-command="formatBlock"
-                              data-wysihtml5-command-value="h1"
-                              tabIndex={-1}
-                              href="javascript:;"
-                              unselectable="on"
-                            >
-                              Heading 1
-                            </a>
+                            <div className="btn-group">
+                              <Link
+                                className="btn  btn-default"
+                                data-wysihtml5-command="bold"
+                                title="CTRL+B"
+                                tabIndex={-1}
+                                to="#"
+                                unselectable="on"
+                              >
+                                Bold
+                              </Link>
+                              <Link
+                                className="btn  btn-default"
+                                data-wysihtml5-command="italic"
+                                title="CTRL+I"
+                                tabIndex={-1}
+                                to="#"
+                                unselectable="on"
+                              >
+                                Italic
+                              </Link>
+                              <Link
+                                className="btn  btn-default"
+                                data-wysihtml5-command="underline"
+                                title="CTRL+U"
+                                tabIndex={-1}
+                                to="#"
+                                unselectable="on"
+                              >
+                                Underline
+                              </Link>
+                              <Link
+                                className="btn  btn-default"
+                                data-wysihtml5-command="small"
+                                title="CTRL+S"
+                                tabIndex={-1}
+                                to="#"
+                                unselectable="on"
+                              >
+                                Small
+                              </Link>
+                            </div>
                           </li>
                           <li>
-                            <a
+                            <Link
+                              className="btn  btn-default"
                               data-wysihtml5-command="formatBlock"
-                              data-wysihtml5-command-value="h2"
+                              data-wysihtml5-command-value="blockquote"
+                              data-wysihtml5-display-format-name="false"
                               tabIndex={-1}
-                              href="javascript:;"
+                              to="#"
                               unselectable="on"
                             >
-                              Heading 2
-                            </a>
+                              <span className="glyphicon glyphicon-quote" />
+                            </Link>
                           </li>
                           <li>
-                            <a
-                              data-wysihtml5-command="formatBlock"
-                              data-wysihtml5-command-value="h3"
-                              tabIndex={-1}
-                              href="javascript:;"
-                              unselectable="on"
-                            >
-                              Heading 3
-                            </a>
+                            <div className="btn-group">
+                              <Link
+                                className="btn  btn-default"
+                                data-wysihtml5-command="insertUnorderedList"
+                                title="Unordered list"
+                                tabIndex={-1}
+                                to="#"
+                                unselectable="on"
+                              >
+                                <span className="glyphicon glyphicon-list" />
+                              </Link>
+                              <Link
+                                className="btn  btn-default"
+                                data-wysihtml5-command="insertOrderedList"
+                                title="Ordered list"
+                                tabIndex={-1}
+                                to="#"
+                                unselectable="on"
+                              >
+                                <span className="glyphicon glyphicon-th-list" />
+                              </Link>
+                              <Link
+                                className="btn  btn-default"
+                                data-wysihtml5-command="Outdent"
+                                title="Outdent"
+                                tabIndex={-1}
+                                to="#"
+                                unselectable="on"
+                              >
+                                <span className="glyphicon glyphicon-indent-right" />
+                              </Link>
+                              <Link
+                                className="btn  btn-default"
+                                data-wysihtml5-command="Indent"
+                                title="Indent"
+                                tabIndex={-1}
+                                to="#"
+                                unselectable="on"
+                              >
+                                <span className="glyphicon glyphicon-indent-left" />
+                              </Link>
+                            </div>
                           </li>
                           <li>
-                            <a
-                              data-wysihtml5-command="formatBlock"
-                              data-wysihtml5-command-value="h4"
+                            <div
+                              className="bootstrap-wysihtml5-insert-link-modal modal fade"
+                              data-wysihtml5-dialog="createLink"
+                            >
+                              <div className="modal-dialog ">
+                                <div className="modal-content">
+                                  <div className="modal-header">
+                                    <Link
+                                      className="close"
+                                      data-dismiss="modal"
+                                    >
+                                      ×
+                                    </Link>
+                                    <h3>Insert link</h3>
+                                  </div>
+                                  <div className="modal-body">
+                                    <div className="form-group">
+                                      <input
+                                        defaultValue="http://"
+                                        className="bootstrap-wysihtml5-insert-link-url form-control"
+                                        data-wysihtml5-dialog-field="href"
+                                      />
+                                    </div>
+                                    <div className="checkbox">
+                                      <label>
+                                        <input
+                                          type="checkbox"
+                                          className="bootstrap-wysihtml5-insert-link-target"
+                                          defaultChecked=""
+                                        />
+                                        Open link in new window
+                                      </label>
+                                    </div>
+                                  </div>
+                                  <div className="modal-footer">
+                                    <Link
+                                      className="btn btn-default"
+                                      data-dismiss="modal"
+                                      data-wysihtml5-dialog-action="cancel"
+                                      to="#"
+                                    >
+                                      Cancel
+                                    </Link>
+                                    <Link
+                                      to="#"
+                                      className="btn btn-primary"
+                                      data-dismiss="modal"
+                                      data-wysihtml5-dialog-action="save"
+                                    >
+                                      Insert link
+                                    </Link>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <Link
+                              className="btn  btn-default"
+                              data-wysihtml5-command="createLink"
+                              title="Insert link"
                               tabIndex={-1}
-                              href="javascript:;"
+                              to="#"
                               unselectable="on"
                             >
-                              Heading 4
-                            </a>
+                              <span className="glyphicon glyphicon-share" />
+                            </Link>
                           </li>
                           <li>
-                            <a
-                              data-wysihtml5-command="formatBlock"
-                              data-wysihtml5-command-value="h5"
+                            <div
+                              className="bootstrap-wysihtml5-insert-image-modal modal fade"
+                              data-wysihtml5-dialog="insertImage"
+                            >
+                              <div className="modal-dialog ">
+                                <div className="modal-content">
+                                  <div className="modal-header">
+                                    <Link
+                                      className="close"
+                                      data-dismiss="modal"
+                                    >
+                                      ×
+                                    </Link>
+                                    <h3>Insert image</h3>
+                                  </div>
+                                  <div className="modal-body">
+                                    <div className="form-group">
+                                      <input
+                                        defaultValue="http://"
+                                        className="bootstrap-wysihtml5-insert-image-url form-control"
+                                        data-wysihtml5-dialog-field="src"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="modal-footer">
+                                    <Link
+                                      className="btn btn-default"
+                                      data-dismiss="modal"
+                                      data-wysihtml5-dialog-action="cancel"
+                                      to="#"
+                                    >
+                                      Cancel
+                                    </Link>
+                                    <Link
+                                      className="btn btn-primary"
+                                      data-dismiss="modal"
+                                      data-wysihtml5-dialog-action="save"
+                                      to="#"
+                                    >
+                                      Insert image
+                                    </Link>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <Link
+                              className="btn  btn-default"
+                              data-wysihtml5-command="insertImage"
+                              title="Insert image"
                               tabIndex={-1}
-                              href="javascript:;"
+                              to="#"
                               unselectable="on"
                             >
-                              Heading 5
-                            </a>
-                          </li>
-                          <li>
-                            <a
-                              data-wysihtml5-command="formatBlock"
-                              data-wysihtml5-command-value="h6"
-                              tabIndex={-1}
-                              href="javascript:;"
-                              unselectable="on"
-                            >
-                              Heading 6
-                            </a>
+                              <span className="glyphicon glyphicon-picture" />
+                            </Link>
                           </li>
                         </ul>
-                      </li>
-                      <li>
-                        <div className="btn-group">
-                          <a
-                            className="btn  btn-default"
-                            data-wysihtml5-command="bold"
-                            title="CTRL+B"
-                            tabIndex={-1}
-                            href="javascript:;"
-                            unselectable="on"
-                          >
-                            Bold
-                          </a>
-                          <a
-                            className="btn  btn-default"
-                            data-wysihtml5-command="italic"
-                            title="CTRL+I"
-                            tabIndex={-1}
-                            href="javascript:;"
-                            unselectable="on"
-                          >
-                            Italic
-                          </a>
-                          <a
-                            className="btn  btn-default"
-                            data-wysihtml5-command="underline"
-                            title="CTRL+U"
-                            tabIndex={-1}
-                            href="javascript:;"
-                            unselectable="on"
-                          >
-                            Underline
-                          </a>
-                          <a
-                            className="btn  btn-default"
-                            data-wysihtml5-command="small"
-                            title="CTRL+S"
-                            tabIndex={-1}
-                            href="javascript:;"
-                            unselectable="on"
-                          >
-                            Small
-                          </a>
-                        </div>
-                      </li>
-                      <li>
-                        <a
-                          className="btn  btn-default"
-                          data-wysihtml5-command="formatBlock"
-                          data-wysihtml5-command-value="blockquote"
-                          data-wysihtml5-display-format-name="false"
-                          tabIndex={-1}
-                          href="javascript:;"
-                          unselectable="on"
+                        <textarea
+                          type="text"
+                          className="form-control"
+                          id="remarks"
+                          name="remarks"
+                          autoComplete="off"
+                          placeholder="Enter 
+                         Stop Notes"
+                          style={{ display: "none" }}
+                          value={formData.remarks}
+                          onChange={handleChange}
+                        />
+                        <input
+                          type="hidden"
+                          name="_wysihtml5_mode"
+                          defaultValue={1}
+                        />
+                        <iframe
+                          className="wysihtml5-sandbox"
+                          security="restricted"
+                          allowTransparency="true"
+                          frameBorder={0}
+                          width={0}
+                          height={0}
+                          marginWidth={0}
+                          marginHeight={0}
+                          style={{
+                            display: "block",
+                            backgroundColor: "rgb(255, 255, 255)",
+                            borderCollapse: "separate",
+                            borderColor: "rgb(204, 204, 204)",
+                            borderStyle: "solid",
+                            borderWidth: "0.8px",
+                            clear: "none",
+                            float: "none",
+                            margin: 0,
+                            outline: "rgb(85, 85, 85) none 0px",
+                            outlineOffset: 0,
+                            padding: "6px 12px",
+                            position: "static",
+                            inset: "auto",
+                            zIndex: "auto",
+                            verticalAlign: "baseline",
+                            textAlign: "start",
+                            boxSizing: "border-box",
+                            boxShadow:
+                              "rgba(0, 0, 0, 0.075) 0px 1px 1px 0px inset",
+                            borderRadius: 4,
+                            width: "100%",
+                            height: "auto",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-6 col-xs-12 pull pull-right">
+                    <br />
+                    <div className="col-md-12 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Company</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="company"
+                          name="company"
+                          placeholder="Enter  Company Name"
+                          autoComplete="off"
+                          value={formData.company}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Phone #</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="phone"
+                          name="phone"
+                          placeholder="Enter Phone"
+                          autoComplete="off"
+                          value={formData.phone}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Ext #</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="ext"
+                          name="ext"
+                          placeholder="Enter Ext."
+                          autoComplete="off"
+                          value={formData.ext}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Alt Phone #</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="altphone"
+                          name="altphone"
+                          placeholder="Enter Alt. Phone"
+                          autoComplete="off"
+                          value={formData.altphone}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Ext #</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="altext"
+                          name="altext"
+                          placeholder="Enter Ext."
+                          autoComplete="off"
+                          value={formData.altext}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Fax #</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="fax"
+                          name="fax"
+                          placeholder="Enter Fax #"
+                          autoComplete="off"
+                          value={formData.fax}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Email</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="email"
+                          name="email"
+                          placeholder="Enter  Email"
+                          autoComplete="off"
+                          value={formData.email}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Refrence #</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="refno"
+                          name="refno"
+                          placeholder="Enter Refrence #"
+                          autoComplete="off"
+                          value={formData.refno}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Type</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="type"
+                          name="type"
+                          placeholder="Enter type"
+                          autoComplete="off"
+                          value={formData.type}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="store">Expense Type</label>
+                        <select
+                          className="form-control"
+                          id="exptype"
+                          name="exptype"
+                          value={formData.exptype}
+                          onChange={handleChange}
                         >
-                          <span className="glyphicon glyphicon-quote" />
-                        </a>
-                      </li>
-                      <li>
-                        <div className="btn-group">
-                          <a
-                            className="btn  btn-default"
-                            data-wysihtml5-command="insertUnorderedList"
-                            title="Unordered list"
-                            tabIndex={-1}
-                            href="javascript:;"
-                            unselectable="on"
-                          >
-                            <span className="glyphicon glyphicon-list" />
-                          </a>
-                          <a
-                            className="btn  btn-default"
-                            data-wysihtml5-command="insertOrderedList"
-                            title="Ordered list"
-                            tabIndex={-1}
-                            href="javascript:;"
-                            unselectable="on"
-                          >
-                            <span className="glyphicon glyphicon-th-list" />
-                          </a>
-                          <a
-                            className="btn  btn-default"
-                            data-wysihtml5-command="Outdent"
-                            title="Outdent"
-                            tabIndex={-1}
-                            href="javascript:;"
-                            unselectable="on"
-                          >
-                            <span className="glyphicon glyphicon-indent-right" />
-                          </a>
-                          <a
-                            className="btn  btn-default"
-                            data-wysihtml5-command="Indent"
-                            title="Indent"
-                            tabIndex={-1}
-                            href="javascript:;"
-                            unselectable="on"
-                          >
-                            <span className="glyphicon glyphicon-indent-left" />
-                          </a>
-                        </div>
-                      </li>
-                      <li>
-                        <div
-                          className="bootstrap-wysihtml5-insert-link-modal modal fade"
-                          data-wysihtml5-dialog="createLink"
-                        >
-                          <div className="modal-dialog ">
-                            <div className="modal-content">
-                              <div className="modal-header">
-                                <a className="close" data-dismiss="modal">
-                                  ×
-                                </a>
-                                <h3>Insert link</h3>
-                              </div>
-                              <div className="modal-body">
-                                <div className="form-group">
-                                  <input
-                                    defaultValue="http://"
-                                    className="bootstrap-wysihtml5-insert-link-url form-control"
-                                    data-wysihtml5-dialog-field="href"
-                                  />
-                                </div>
-                                <div className="checkbox">
-                                  <label>
-                                    <input
-                                      type="checkbox"
-                                      className="bootstrap-wysihtml5-insert-link-target"
-                                      defaultChecked=""
-                                    />
-                                    Open link in new window
-                                  </label>
-                                </div>
-                              </div>
-                              <div className="modal-footer">
-                                <a
-                                  className="btn btn-default"
-                                  data-dismiss="modal"
-                                  data-wysihtml5-dialog-action="cancel"
-                                  href="#"
-                                >
-                                  Cancel
-                                </a>
-                                <a
-                                  href="#"
-                                  className="btn btn-primary"
-                                  data-dismiss="modal"
-                                  data-wysihtml5-dialog-action="save"
-                                >
-                                  Insert link
-                                </a>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <a
-                          className="btn  btn-default"
-                          data-wysihtml5-command="createLink"
-                          title="Insert link"
-                          tabIndex={-1}
-                          href="javascript:;"
-                          unselectable="on"
-                        >
-                          <span className="glyphicon glyphicon-share" />
-                        </a>
-                      </li>
-                      <li>
-                        <div
-                          className="bootstrap-wysihtml5-insert-image-modal modal fade"
-                          data-wysihtml5-dialog="insertImage"
-                        >
-                          <div className="modal-dialog ">
-                            <div className="modal-content">
-                              <div className="modal-header">
-                                <a className="close" data-dismiss="modal">
-                                  ×
-                                </a>
-                                <h3>Insert image</h3>
-                              </div>
-                              <div className="modal-body">
-                                <div className="form-group">
-                                  <input
-                                    defaultValue="http://"
-                                    className="bootstrap-wysihtml5-insert-image-url form-control"
-                                    data-wysihtml5-dialog-field="src"
-                                  />
-                                </div>
-                              </div>
-                              <div className="modal-footer">
-                                <a
-                                  className="btn btn-default"
-                                  data-dismiss="modal"
-                                  data-wysihtml5-dialog-action="cancel"
-                                  href="#"
-                                >
-                                  Cancel
-                                </a>
-                                <a
-                                  className="btn btn-primary"
-                                  data-dismiss="modal"
-                                  data-wysihtml5-dialog-action="save"
-                                  href="#"
-                                >
-                                  Insert image
-                                </a>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <a
-                          className="btn  btn-default"
-                          data-wysihtml5-command="insertImage"
-                          title="Insert image"
-                          tabIndex={-1}
-                          href="javascript:;"
-                          unselectable="on"
-                        >
-                          <span className="glyphicon glyphicon-picture" />
-                        </a>
-                      </li>
-                    </ul>
-                    <textarea
-                      type="text"
-                      className="form-control"
-                      id="remarks"
-                      name="remarks"
-                      autoComplete="off"
-                      placeholder="Enter 
-            Stop Notes"
-                      style={{ display: "none" }}
-                      value={formData.remarks}
-                      onChange={handleChange}
-                    />
-                    <input
-                      type="hidden"
-                      name="_wysihtml5_mode"
-                      defaultValue={1}
-                    />
-                    <iframe
-                      className="wysihtml5-sandbox"
-                      security="restricted"
-                      allowTransparency="true"
-                      frameBorder={0}
-                      width={0}
-                      height={0}
-                      marginWidth={0}
-                      marginHeight={0}
-                      style={{
-                        display: "block",
-                        backgroundColor: "rgb(255, 255, 255)",
-                        borderCollapse: "separate",
-                        borderColor: "rgb(204, 204, 204)",
-                        borderStyle: "solid",
-                        borderWidth: "0.8px",
-                        clear: "none",
-                        float: "none",
-                        margin: 0,
-                        outline: "rgb(85, 85, 85) none 0px",
-                        outlineOffset: 0,
-                        padding: "6px 12px",
-                        position: "static",
-                        inset: "auto",
-                        zIndex: "auto",
-                        verticalAlign: "baseline",
-                        textAlign: "start",
-                        boxSizing: "border-box",
-                        boxShadow: "rgba(0, 0, 0, 0.075) 0px 1px 1px 0px inset",
-                        borderRadius: 4,
-                        width: "100%",
-                        height: "auto"
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-6 col-xs-12 pull pull-right">
-                <br />
-                <div className="col-md-12 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Company</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="company"
-                      name="company"
-                      placeholder="Enter  Company Name"
-                      autoComplete="off"
-                      value={formData.company}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Phone #</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="phone"
-                      name="phone"
-                      placeholder="Enter Phone"
-                      autoComplete="off"
-                      value={formData.phone}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Ext #</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="ext"
-                      name="ext"
-                      placeholder="Enter Ext."
-                      autoComplete="off"
-                      value={formData.ext}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Alt Phone #</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="altphone"
-                      name="altphone"
-                      placeholder="Enter Alt. Phone"
-                      autoComplete="off"
-                      value={formData.altphone}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Ext #</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="altext"
-                      name="altext"
-                      placeholder="Enter Ext."
-                      autoComplete="off"
-                      value={formData.altext}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Fax #</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="fax"
-                      name="fax"
-                      placeholder="Enter Fax #"
-                      autoComplete="off"
-                      value={formData.fax}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Email</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="email"
-                      name="email"
-                      placeholder="Enter  Email"
-                      autoComplete="off"
-                      value={formData.email}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Refrence #</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="refno"
-                      name="refno"
-                      placeholder="Enter Refrence #"
-                      autoComplete="off"
-                      value={formData.refno}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Type</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="type"
-                      name="type"
-                      placeholder="Enter type"
-                      autoComplete="off"
-                      value={formData.type}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="store">Expense Type</label>
-                    <select
-                      className="form-control"
-                      id="exptype"
-                      name="exptype"
-                      value={formData.exptype}
-                      onChange={handleChange}
-                    >
-                      <option value="Border Fees">Border Fees</option>
-                      <option value="Vash Advance">Vash Advance</option>
-                      <option value="D.E.F. Pump(Fuel)">
-                        D.E.F. Pump(Fuel)
-                      </option>
-                      <option value="DEF">DEF</option>
-                      <option value="FAX">FAX</option>
-                      <option value="Fuel Expenses(Fuel)">
-                        Fuel Expenses(Fuel)
-                      </option>
-                      <option value="Maintenance">Maintenance</option>
-                      <option value="Misc">Misc</option>
-                      <option value="Reefer Fuel(Fuel)">
-                        Reefer Fuel(Fuel)
-                      </option>
-                      <option value="Scale">Scale</option>
-                      <option value="Toll Fee">Toll Fee</option>
-                    </select>
-                  </div>
-                </div>
-                {/*
+                          <option value="Border Fees">Border Fees</option>
+                          <option value="Vash Advance">Vash Advance</option>
+                          <option value="D.E.F. Pump(Fuel)">
+                            D.E.F. Pump(Fuel)
+                          </option>
+                          <option value="DEF">DEF</option>
+                          <option value="FAX">FAX</option>
+                          <option value="Fuel Expenses(Fuel)">
+                            Fuel Expenses(Fuel)
+                          </option>
+                          <option value="Maintenance">Maintenance</option>
+                          <option value="Misc">Misc</option>
+                          <option value="Reefer Fuel(Fuel)">
+                            Reefer Fuel(Fuel)
+                          </option>
+                          <option value="Scale">Scale</option>
+                          <option value="Toll Fee">Toll Fee</option>
+                        </select>
+                      </div>
+                    </div>
+                    {/*
               <div class="col-md-4 col-xs-12 pull pull-left">
               <label for="store">Pickup Date</label>   
                   <div class="input-group date" data-provide="datepicker">
@@ -905,28 +919,31 @@ const Createvendors = () => {
                   </div>
               </div>
         */}
-              </div>
+                  </div>
+                </div>
+              </form>
             </div>
-          </form>
+            {/* /.box-body */}
+            <div className="box-footer">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSubmit}
+              >
+                Save Changes
+              </button>
+              <Link to="/customers/" className="btn btn-warning">
+                Back
+              </Link>
+            </div>
+            {/* /.box-body */}
+          </div>
+          {/* /.box */}
         </div>
-        {/* /.box-body */}
-        <div className="box-footer">
-          <button type="button" className="btn btn-primary" onClick={handleSubmit}>
-            Save Changes
-          </button>
-          <a href="/customers/" className="btn btn-warning">
-            Back
-          </a>
-        </div>
-        {/* /.box-body */}
-      </div>
-      {/* /.box */}
+        {/* col-md-12 */}
+      </section>
     </div>
-    {/* col-md-12 */}
-  </section>
-</div>
+  );
+};
 
-  )
-}
-
-export default Createvendors
+export default Createvendors;

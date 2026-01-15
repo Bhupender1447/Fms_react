@@ -2,6 +2,8 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Distance from "../Distance";
+import {Link } from 'react-router-dom';
+
 
 const Updatecarriers = () => {
   const { id } = useParams();
@@ -207,7 +209,7 @@ const Updatecarriers = () => {
 
                 <div className="box-footer">
                   <button className="btn btn-primary">Update Carrier</button>
-                  <a href="/carriers" className="btn btn-warning">Back</a>
+                  <Link to="/carriers" className="btn btn-warning">Back</Link>
                 </div>
               </form>
 

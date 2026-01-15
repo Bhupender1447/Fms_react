@@ -11,3 +11,9 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+h4.software-1-description-title {
+    color: #fff !important;
+}
+.title-software h2 {
+    color: #fff !important;
+}

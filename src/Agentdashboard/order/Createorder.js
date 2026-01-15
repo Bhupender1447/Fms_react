@@ -235,7 +235,7 @@ const handleRemoveRow = (index) => {
       <small>Trips</small>
     </h1>
     <ol className="breadcrumb">
-      <li><a href="#"><i className="fa fa-dashboard"></i> Home</a></li>
+      <li><Link to="#"><i className="fa fa-dashboard"></i> Home</Link></li>
       <li className="active">Orders</li>
     </ol>
   </section>
@@ -660,9 +660,9 @@ const handleRemoveRow = (index) => {
               <div className="form-group">
                 <label htmlFor="store">
                   Pickup From |{" "}
-                  <a href="/locations/create">
+                  <Link to="/locations/create">
                     Add Location
-                  </a>{" "}
+                  </Link>{" "}
                 </label>
                 <select
                   className="form-control"
@@ -680,12 +680,12 @@ const handleRemoveRow = (index) => {
             <div className="col-md-4 col-xs-12 pull pull-left">
               <div className="form-group">
                 <label htmlFor="username">Add New Locations</label>
-                <a
-                  href="/locations/create"
+                <Link
+                  to="/locations/create"
                   className="btn btn-warning"
                 >
                   Add
-                </a>
+                </Link>
               </div>
             </div>
             <div className="col-md-12 col-xs-12 pull pull-left">
@@ -907,27 +907,27 @@ const handleRemoveRow = (index) => {
                         className="paginate_button previous disabled"
                         id="manageTablestops_previous"
                       >
-                        <a
-                          href="#"
+                        <Link
+                          to="#"
                           aria-controls="manageTablestops"
                           data-dt-idx={0}
                           tabIndex={0}
                         >
                           Previous
-                        </a>
+                        </Link>
                       </li>
                       <li
                         className="paginate_button next disabled"
                         id="manageTablestops_next"
                       >
-                        <a
-                          href="#"
+                        <Link
+                          to="#"
                           aria-controls="manageTablestops"
                           data-dt-idx={1}
                           tabIndex={0}
                         >
                           Next
-                        </a>
+                        </Link>
                       </li>
                     </ul>
                   </div>
@@ -1243,9 +1243,9 @@ const handleRemoveRow = (index) => {
     <button onClick={handleonSubmit} className="btn btn-primary">
       Save
     </button>
-    <a href="/orders/" className="btn btn-warning">
+    <Link to="/orders/" className="btn btn-warning">
       Back
-    </a>
+    </Link>
   </div>
 </section>
 

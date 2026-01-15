@@ -1,3 +1,4 @@
+import {Link } from 'react-router-dom';
 import React, { useEffect, useRef } from 'react';
 
 
@@ -77,10 +78,10 @@ const News = () => {
           freight industry forward.
         </p>
         <div className="scroll-down-button">
-          <a href="#news-content">
+          <Link to="#news-content">
             <span> Scroll Down </span>
             <i className="fa-solid fa-angles-down" />
-          </a>
+          </Link>
         </div>
       </div>
     </section>

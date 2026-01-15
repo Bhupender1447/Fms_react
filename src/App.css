@@ -3,6 +3,7 @@ body h1,h2,h3,h4,h5,h6{
     font-family: "Rajdhani", serif;
 
 }
+body{overflow-x: hidden;}
 /*tobar*/
 .top_header{background-color: #ea1854;padding: 10px 0;}
 .header-quick-link {justify-content: space-between;display: flex;flex-wrap: wrap;}
@@ -275,4 +276,105 @@ to {opacity: 1;transform: translate(0px);}
 }
 @media (min-width: 767px) and (max-width: 991px) {
 .card .carousel-caption h3 {margin-top: 0;font-size: 16px;font-weight: 700;}
+}
+
+
+
+
+/* ================= TOPBAR ================= */
+.topbar {
+  background: #0b2c3d;
+  padding: 8px 0;
+}
+
+.topbar-addrees {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.topbar-contact-adrees {
+  display: flex;
+  gap: 20px;
+}
+
+.topbar a {
+  color: #fff;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.list-of-links {
+  list-style: none;
+  display: flex;
+  gap: 15px;
+  padding: 0;
+  margin: 0;
+}
+
+/* ================= HEADER ================= */
+.header-bar {
+  padding: 12px 0;
+}
+
+.header-logo img {
+  max-width: 160px;
+}
+
+/* ================= NAVBAR ================= */
+.nav-link {
+  color: #000 !important;
+  font-weight: 500;
+}
+
+.nav-link.active {
+  color: #0b2c3d !important;
+  font-weight: 600;
+}
+
+.dropdown-menu {
+  border-radius: 8px;
+}
+
+/* ================= MOBILE ================= */
+@media (max-width: 991px) {
+  .topbar-addrees {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  .title-software h2 {
+    color: #fff !important;
+  }
+
+  .topbar-contact-adrees {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .list-of-links {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .navbar-nav {
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+  }
+
+  .nav-item {
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 576px) {
+  .header-logo img {
+    max-width: 130px;
+  }
+
+  .nav-link {
+    font-size: 15px;
+  }
 }

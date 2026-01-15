@@ -1,8 +1,6 @@
-import React, { useEffect } from 'react'
+import {Link } from 'react-router-dom';
 
 const Yardsdata = () => {
- 
-  
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
     {/* Content Header (Page header) */}
@@ -16,10 +14,10 @@ const Yardsdata = () => {
       <div className="row">
         <div className="col-md-12 col-xs-12">
           <div id="messages" />
-          <a href="/yards/create" className="btn btn-primary">
+          <Link to="/yards/create" className="btn btn-primary">
             Add yards
-          </a>
-          {/*        <a href="" class="btn btn-success">View Motors</a> */}
+          </Link>
+          {/*        <Link to="" class="btn btn-success">View Motors</Link> */}
           <br /> <br />
           <div className="box">
             <div className="box-header">
@@ -163,12 +161,12 @@ const Yardsdata = () => {
                           <td>Ontario</td>
                           <td>L5P 1B2</td>
                           <td>
-                            <a
-                              href="/yards/update/8"
+                            <Link
+                              to="/yards/update/8"
                               className="btn btn-default btn-sm"
                             >
                               <i className="fa fa-pencil" />
-                            </a>{" "}
+                            </Link>{" "}
                             <button
                               type="button"
                               className="btn btn-default btn-sm"
@@ -190,12 +188,12 @@ const Yardsdata = () => {
                           <td>Ontario</td>
                           <td>L6R 3J7</td>
                           <td>
-                            <a
-                              href="/yards/update/7"
+                            <Link
+                              to="/yards/update/7"
                               className="btn btn-default btn-sm"
                             >
                               <i className="fa fa-pencil" />
-                            </a>{" "}
+                            </Link>{" "}
                             <button
                               type="button"
                               className="btn btn-default btn-sm"
@@ -232,37 +230,37 @@ const Yardsdata = () => {
                           className="paginate_button previous disabled"
                           id="manageTable_previous"
                         >
-                          <a
-                            href="#"
+                          <Link
+                            to="#"
                             aria-controls="manageTable"
                             data-dt-idx={0}
                             tabIndex={0}
                           >
                             Previous
-                          </a>
+                          </Link>
                         </li>
                         <li className="paginate_button active">
-                          <a
-                            href="#"
+                          <Link
+                            to="#"
                             aria-controls="manageTable"
                             data-dt-idx={1}
                             tabIndex={0}
                           >
                             1
-                          </a>
+                          </Link>
                         </li>
                         <li
                           className="paginate_button next disabled"
                           id="manageTable_next"
                         >
-                          <a
-                            href="#"
+                          <Link
+                            to="#"
                             aria-controls="manageTable"
                             data-dt-idx={2}
                             tabIndex={0}
                           >
                             Next
-                          </a>
+                          </Link>
                         </li>
                       </ul>
                     </div>

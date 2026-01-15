@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
 
@@ -7,7 +7,7 @@ const Orders = () => {
   const [list, setList] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(10);
   const [currency, setCurrency] = useState('');
   const [pickupDate, setPickupDate] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
@@ -40,10 +40,6 @@ const Orders = () => {
     setCurrentPage(selected);
   };
 
-  const handleItemsPerPageChange = (e) => {
-    setItemsPerPage(parseInt(e.target.value, 10));
-    setCurrentPage(0);
-  };
 
   const offset = currentPage * itemsPerPage;
   const currentItems = filteredOrders.slice(offset, offset + itemsPerPage);
@@ -105,23 +101,23 @@ const Orders = () => {
                         <td>{item.delivery_address}</td>
                         <td>{item.currency}</td>
                         <td>
-                                <a
+                                <Link
                                   target="_blank"
-                                  href={`https://isovia.ca/fms_api/pdf/invoice.php?id=${item.id}`}
+                                  to={`https://isovia.ca/fms_api/pdf/invoice.php?id=${item.id}`}
                                   className="btn btn-danger btn-sm"
                                 >
                                   Confirmation
-                                </a>
+                                </Link>
                                 {item.tmsTriptId&&<Link to={`/tripviewer/${item.tmsTriptId}`} className="btn btn-default btn-xs">
                                   Map
                                 </Link>}
-                                <a
+                                <Link
                                   target="_blank"
-                                  href={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
+                                  to={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
                                   className="btn btn-warning btn-xs"
                                 >
                                   Invoice
-                                </a>
+                                </Link>
                                 <Link
                                   to={"/update/"+item.id}
                                   className="btn btn-default btn-sm"

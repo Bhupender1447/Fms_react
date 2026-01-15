@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+/* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
@@ -104,9 +106,9 @@ const UpdateTruck = () => {
       </h1>
       <ol className="breadcrumb">
         <li>
-          <a href="#">
+          <Link to="#">
             <i className="fa fa-dashboard" /> Home
-          </a>
+          </Link>
         </li>
         <li className="active">Trucks</li>
       </ol>
@@ -669,9 +671,9 @@ const UpdateTruck = () => {
           <button type="button" className="btn btn-primary" onClick={handleSubmit}>
             Save Changes
           </button>
-          <a href="https://isovia.ca/fms/trucks/" className="btn btn-warning">
+          <Link to="https://isovia.ca/fms/trucks/" className="btn btn-warning">
             Back
-          </a>
+          </Link>
         </div>
         {/* /.box-body */}
       </div>

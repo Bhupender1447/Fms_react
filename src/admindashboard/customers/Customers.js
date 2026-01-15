@@ -54,9 +54,9 @@ const Customers = () => {
         </h1>
         <ol className="breadcrumb">
           <li>
-            <a href="#">
+            <Link to="#">
               <i className="fa fa-dashboard" /> Home
-            </a>
+            </Link>
           </li>
           <li className="active">Customers</li>
         </ol>
@@ -73,7 +73,7 @@ const Customers = () => {
             >
               Add Customers
             </Link>
-            {/* <a href="" class="btn btn-success">View Motors</a> */}
+            {/* <Link to="" class="btn btn-success">View Motors</Link> */}
             <br /> <br />
             <div className="box">
               <div className="box-header">

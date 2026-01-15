@@ -79,7 +79,6 @@
   }
 
  .navbar-toggler {
-    margin-top: -87px;
     border: none !important;
 }
 
@@ -940,5 +939,14 @@
 }
 .software-1-text h2 {
     font-size: 35px;
+}
+}
+
+@media (max-width: 767px) {
+  .navbar-toggler {
+    border: none !important;
+}
+.navbar-toggler:focus {
+    box-shadow: none;
 }
 }

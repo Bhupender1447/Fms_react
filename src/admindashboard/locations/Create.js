@@ -1,6 +1,7 @@
-import axios from 'axios';
-import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+/* eslint-disable jsx-a11y/no-redundant-roles */
+
+import{ useEffect, useRef, useState } from 'react';
+import { useNavigate,Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 const Createlocation = () => {
@@ -74,7 +75,6 @@ console.log(place)
     formData.append('city', city);
     formData.append('zip', zip);
     try {
-      const response = await axios.post('https://isovia.ca/fms_api/api/createlocation', formData);
       toast.success('Successfully created', {
         position: "top-right",
         autoClose: 3000,
@@ -112,9 +112,9 @@ console.log(place)
         </h1>
         <ol className="breadcrumb">
           <li>
-            <a href="#">
+            <Link to="#">
               <i className="fa fa-dashboard" /> Home
-            </a>
+            </Link>
           </li>
           <li className="active">Locations</li>
         </ol>
@@ -276,12 +276,12 @@ console.log(place)
                   <button type="submit" className="btn btn-primary">
                     Save Changes
                   </button>
-                  <a
-                    href="/locations/"
+                  <Link
+                    to="/locations/"
                     className="btn btn-warning"
                   >
                     Back
-                  </a>
+                  </Link>
                 </div>
               </form>
             </div>

@@ -1,6 +1,7 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import ReactPaginate from 'react-paginate';
+import {Link } from 'react-router-dom';
 
 const Invoices = () => {
   const [data, setData] = useState([]);
@@ -35,9 +36,9 @@ const Invoices = () => {
         </h1>
         <ol className="breadcrumb">
           <li>
-            <a href="#">
+            <Link to="#">
               <i className="fa fa-dashboard" /> Home
-            </a>
+            </Link>
           </li>
           <li className="active">Trips</li>
         </ol>
@@ -167,13 +168,13 @@ const Invoices = () => {
                               <td>{item.pickup_address}</td>
                               <td>{item.delivery_address}</td>
                               <td>
-                                <a
+                                <Link
                                   target="_blank"
-                                  href={`https://isovia.ca/fms_api/pdf/invoice_orders.php?id=${item.id}`}
+                                  to={`https://isovia.ca/fms_api/pdf/invoice_orders.php?id=${item.id}`}
                                   className="btn btn-success btn-xs"
                                 >
                                   Invoice
-                                </a>
+                                </Link>
                               </td>
                             </tr>
                           ))}

@@ -22,6 +22,7 @@ const DriverDutyStatus = () => {
   const googleScriptRef = useRef(null);
 
   // Fetch driver data
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchDrivers = async () => {
     try {
       const response = await fetch('https://isovia.ca/fms_api/api/getDriversDutyStatus');
@@ -306,7 +307,7 @@ const DriverDutyStatus = () => {
         }
       }
     };
-  }, []);
+  }, [fetchDrivers]);
 
   // Show duty modal when drivers on duty
   useEffect(() => {

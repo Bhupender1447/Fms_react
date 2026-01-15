@@ -40,14 +40,14 @@ const Adminheader = () => {
   {/* Header Navbar: style can be found in header.less */}
   <nav className="navbar navbar-static-top">
     {/* Sidebar toggle button*/}
-    <a
-      href="#"
+    <Link
+      to="#"
       className="sidebar-toggle"
       data-toggle="push-menu"
       role="button"
     >
       <span className="sr-only">Toggle navigation</span>
-    </a>
+    </Link>
   </nav>
 </header>
 

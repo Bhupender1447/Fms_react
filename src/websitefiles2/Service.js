@@ -23,9 +23,9 @@ const Service = () => {
                   nulla pariatur.Excepteur
                 </p>
                 <div className="d-flex justify-content-end">
-                  <a href="" className="service-btn">
+                  <Link to="" className="service-btn">
                     See More
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -43,9 +43,9 @@ const Service = () => {
                   nulla pariatur.Excepteur
                 </p>
                 <div className="d-flex justify-content-end">
-                  <a href="" className="service-btn">
+                  <Link to="" className="service-btn">
                     See More
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -63,9 +63,9 @@ const Service = () => {
                   nulla pariatur.Excepteur
                 </p>
                 <div className="d-flex justify-content-end">
-                  <a href="" className="service-btn">
+                  <Link to="" className="service-btn">
                     See More
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>

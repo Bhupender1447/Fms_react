@@ -53,9 +53,9 @@ const Doctypes = () => {
         </h1>
         <ol className="breadcrumb">
           <li>
-            <a href="#">
+            <Link to="#">
               <i className="fa fa-dashboard" /> Home
-            </a>
+            </Link>
           </li>
           <li className="active">Documents</li>
         </ol>
@@ -164,30 +164,30 @@ const Doctypes = () => {
                     <div className="dataTables_paginate paging_simple_numbers">
                       <ul className="pagination">
                         <li className={`paginate_button previous ${currentPage === 1 ? 'disabled' : ''}`}>
-                          <a
-                            href="#!"
+                          <Link
+                            to="#!"
                             onClick={() => paginate(currentPage - 1)}
                           >
                             Previous
-                          </a>
+                          </Link>
                         </li>
                         {Array.from({ length: Math.ceil(data.length / itemsPerPage) }, (_, i) => (
                           <li key={i} className={`paginate_button ${currentPage === i + 1 ? 'active' : ''}`}>
-                            <a
-                              href="#!"
+                            <Link
+                              to="#!"
                               onClick={() => paginate(i + 1)}
                             >
                               {i + 1}
-                            </a>
+                            </Link>
                           </li>
                         ))}
                         <li className={`paginate_button next ${currentPage === Math.ceil(data.length / itemsPerPage) ? 'disabled' : ''}`}>
-                          <a
-                            href="#!"
+                          <Link
+                            to="#!"
                             onClick={() => paginate(currentPage + 1)}
                           >
                             Next
-                          </a>
+                          </Link>
                         </li>
                       </ul>
                     </div>

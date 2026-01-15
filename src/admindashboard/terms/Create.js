@@ -1,5 +1,7 @@
+/* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
-import React, { useState } from 'react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom';
 
 const Createterms = () => {
   const [formData, setFormData] = useState({
@@ -44,9 +46,9 @@ const Createterms = () => {
     </h1>
     <ol className="breadcrumb">
       <li>
-        <a href="#">
+        <Link to="#">
           <i className="fa fa-dashboard" /> Home
-        </a>
+        </Link>
       </li>
       <li className="active">Terms</li>
     </ol>
@@ -166,12 +168,12 @@ const Createterms = () => {
               <button type="submit" className="btn btn-primary">
                 Save Changes
               </button>
-              <a
-                href="/customers/"
+              <Link
+                to="/customers/"
                 className="btn btn-warning"
               >
                 Back
-              </a>
+              </Link>
             </div>
           </form>
           {/* /.box-body */}

@@ -81,7 +81,7 @@ const FleetManagement = () => {
                        */}
                     </div>
                     <div className="modal-body text-center">
-                      <a href="tel:+16472415999 ">or call us at +16472415999</a>
+                      <Link to="tel:+16472415999 ">or call us at +16472415999</Link>
                       <form className="popup">
                         <div className="row">
                           <div className="col-md-12 form-group">

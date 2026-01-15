@@ -54,9 +54,9 @@ const Mtypes = () => {
         </h1>
         <ol className="breadcrumb">
           <li>
-            <a href="#">
+            <Link to="#">
               <i className="fa fa-dashboard" /> Home
-            </a>
+            </Link>
           </li>
           <li className="active">Maintenance</li>
         </ol>
@@ -143,9 +143,9 @@ const Mtypes = () => {
                               <td>{item.value}</td>
                               <td>{item.remarks}</td>
                               <td>
-                                <a href={`/mtypes/update/${item.id}`} className="btn btn-default">
+                                <Link to={`/mtypes/update/${item.id}`} className="btn btn-default">
                                   <i className="fa fa-pencil" />
-                                </a>{" "}
+                                </Link>{" "}
                                 <button
                                   type="button"
                                   className="btn btn-default"
@@ -172,21 +172,21 @@ const Mtypes = () => {
                       <div className="dataTables_paginate paging_simple_numbers" id="manageTable_paginate">
                         <ul className="pagination">
                           <li className={`paginate_button previous ${currentPage === 1 ? "disabled" : ""}`} id="manageTable_previous">
-                            <a href="#" aria-controls="manageTable" data-dt-idx={0} tabIndex={0} onClick={() => paginate(currentPage - 1)}>
+                            <Link to="#" aria-controls="manageTable" data-dt-idx={0} tabIndex={0} onClick={() => paginate(currentPage - 1)}>
                               Previous
-                            </a>
+                            </Link>
                           </li>
                           {Array.from({ length: totalPages }, (_, index) => (
                             <li key={index} className={`paginate_button ${currentPage === index + 1 ? "active" : ""}`}>
-                              <a href="#" aria-controls="manageTable" data-dt-idx={index + 1} tabIndex={0} onClick={() => paginate(index + 1)}>
+                              <Link to="#" aria-controls="manageTable" data-dt-idx={index + 1} tabIndex={0} onClick={() => paginate(index + 1)}>
                                 {index + 1}
-                              </a>
+                              </Link>
                             </li>
                           ))}
                           <li className={`paginate_button next ${currentPage === totalPages ? "disabled" : ""}`} id="manageTable_next">
-                            <a href="#" aria-controls="manageTable" data-dt-idx={2} tabIndex={0} onClick={() => paginate(currentPage + 1)}>
+                            <Link to="#" aria-controls="manageTable" data-dt-idx={2} tabIndex={0} onClick={() => paginate(currentPage + 1)}>
                               Next
-                            </a>
+                            </Link>
                           </li>
                         </ul>
                       </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import {Link } from 'react-router-dom';
 
 const Truckbulk = () => {
   const [file, setFile] = useState(null);
@@ -101,23 +102,23 @@ const Truckbulk = () => {
           <p className="fw-semibold mb-2 text-center">📂 Example Templates</p>
 
           <div className="d-flex justify-content-center gap-2">
-            <a
-              href="/trucks-Csv.csv"
+            <Link
+              to="/trucks-Csv.csv"
               download
               className="btn btn-sm btn-outline-light"
               style={{ borderRadius: "8px" }}
             >
               <i className="bi bi-filetype-csv me-1"></i>CSV
-            </a>
+            </Link>
 
-            <a
-              href="/trucks-xlsx.xlsx"
+            <Link
+              to="/trucks-xlsx.xlsx"
               download
               className="btn btn-sm btn-outline-light"
               style={{ borderRadius: "8px" }}
             >
               <i className="bi bi-filetype-xlsx me-1"></i>XLSX
-            </a>
+            </Link>
           </div>
         </div>
 

@@ -95,8 +95,8 @@ const DispatchBoard = () => {
                     <td>{item.delivery_address}</td>
                     <td>{item.currency}</td>
                     <td>
-                      <a target="_blank" href={`https://isovia.ca/fms_api/pdf/invoice.php?id=${item.id}`} className="btn btn-danger btn-sm">Confirmation</a>
-                      <a target="_blank" href={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`} className="btn btn-warning btn-xs">Invoice</a>
+                      <Link target="_blank" to={`https://isovia.ca/fms_api/pdf/invoice.php?id=${item.id}`} className="btn btn-danger btn-sm">Confirmation</Link>
+                      <Link target="_blank" to={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`} className="btn btn-warning btn-xs">Invoice</Link>
                       <Link to={`/update/${item.id}`} className="btn btn-default btn-sm"><i className="fa fa-pencil" /></Link>
                       <Link to={`/assign/${item.id}`} className="btn btn-success btn-sm">Assign</Link>
                       <button type="button" className="btn btn-danger btn-sm" onClick={() => console.log('removeFunc', item.id)}>

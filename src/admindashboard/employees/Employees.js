@@ -75,7 +75,7 @@ const Employees = () => {
             >
               Add Employee
             </Link>
-            {/*        <a href="" class="btn btn-success">View Motors</a> */}
+            {/*        <Link to="" class="btn btn-success">View Motors</Link> */}
             <br /> <br />
             <div className="box">
               <div className="box-header">

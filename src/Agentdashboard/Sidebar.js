@@ -36,13 +36,14 @@ useEffect(()=>{
  // Check if login data exists in local storage
  const loginData = JSON.parse(localStorage.getItem("logindetail"));
 
+ // eslint-disable-next-line eqeqeq
  if (loginData&&loginData.role=='agent') {
    
  } else {
      // No data, redirect to login page
      navigate('/login');
  }
-},[update])
+},[navigate, update])
 
 
 let logout=()=>{
@@ -58,9 +59,9 @@ let logout=()=>{
     <ul className="sidebar-menu tree" data-widget="tree">
       {/*
   <li className="nav-item" id="dashboardMainMenu">
-    <a href="/dashboard">
+    <Link to="/dashboard">
       <i class="fa fa-dashboard"></i> <span>Dashboard</span>
-    </a>
+    </Link>
   </li>
   */}
        {/* <li className="nav-item" id="manageOrderSubMenu">
@@ -94,11 +95,11 @@ let logout=()=>{
           </li>
 
           <li className="nav-item dropdown"  id="OrderMainNav">
-            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+            <Link to="#" className="dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-files-o" />
               <span>Orders</span>
      
-            </a>
+            </Link>
             <ul className="dropdown-menu bg-dark text-light">
               <li className="nav-item" id="createOrderSubMenu">
                 <Link className="dropdown-item"  to={'/createorder'}>
@@ -113,11 +114,11 @@ let logout=()=>{
             </ul>
           </li>
           <li className="nav-item dropdown"  id="TripMainNav">
-            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+            <Link to="#" className="dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-files-o" />
               <span>Trips</span>
         
-            </a>
+            </Link>
             <ul className="dropdown-menu bg-dark text-light">
               <li className="nav-item" id="createTripSubMenu">
                 <Link className="dropdown-item"  to={'/createtrips'}>
@@ -132,11 +133,11 @@ let logout=()=>{
             </ul>
           </li>
           <li className="nav-item dropdown"  id="InvoiceMainNav">
-            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+            <Link to="#" className="dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-files-o" />
               <span>Invoices</span>
         
-            </a>
+            </Link>
             <ul className="dropdown-menu bg-dark text-light">
               <li className="nav-item" id="manageInvoiceSubMenu">
                 <Link className="dropdown-item"  to={'/invoices'}>
@@ -146,21 +147,21 @@ let logout=()=>{
             </ul>
           </li>
           <li className="nav-item dropdown"  id="ReportMainNav">
-            <a href="#" className="dropdown-toggle" data-toggle="dropdown">
+            <Link to="#" className="dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-files-o" />
               <span>Reports</span>
      
-            </a>
+            </Link>
             <ul className="dropdown-menu bg-dark text-light">
               <li className="nav-item" id="productReportSubMenu">
-                <a href="#">
+                <Link to="#">
                   <i className="fa fa-circle-o" /> Product Wise
-                </a>
+                </Link>
               </li>
               <li className="nav-item" id="storeReportSubMenu">
-                <a href="#">
+                <Link to="#">
                   <i className="fa fa-circle-o" /> Total Store wise
-                </a>
+                </Link>
               </li>
             </ul>
           </li>
@@ -175,9 +176,9 @@ let logout=()=>{
             </Link>
           </li>
           <li>
-        <a onClick={logout}>
+        <Link onClick={logout}>
           <i className="glyphicon glyphicon-log-out" /> <span>Logout</span>
-        </a>
+        </Link>
       </li>
     </ul>
 

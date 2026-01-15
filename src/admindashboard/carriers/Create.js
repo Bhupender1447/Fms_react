@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,Link } from 'react-router-dom';
 import Distance from '../Distance';
 import CarrierDataPopup from './CarrierDataPopup';
 import { ToastContainer, toast } from 'react-toastify';
@@ -117,9 +117,9 @@ const Createcarriers = () => {
                     <button type="submit" className="btn btn-primary">
                       Search
                     </button>
-                    <a href="/carriers/" className="btn btn-warning">
+                    <Link to="/carriers/" className="btn btn-warning">
                       Back
-                    </a>
+                    </Link>
                   </div>
                 </form>
 

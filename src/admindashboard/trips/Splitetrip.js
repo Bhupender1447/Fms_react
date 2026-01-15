@@ -157,7 +157,8 @@ const SplitRoutes = () => {
     }, []);
   
     // Fetch split routes data
-    const fetchSplitRoutes = () => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps, no-undef
+    const fetchSplitRoutes = useCallback(() => {
       axios
         .get(`https://isovia.ca/fms_api/api/fetchProductDatadocs/${tripId}`, {
           headers: {
@@ -175,12 +176,12 @@ const SplitRoutes = () => {
         .catch((error) => {
           console.error("Error fetching split routes data:", error);
         });
-    };
+    });
   
     // Initial fetch of split routes data
     useEffect(() => {
       fetchSplitRoutes();
-    }, [tripId]);
+    }, [fetchSplitRoutes, tripId]);
   
     return (
       <div className="content-wrapper">

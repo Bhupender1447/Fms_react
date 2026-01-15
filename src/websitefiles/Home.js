@@ -1,45 +1,47 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+/* eslint-disable jsx-a11y/iframe-has-title */
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const Home = () => {
-  const [activeService, setActiveService] = useState('list-1');
+  const [activeService, setActiveService] = useState("list-1");
   const [modalOpen, setModalOpen] = useState(false);
   const [countersAnimated, setCountersAnimated] = useState(false);
-useEffect(() => {
-  // FORCE RE-INITIALIZE BOOTSTRAP CAROUSEL ON ROUTE NAVIGATION
-  const el = document.getElementById("carouselExampleFade");
+  useEffect(() => {
+    // FORCE RE-INITIALIZE BOOTSTRAP CAROUSEL ON ROUTE NAVIGATION
+    const el = document.getElementById("carouselExampleFade");
 
-  if (el && window.bootstrap) {
-    try {
-      // destroy old instance if exists
-      const old = window.bootstrap.Carousel.getInstance(el);
-      if (old) old.dispose();
+    if (el && window.bootstrap) {
+      try {
+        // destroy old instance if exists
+        const old = window.bootstrap.Carousel.getInstance(el);
+        if (old) old.dispose();
 
-      // create new carousel instance
-      window.bootstrap.Carousel.getOrCreateInstance(el, {
-        interval: 3000,
-        ride: "carousel",
-        pause: false,
-        wrap: true,
-      });
+        // create new carousel instance
+        window.bootstrap.Carousel.getOrCreateInstance(el, {
+          // interval: 3000,
+          ride: "carousel",
+          pause: false,
+          wrap: true,
+        });
 
-      console.log("Carousel Reinitialized Successfully");
-    } catch (err) {
-      console.error("Carousel init error:", err);
+        console.log("Carousel Reinitialized Successfully");
+      } catch (err) {
+        console.error("Carousel init error:", err);
+      }
     }
-  }
-}, []);
+  }, []);
 
   // Counter animation function
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const animateCounters = () => {
     if (countersAnimated) return;
 
-    const counters = document.querySelectorAll('.counter');
-    counters.forEach(counter => {
+    const counters = document.querySelectorAll(".counter");
+    counters.forEach((counter) => {
       const updateCount = () => {
-        const target = +counter.getAttribute('data-count');
-        const prefix = counter.getAttribute('data-prefix') || '';
-        const count = +counter.innerText.replace('+', '').replace(prefix, '');
+        const target = +counter.getAttribute("data-count");
+        const prefix = counter.getAttribute("data-prefix") || "";
+        const count = +counter.innerText.replace("+", "").replace(prefix, "");
 
         if (count < target) {
           const increment = target / 200;
@@ -51,7 +53,7 @@ useEffect(() => {
       };
       updateCount();
     });
-    
+
     setCountersAnimated(true);
   };
 
@@ -62,58 +64,60 @@ useEffect(() => {
 
   // Modal handlers
   const openModal = () => setModalOpen(true);
-  const closeModal = () => setModalOpen(false);
 
   useEffect(() => {
     // Initialize service click handlers
-    const listItems = document.querySelectorAll('.number-list-services-text');
-    listItems.forEach(item => {
-      item.addEventListener('click', (e) => {
-        const target = e.currentTarget.getAttribute('data-target');
+    const listItems = document.querySelectorAll(".number-list-services-text");
+    listItems.forEach((item) => {
+      item.addEventListener("click", (e) => {
+        const target = e.currentTarget.getAttribute("data-target");
         handleServiceClick(target);
       });
     });
 
     // Initialize modal handlers
-    const circleBtn = document.getElementById('circleBtn');
-    const closeModal = document.getElementById('closeModal');
-    const modal = document.getElementById('contactModal');
+    const circleBtn = document.getElementById("circleBtn");
+    const closeModal = document.getElementById("closeModal");
+    const modal = document.getElementById("contactModal");
 
     if (circleBtn) {
-      circleBtn.addEventListener('click', openModal);
+      circleBtn.addEventListener("click", openModal);
     }
 
     if (closeModal) {
-      closeModal.addEventListener('click', closeModal);
+      closeModal.addEventListener("click", closeModal);
     }
 
     if (modal) {
-      modal.addEventListener('click', (e) => {
+      modal.addEventListener("click", (e) => {
         if (e.target === modal) closeModal();
       });
     }
 
     // Intersection Observer for counter animation
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          animateCounters();
-        }
-      });
-    }, { threshold: 0.5 });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            animateCounters();
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
 
-    const counterSection = document.querySelector('.counter-section');
+    const counterSection = document.querySelector(".counter-section");
     if (counterSection) {
       observer.observe(counterSection);
     }
 
     // Initialize carousel
     const initializeCarousel = () => {
-      const carousel = document.getElementById('carouselExampleFade');
+      const carousel = document.getElementById("carouselExampleFade");
       if (carousel) {
-        const firstSlide = carousel.querySelector('.carousel-item');
-        if (firstSlide && !firstSlide.classList.contains('active')) {
-          firstSlide.classList.add('active');
+        const firstSlide = carousel.querySelector(".carousel-item");
+        if (firstSlide && !firstSlide.classList.contains("active")) {
+          firstSlide.classList.add("active");
         }
       }
     };
@@ -122,27 +126,27 @@ useEffect(() => {
 
     // Cleanup
     return () => {
-      listItems.forEach(item => {
-        item.removeEventListener('click', () => {});
+      listItems.forEach((item) => {
+        item.removeEventListener("click", () => {});
       });
-      
+
       if (circleBtn) {
-        circleBtn.removeEventListener('click', openModal);
+        circleBtn.removeEventListener("click", openModal);
       }
-      
+
       if (closeModal) {
-        closeModal.removeEventListener('click', closeModal);
+        closeModal.removeEventListener("click", closeModal);
       }
-      
+
       if (modal) {
-        modal.removeEventListener('click', () => {});
+        modal.removeEventListener("click", () => {});
       }
-      
+
       if (counterSection) {
         observer.unobserve(counterSection);
       }
     };
-  }, [countersAnimated]);
+  }, [animateCounters, countersAnimated]);
 
   return (
     <>
@@ -161,8 +165,8 @@ useEffect(() => {
                   </div>
                   <div className="banner-textarea-section-subheading">
                     <p>
-                      "Bring transparency and efficiency to logistics with Isovia's
-                      cloud freight system."
+                      "Bring transparency and efficiency to logistics with
+                      Isovia's cloud freight system."
                     </p>
                   </div>
                   <div className="banner-textarea-section-buttons">
@@ -174,7 +178,7 @@ useEffect(() => {
                         alt="Tire"
                       />
                     </Link>
-                    <Link to ="/contact">
+                    <Link to="/contact">
                       Get A Quote
                       <img
                         src="images/truck-tire-icon-removebg-preview.png"
@@ -190,27 +194,7 @@ useEffect(() => {
               <div className="banner-section-bg" data-aos="zoom-out">
                 <div className="main-container">
                   <div className="content">
-                    <div className="text-section">
-                      <h1>
-                        The Future of{" "}
-                        <span className="animated-gradient">
-                          Intelligent Logistics
-                        </span>
-                      </h1>
-                      <p>
-                        Experience next-generation fleet management powered by
-                        quantum computing, neural networks, and autonomous AI
-                        systems that revolutionize transportation logistics.
-                      </p>
-                      <div className="buttons">
-                        <a href="#" className="btn-primary">
-                          Start Neural Demo
-                        </a>
-                        <a href="#" className="btn-secondary">
-                          Explore Technology →
-                        </a>
-                      </div>
-                    </div>
+                  
                     <div className="cube-section">
                       <div className="rings">
                         <div className="scene">
@@ -235,6 +219,27 @@ useEffect(() => {
                             </div>
                           </div>
                         </div>
+                      </div>
+                    </div>
+                      <div className="text-section mt-5">
+                      <h1>
+                        The Future of <br></br>
+                         <span className="animated-gradient">
+                          Intelligent Logistics
+                        </span>
+                      </h1>
+                      <p>
+                        Experience next-generation fleet management powered by
+                        quantum computing, neural networks, and <br></br>autonomous AI
+                        systems that revolutionize transportation logistics.
+                      </p>
+                      <div className="buttons">
+                        <Link to="#" className="btn-primary">
+                          Start Neural Demo
+                        </Link>
+                        <Link to="#" className="btn-secondary">
+                          Explore Technology →
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -271,21 +276,21 @@ useEffect(() => {
           <div className="about-us-section-text-area-subtitle">
             <p>
               Under Arshdeep's leadership, Isovia Inc. aims to revolutionize the
-              logistics industry with advanced, accessible technology. Beyond TMS,
-              Isovia is developing an AI Safety Assist tool for real-time guidance
-              on compliance and safety practices to promote secure operations across
-              partner companies. Future plans also include launching an integrated
-              Load Board platform, which will foster a robust local network of
-              trusted logistics partners and facilitate secure, economical
-              transactions. With a unique blend of industry experience and technical
-              expertise, Arshdeep leads Isovia's mission to support a seamless,
-              profitable workflow for the logistics sector, empowering companies
-              with cutting-edge, tailored solutions to meet today's challenges and
-              tomorrow's opportunities.
+              logistics industry with advanced, accessible technology. Beyond
+              TMS, Isovia is developing an AI Safety Assist tool for real-time
+              guidance on compliance and safety practices to promote secure
+              operations across partner companies. Future plans also include
+              launching an integrated Load Board platform, which will foster a
+              robust local network of trusted logistics partners and facilitate
+              secure, economical transactions. With a unique blend of industry
+              experience and technical expertise, Arshdeep leads Isovia's
+              mission to support a seamless, profitable workflow for the
+              logistics sector, empowering companies with cutting-edge, tailored
+              solutions to meet today's challenges and tomorrow's opportunities.
             </p>
           </div>
         </div>
-        <div className="truck-png">
+        {/* <div className="truck-png">
           <img src="images/truck-png.png" alt="Animated truck driving" />
         </div>
         <div className="bushes-png">
@@ -293,11 +298,12 @@ useEffect(() => {
         </div>
         <div className="road-png-section">
           <img src="images/road-png.png" alt="Road background" />
-        </div>
+        </div> */}
       </section>
 
       <section className="services-section">
-        <div className="services-section-textarea">
+       <div className="section-container">
+         <div className="services-section-textarea">
           <div className="services-container">
             <div>
               <div className="services-section-title">
@@ -305,19 +311,25 @@ useEffect(() => {
               </div>
               <ol className="number-list-services">
                 <li
-                  className={`number-list-services-text ${activeService === 'list-1' ? 'active' : ''}`}
+                  className={`number-list-services-text ${
+                    activeService === "list-1" ? "active" : ""
+                  }`}
                   data-target="list-1"
                 >
                   Brokers and Shippers
                 </li>
                 <li
-                  className={`number-list-services-text ${activeService === 'list-2' ? 'active' : ''}`}
+                  className={`number-list-services-text ${
+                    activeService === "list-2" ? "active" : ""
+                  }`}
                   data-target="list-2"
                 >
                   Save Money
                 </li>
                 <li
-                  className={`number-list-services-text ${activeService === 'list-3' ? 'active' : ''}`}
+                  className={`number-list-services-text ${
+                    activeService === "list-3" ? "active" : ""
+                  }`}
                   data-target="list-3"
                 >
                   Fuel Tracker
@@ -326,29 +338,33 @@ useEffect(() => {
             </div>
             <div>
               <div
-                className={`services-section-service-list-content ${activeService === 'list-1' ? 'active' : ''}`}
+                className={`services-section-service-list-content ${
+                  activeService === "list-1" ? "active" : ""
+                }`}
                 id="list-1"
               >
                 <p>
-                  Our system enables brokers and shippers to manage their fleets and
-                  loads.
+                  Our system enables brokers and shippers to manage their fleets
+                  and loads.
                 </p>
                 <div className="service-img">
                   <img src="images/servie-1.png" alt="" />
                 </div>
                 <div className="banner-textarea-section-buttons">
-                  <a href="#">
+                  <Link to="#">
                     See More
                     <img
                       src="images/truck-tire-icon-removebg-preview.png"
                       className="tire-icon"
                       alt="Tire"
                     />
-                  </a>
+                  </Link>
                 </div>
               </div>
               <div
-                className={`services-section-service-list-content ${activeService === 'list-2' ? 'active' : ''}`}
+                className={`services-section-service-list-content ${
+                  activeService === "list-2" ? "active" : ""
+                }`}
                 id="list-2"
               >
                 <p>
@@ -359,44 +375,48 @@ useEffect(() => {
                   <img src="images/servie-2.png" alt="" />
                 </div>
                 <div className="banner-textarea-section-buttons">
-                  <a href="#">
+                  <Link to="#">
                     See More
                     <img
                       src="images/truck-tire-icon-removebg-preview.png"
                       className="tire-icon"
                       alt="Tire"
                     />
-                  </a>
+                  </Link>
                 </div>
               </div>
               <div
-                className={`services-section-service-list-content ${activeService === 'list-3' ? 'active' : ''}`}
+                className={`services-section-service-list-content ${
+                  activeService === "list-3" ? "active" : ""
+                }`}
                 id="list-3"
               >
                 <p>
-                  Effectively manage your fuel through our real-time fuel tracker.
+                  Effectively manage your fuel through our real-time fuel
+                  tracker.
                 </p>
                 <div className="service-img">
                   <img src="images/servie-3.png" alt="" />
                 </div>
                 <div className="banner-textarea-section-buttons">
-                  <a href="#">
+                  <Link to="#">
                     See More
                     <img
                       src="images/truck-tire-icon-removebg-preview.png"
                       className="tire-icon"
                       alt="Tire"
                     />
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
           </div>
         </div>
+       </div>
       </section>
 
-      <section className="counter-section">
-        <div className="container">
+      <section className="counter-section section-container">
+        <div className="container ">
           <div className="row">
             <div className="col-md-4 text-center drop-left">
               <div className="content-wrap">
@@ -436,7 +456,8 @@ useEffect(() => {
               <div className="title-blog">
                 <h2>Blogs</h2>
                 <p className="blog-subtitle">
-                  Stay informed with our latest thoughts, trends, and tech stories.
+                  Stay informed with our latest thoughts, trends, and tech
+                  stories.
                 </p>
               </div>
               <div className="row blogs-section">
@@ -447,12 +468,13 @@ useEffect(() => {
                   <div className="blog-article">
                     <h4 className="blog-article-title">Real-time Monitoring</h4>
                     <p className="blog-article-excerpt">
-                      The current logistics scenario increasingly demands accurate
-                      and fast deliveries. With efficient transportation........
+                      The current logistics scenario increasingly demands
+                      accurate and fast deliveries. With efficient
+                      transportation........
                     </p>
-                    <a href="#" className="read-more">
+                    <Link to="#" className="read-more">
                       Read More →
-                    </a>
+                    </Link>
                   </div>
                 </div>
                 <div className="col-md-4 blog-sec-responsive">
@@ -463,11 +485,12 @@ useEffect(() => {
                     <h4 className="blog-article-title">The Meaning of IFM</h4>
                     <p className="blog-article-excerpt">
                       Logistics is a fundamental sector of the global economy,
-                      connecting companies, suppliers and consumers through........
+                      connecting companies, suppliers and consumers
+                      through........
                     </p>
-                    <a href="#" className="read-more">
+                    <Link to="#" className="read-more">
                       Read More →
-                    </a>
+                    </Link>
                   </div>
                 </div>
                 <div className="col-md-4 blog-sec-responsive">
@@ -482,14 +505,14 @@ useEffect(() => {
                       Freight transportation is an essential part of the global
                       economy, where various goods ........
                     </p>
-                    <a href="#" className="read-more">
+                    <Link to="#" className="read-more">
                       Read More →
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
-              <div className="view-all-btn">
-                <a href="#">View All Articles</a>
+              <div className="view-all-btn flex justify-content-center mx-auto">
+                <Link to="#">View All Articles</Link>
               </div>
             </div>
           </div>
@@ -502,64 +525,64 @@ useEffect(() => {
             <div className="partner-section-logos-list">
               <ul className="list-of-logos">
                 <li className="partner-logos">
-                  <a href="#">
+                  <Link to="#">
                     <img src="images/samsara.png" alt="" />
-                  </a>
+                  </Link>
                 </li>
                 <li className="partner-logos">
-                  <a href="#">
+                  <Link to="#">
                     <img src="images/KeepTrucking.png" alt="" />
-                  </a>
+                  </Link>
                 </li>
                 <li className="partner-logos">
-                  <a href="#">
+                  <Link to="#">
                     <img src="images/trimbleconnect.png" alt="" />
-                  </a>
+                  </Link>
                 </li>
                 <li className="partner-logos">
-                  <a href="#">
+                  <Link to="#">
                     <img src="images/waterconect.png" alt="" />
-                  </a>
+                  </Link>
                 </li>
                 <li className="partner-logos">
-                  <a href="#">
+                  <Link to="#">
                     <img src="images/samsara.png" alt="" />
-                  </a>
+                  </Link>
                 </li>
                 <li className="partner-logos">
-                  <a href="#">
+                  <Link to="#">
                     <img src="images/KeepTrucking.png" alt="" />
-                  </a>
+                  </Link>
                 </li>
                 <li className="partner-logos">
-                  <a href="#">
+                  <Link to="#">
                     <img src="images/trimbleconnect.png" alt="" />
-                  </a>
+                  </Link>
                 </li>
                 <li className="partner-logos">
-                  <a href="#">
+                  <Link to="#">
                     <img src="images/waterconect.png" alt="" />
-                  </a>
+                  </Link>
                 </li>
                 <li className="partner-logos">
-                  <a href="#">
+                  <Link to="#">
                     <img src="images/samsara.png" alt="" />
-                  </a>
+                  </Link>
                 </li>
                 <li className="partner-logos">
-                  <a href="#">
+                  <Link to="#">
                     <img src="images/KeepTrucking.png" alt="" />
-                  </a>
+                  </Link>
                 </li>
                 <li className="partner-logos">
-                  <a href="#">
+                  <Link to="#">
                     <img src="images/trimbleconnect.png" alt="" />
-                  </a>
+                  </Link>
                 </li>
                 <li className="partner-logos">
-                  <a href="#">
+                  <Link to="#">
                     <img src="images/waterconect.png" alt="" />
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -576,8 +599,9 @@ useEffect(() => {
           </div>
           <div className="network-section-text-area-subtitle">
             <p>
-              Next-Generation Autonomous Dispatch System that optimizes logistics
-              operations with smart automation and real-time coordination.
+              Next-Generation Autonomous Dispatch System that optimizes
+              logistics operations with smart automation and real-time
+              coordination.
             </p>
           </div>
         </div>
@@ -595,7 +619,7 @@ useEffect(() => {
               <div
                 className="rotating-arc"
                 style={{
-                  borderColor: "#00c853 transparent transparent transparent"
+                  borderColor: "#00c853 transparent transparent transparent",
                 }}
               />
             </div>
@@ -608,12 +632,18 @@ useEffect(() => {
           <div className="step">
             <div className="icon-container">
               <svg viewBox="0 0 24 24" fill="none">
-                <circle cx={12} cy={12} r={6} stroke="#00bfa5" strokeWidth={2} />
+                <circle
+                  cx={12}
+                  cy={12}
+                  r={6}
+                  stroke="#00bfa5"
+                  strokeWidth={2}
+                />
               </svg>
               <div
                 className="rotating-arc"
                 style={{
-                  borderColor: "#00bfa5 transparent transparent transparent"
+                  borderColor: "#00bfa5 transparent transparent transparent",
                 }}
               />
             </div>
@@ -631,7 +661,7 @@ useEffect(() => {
               <div
                 className="rotating-arc"
                 style={{
-                  borderColor: "#00acc1 transparent transparent transparent"
+                  borderColor: "#00acc1 transparent transparent transparent",
                 }}
               />
             </div>
@@ -653,7 +683,7 @@ useEffect(() => {
               <div
                 className="rotating-arc"
                 style={{
-                  borderColor: "#ff9800 transparent transparent transparent"
+                  borderColor: "#ff9800 transparent transparent transparent",
                 }}
               />
             </div>
@@ -675,7 +705,7 @@ useEffect(() => {
               <div
                 className="rotating-arc"
                 style={{
-                  borderColor: "#3f51b5 transparent transparent transparent"
+                  borderColor: "#3f51b5 transparent transparent transparent",
                 }}
               />
             </div>
@@ -707,8 +737,8 @@ useEffect(() => {
                         Isovia Freight Management System
                       </h4>
                       <p className="software-1-description-subtitle">
-                        Freight brokers, logistics companies, and small-to-medium
-                        businesses handling freight.
+                        Freight brokers, logistics companies, and
+                        small-to-medium businesses handling freight.
                       </p>
                       <div className="keypoints-software-1">
                         <ul className="list-softwares-1">
@@ -721,7 +751,9 @@ useEffect(() => {
                           <li className="list-item">
                             Integration with Industry Leaders
                           </li>
-                          <li className="list-item">Subscription Flexibility</li>
+                          <li className="list-item">
+                            Subscription Flexibility
+                          </li>
                         </ul>
                       </div>
                     </div>
@@ -732,8 +764,8 @@ useEffect(() => {
                         Isovia Freight Management System
                       </h4>
                       <p className="software-1-description-subtitle">
-                        Freight brokers, logistics companies, and small-to-medium
-                        businesses handling freight.
+                        Freight brokers, logistics companies, and
+                        small-to-medium businesses handling freight.
                       </p>
                       <div className="keypoints-software-1">
                         <ul className="list-softwares-1">
@@ -746,14 +778,16 @@ useEffect(() => {
                           <li className="list-item">
                             Integration with Industry Leaders
                           </li>
-                          <li className="list-item">Subscription Flexibility</li>
+                          <li className="list-item">
+                            Subscription Flexibility
+                          </li>
                         </ul>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="view-all-btn" data-aos="zoom-in">
-                  <a href="#">View All</a>
+                <div className="view-all-btn flex justify-content-center mx-auto mt-5" data-aos="zoom-in">
+                  <Link to="#">View All</Link>
                 </div>
               </div>
             </div>
@@ -768,7 +802,8 @@ useEffect(() => {
               <span>Get in Touch</span>
             </h2>
             <p>
-              We'd love to hear from you. Fill out the form to start a conversation.
+              We'd love to hear from you. Fill out the form to start a
+              conversation.
             </p>
           </div>
           <div className="circle-container">
@@ -784,7 +819,9 @@ useEffect(() => {
             </button>
           </div>
         </section>
-        <section className="maps-link" style={{ width: "99%", height: 450, margin: "0 auto" }}>
+        <section
+          className="maps-link"
+        >
           <iframe
             src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d4558.806568275673!2d-79.828052!3d43.710764!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x882b1407a332ea77%3A0x2c6bf2883e944c9a!2s33%20Sir%20Jacobs%20Crescent%2C%20Brampton%2C%20ON%20L7A%203V2%2C%20Canada!5e1!3m2!1sen!2sin!4v1760336164605!5m2!1sen!2sin"
             width="100%"
@@ -795,8 +832,8 @@ useEffect(() => {
             referrerPolicy="no-referrer-when-downgrade"
           />
         </section>
-        
-        <div id="contactModal" className={`modal ${modalOpen ? 'active' : ''}`}>
+
+        <div id="contactModal" className={`modal ${modalOpen ? "active" : ""}`}>
           <div className="modal-content">
             <button id="closeModal" className="close-btn">
               ×

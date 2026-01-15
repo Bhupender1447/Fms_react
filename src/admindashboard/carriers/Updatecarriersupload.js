@@ -128,9 +128,9 @@ const Updatecarriersupload = () => {
 
               <div className="box-footer">
                 <button className="btn btn-primary">Save</button>
-                <a href="/carriers" className="btn btn-warning">
+                <Link to="/carriers" className="btn btn-warning">
                   Back
-                </a>
+                </Link>
               </div>
             </div> */}
 

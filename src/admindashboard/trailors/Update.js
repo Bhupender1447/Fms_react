@@ -1,6 +1,7 @@
+/* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams ,Link} from 'react-router-dom';
 
 const Updatetrailors = () => {
     const { id } = useParams();
@@ -953,9 +954,9 @@ const Updatetrailors = () => {
                                     <button type="submit" className="btn btn-primary">
                                         Update Trailer
                                     </button>
-                                    <a href="https://isovia.ca/fms/trailors/" className="btn btn-warning">
+                                    <Link to="https://isovia.ca/fms/trailors/" className="btn btn-warning">
                                         Back
-                                    </a>
+                                    </Link>
                                 </div>
                             </form>
                         </div>

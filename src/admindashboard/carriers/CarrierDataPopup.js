@@ -1,9 +1,9 @@
 import axios from "axios";
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate ,Link} from "react-router-dom";
 
 const CarrierDataPopup = ({ brokerData, popup, setpopup }) => {
-  const [showModal, setShowModal] = useState(popup);
+  const [showModal] = useState(popup);
   let navigate = useNavigate();
 
   const handleClose = () => setpopup(false);
@@ -100,14 +100,14 @@ const CarrierDataPopup = ({ brokerData, popup, setpopup }) => {
                 )}
               </div>
 
-              <a
-                href={brokerData.url}
+              <Link
+                to={brokerData.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-info btn-sm mt-3"
               >
                 More Info
-              </a>
+              </Link>
             </div>
             <div className="modal-footer">
               <button

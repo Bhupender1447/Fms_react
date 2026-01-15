@@ -1,6 +1,7 @@
+/* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
-import React, { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import  { useEffect, useRef, useState } from 'react';
+import { useParams,Link } from 'react-router-dom';
 
 const UpdateLocation = () => {
   const nameRef = useRef(null);
@@ -94,7 +95,6 @@ const UpdateLocation = () => {
     formData.append('zip', zip);
 
     try {
-      const response = await axios.post(`https://isovia.ca/fms_api/api/updatelocations/${id}`, formData);
       alert('Successfully updated');
     } catch (error) {
       console.error('Error updating location', error);
@@ -111,9 +111,9 @@ const UpdateLocation = () => {
         </h1>
         <ol className="breadcrumb">
           <li>
-            <a href="#">
+            <Link to="#">
               <i className="fa fa-dashboard" /> Home
-            </a>
+            </Link>
           </li>
           <li className="active">Locations</li>
         </ol>
@@ -271,9 +271,9 @@ const UpdateLocation = () => {
                   <button type="submit" className="btn btn-primary">
                     Save Changes
                   </button>
-                  <a href="/locations/" className="btn btn-warning">
+                  <Link to="/locations/" className="btn btn-warning">
                     Back
-                  </a>
+                  </Link>
                 </div>
               </form>
             </div>

@@ -1,5 +1,4 @@
-import React from 'react'
-
+import { Link } from 'react-router-dom';
 const Article2 = () => {
   return (
 <section className="blog-banner-section">
@@ -97,26 +96,26 @@ const Article2 = () => {
             <div className="text-side-container-main-data">
               <h2>Isovia Freight Manager (IFM):</h2>
               <ul className="list-main-sec">
-                <a href="#" className="main-setion-list-anchor">
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     AI-driven load matching and route optimization
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     Automated dispatching and freight brokerage tools
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     Real-time shipment tracking and analytics
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     Integration with partners such as Trimble, Google, and FMCSA
                   </li>
-                </a>
+                </Link>
               </ul>
             </div>
           </div>
@@ -126,33 +125,33 @@ const Article2 = () => {
             </div>
             <div className="text-side-container-main-data">
               <ul className="list-main-sec">
-                <a href="#" className="main-setion-list-anchor">
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     AI-driven fleet tracking and predictive maintenance
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     Compliance management (HOS, ELD, IFTA)
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     Driver performance analytics and safety monitoring
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     Cost reduction through optimized fuel consumption and asset
                     utilization
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     Integration with partners such as Trimble, Samsara,
                     GoMotive, Google, and FMCSA
                   </li>
-                </a>
+                </Link>
               </ul>
             </div>
           </div>
@@ -167,52 +166,52 @@ const Article2 = () => {
             </div>
             <div className="text-side-container-main-data">
               <ul className="list-main-sec">
-                <a href="#" className="main-setion-list-anchor">
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     Real-time tracking and HOS information for drivers
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     Broker and carrier credit check system
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     Quality and regulatory compliance
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Advanced financial reporting for the logistics system
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Direct connections between carriers and safety/compliance
                     companies
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Access to industry best practices for hiring and operations
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Future Advanced analytics integration
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Early machine learning for logistics
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Continuous feature enhancements based on customer feedback
                   </li>
-                </a>
+                </Link>
               </ul>
             </div>
           </div>
@@ -235,7 +234,7 @@ const Article2 = () => {
             </div>
             <div className="text-side-container-main-data">
               <ul className="list-main-sec">
-                <a href="#" className="main-setion-list-anchor">
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <span>Dispatch and work tracking:</span> allows you to track
                     the path of delivery routes from the moment they are sent to
@@ -246,8 +245,8 @@ const Article2 = () => {
                     status of the goods transported throughout the logistics
                     process.
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <span>
                       Quality, verification of standards and financial reports:{" "}
@@ -258,8 +257,8 @@ const Article2 = () => {
                     extensive reports that are essential for the company's
                     decision-making, which will allow it to plan efficiently.
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <span>Decision-making with real-time data analysis:</span>
                     real-time decisions when following changes in the corporate
@@ -268,8 +267,8 @@ const Article2 = () => {
                     find the key to a beneficial operational definition for
                     companies.
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     <span>Operational efficiency and cost reduction: </span>
                     the ability to optimize processes to reduce costs and
@@ -279,8 +278,8 @@ const Article2 = () => {
                     ways of producing these mentioned aspects, leverage is
                     guaranteed.
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     <span>Customer engagement: </span>
                     the company establishes contact between the brand, consumer
@@ -292,8 +291,8 @@ const Article2 = () => {
                     content e dedicated customer support via phone, email and
                     live chat.
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     <span>Sales approach:</span>the sales approach is the
                     crucial step in the entire sales cycle. Isovia Inc. presents
@@ -312,22 +311,22 @@ const Article2 = () => {
                     drives profits and sales, creates effective marketing
                     campaigns, and builds sales strategies.
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Future Advanced analytics integration
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Early machine learning for logistics
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Continuous feature enhancements based on customer feedback
                   </li>
-                </a>
+                </Link>
               </ul>
             </div>
           </div>
@@ -337,52 +336,52 @@ const Article2 = () => {
             </div>
             <div className="text-side-container-main-data">
               <ul className="list-main-sec">
-                <a href="#" className="main-setion-list-anchor">
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     CVOR and Insurance Only connectivity capability for local
                     market access.
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     AI-based carrier safety and compliance integration.
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     Machine learning applications to optimize scheduling and
                     freight dispatching.
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Exploring automated logistics trends to stay competitive.
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Participation in industry events (transportation, logistics,
                     and manufacturing expos).
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Strong online presence (website, social media, LinkedIn,
                     YouTube).
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Targeted advertising (industry publications, digital
                     marketing).
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     Referral partnerships with brokers, carriers, and logistics
                     companies.
                   </li>
-                </a>
+                </Link>
                 <li className="main-list-item conslusion-">
                   <h2 className="Conclusion">Conclusion</h2>
                   <p>

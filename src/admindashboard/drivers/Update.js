@@ -1,6 +1,7 @@
+/* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams,Link } from 'react-router-dom';
 
 const Updatedrivers = () => {
   const [message, setMessage] = useState('');
@@ -891,12 +892,12 @@ const Updatedrivers = () => {
                   <button type="submit" className="btn btn-primary">
                     Update Driver
                   </button>
-                  <a
-                    href="https://isovia.ca/fms/drivers/"
+                  <Link
+                    to="https://isovia.ca/fms/drivers/"
                     className="btn btn-warning ml-2"
                   >
                     Back to Drivers
-                  </a>
+                  </Link>
                 </div>
               </form>
             </div>

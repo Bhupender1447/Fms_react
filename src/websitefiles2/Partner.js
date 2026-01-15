@@ -32,9 +32,9 @@ const Partner = () => {
                 and logistics to field services, food production, energy,
                 construction, local governments, and manufacturing.
               </p>
-              <a href="#" className="partner_btn">
+              <Link to="#" className="partner_btn">
                 Visit Our Partner
-              </a>
+              </Link>
             </div>
             <div className="col-md-6 col-xs-12 about_partner drop-right">
               <img src="img/KeepTrucking.png" />
@@ -45,9 +45,9 @@ const Partner = () => {
                 online and fundamentally changing the way freight is moved on our
                 roads.
               </p>
-              <a href="#" className="partner_btn">
+              <Link to="#" className="partner_btn">
                 Visit Our Partner
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -61,9 +61,9 @@ const Partner = () => {
                 solutions.Enables Isovia to deliver real-time vehicle and asset
                 tracking.
               </p>
-              <a href="#" className="partner_btn">
+              <Link to="#" className="partner_btn">
                 Visit Our Partner
-              </a>
+              </Link>
             </div>
             <div className="col-md-6 col-xs-12 about_partner drop-right">
               <img src="img/downloadg.png" />
@@ -74,9 +74,9 @@ const Partner = () => {
                 Isovia’s platform. FMCSA (Federal Motor Carrier Safety
                 Administration)
               </p>
-              <a href="#" className="partner_btn">
+              <Link to="#" className="partner_btn">
                 Visit Our Partner
-              </a>
+              </Link>
             </div>
           </div>
         </div>

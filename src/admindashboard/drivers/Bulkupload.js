@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import {Link } from 'react-router-dom';
 
 
 const Bulkuploaddriver = () => {
@@ -92,22 +93,22 @@ const Bulkuploaddriver = () => {
             📂 Example Templates
           </p>
           <div className="d-flex justify-content-center gap-2">
-            <a
-              href="/drivers_import_templateCSV.csv"
+            <Link
+              to="/drivers_import_templateCSV.csv"
               download
               className="btn btn-sm btn-outline-light"
               style={{ borderRadius: "8px" }}
             >
               <i className="bi bi-filetype-csv me-1"></i>CSV
-            </a>
-            <a
-              href="/drivers_import_template.xlsx"
+            </Link>
+            <Link
+              to="/drivers_import_template.xlsx"
               download
               className="btn btn-sm btn-outline-light"
               style={{ borderRadius: "8px" }}
             >
               <i className="bi bi-filetype-xlsx me-1"></i>XLSX
-            </a>
+            </Link>
           </div>
         </div>
 

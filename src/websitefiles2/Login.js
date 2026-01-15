@@ -51,9 +51,9 @@ const handleonSubmit = (e) => {
     <div className="row">
       <div className="col-md-6 col-xs-12 login-box">
         <div className="login-logo">
-          <a href="">
+          <Link to="">
             <b>Login</b>
-          </a>
+          </Link>
         </div>
         <div className="login-box-body">
           <p className="login-box-msg">Sign in to start your session</p>
@@ -104,7 +104,7 @@ const handleonSubmit = (e) => {
                 >
                   Sign In
                 </button>
-                <a href="">Forgot Password</a>
+                <Link to="">Forgot Password</Link>
               </div>
             </div>
           </form>
@@ -116,9 +116,9 @@ const handleonSubmit = (e) => {
 
     {/* <div className="login-box">
     <div className="login-logo">
-      <a href="">
+      <Link to="">
         <b>Login</b>
-      </a>
+      </Link>
     </div>
 
     <div className="login-box-body">

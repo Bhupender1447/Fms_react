@@ -21,9 +21,9 @@ console.log(list)
         </h1>
         <ol className="breadcrumb">
           <li>
-            <a href="#">
+            <Link to="#">
               <i className="fa fa-dashboard" /> Home
-            </a>
+            </Link>
           </li>
           <li className="active">Orders</li>
         </ol>
@@ -100,20 +100,20 @@ console.log(list)
                               <td>{item.delivery_address}</td>
                               <td>
                                
-                                <a
+                                <Link
                                   target="_blank"
-                                  href={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
+                                  to={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
                                   className="btn btn-danger btn-xs"
                                 >
                                   Dispatch
-                                </a>
-                                <a
+                                </Link>
+                                <Link
                                   target="_blank"
-                                  href={`https://isovia.ca/fms_api/pdf/invoice_orders.php?id=${item.id}`}
+                                  to={`https://isovia.ca/fms_api/pdf/invoice_orders.php?id=${item.id}`}
                                   className="btn btn-warning btn-xs"
                                 >
                                   Invoice
-                                </a>
+                                </Link>
                               
                                 <Link to={{ pathname: '/tripdetails', state: { value: item } }}>
                 Go to Trip Details
@@ -135,11 +135,11 @@ console.log(list)
                       <div className="dataTables_paginate paging_simple_numbers" id="manageTable_paginate">
                         <ul className="pagination">
                           <li className="paginate_button previous disabled" id="manageTable_previous">
-                            <a href="#" aria-controls="manageTable" data-dt-idx={0} tabIndex={0}>Previous</a>
+                            <Link to="#" aria-controls="manageTable" data-dt-idx={0} tabIndex={0}>Previous</Link>
                           </li>
                           {/* Pagination buttons */}
                           <li className="paginate_button next" id="manageTable_next">
-                            <a href="#" aria-controls="manageTable" data-dt-idx={8} tabIndex={0}>Next</a>
+                            <Link to="#" aria-controls="manageTable" data-dt-idx={8} tabIndex={0}>Next</Link>
                           </li>
                         </ul>
                       </div>

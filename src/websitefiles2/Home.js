@@ -1,4 +1,4 @@
-import React from "react";
+import { Link } from 'react-router-dom';
 
 const Home = () => {
   return (
@@ -8,8 +8,8 @@ const Home = () => {
       <div className="row">
         <div className="col-md-6 col-sm-12 slider_content">
           <h2>ISOVIA INC. cloud based Freight Management System</h2>
-          <a href="about.html">READ MORE</a>
-          <a href="contact.html">GET A QUOTE</a>
+          <Link to="about.html">READ MORE</Link>
+          <Link to="contact.html">GET A QUOTE</Link>
         </div>
         <div className="col-md-6 col-sm-12 slider_image">
           <img src="img/firstimage.gif" />
@@ -33,14 +33,14 @@ const Home = () => {
       </div>
       <div className="row">
         <div className="col-md-12 buttons">
-          <a href="tel:+16472415999" className="call_us_button">
+          <Link to="tel:+16472415999" className="call_us_button">
             <i className="fa-solid fa-phone" />
             Call Us
-          </a>
-          <a href="contact.html" className="call_us_button">
+          </Link>
+          <Link to="contact.html" className="call_us_button">
             <i className="fas fa-arrow-right" aria-hidden="true" />
             Request a Quote
-          </a>
+          </Link>
         </div>
       </div>
     </div>
@@ -91,7 +91,7 @@ const Home = () => {
             cutting-edge, tailored solutions to meet today’s challenges and
             tomorrow’s opportunities.
           </p>
-          <a href="about.html">Know More about Us</a>
+          <Link to="about.html">Know More about Us</Link>
         </div>
         <div className=" col-md-6 industry_image">
           <img src="img/2truck.gif" />
@@ -114,7 +114,7 @@ const Home = () => {
                 and loads.
               </p>
               <h5 className="title white-color">
-                <a href="#">SEE MORE</a>
+                <Link to="#">SEE MORE</Link>
               </h5>
             </div>
           </div>
@@ -133,7 +133,7 @@ const Home = () => {
                 thier all tasks at one platform
               </p>
               <h5 className="title white-color">
-                <a href="#"> SEE MORE</a>
+                <Link to="#"> SEE MORE</Link>
               </h5>
             </div>
           </div>
@@ -148,7 +148,7 @@ const Home = () => {
                 Effectively manage your fuel through our real time fuel tracker
               </p>
               <h5 className="title white-color">
-                <a href="#">SEE MORE</a>
+                <Link to="#">SEE MORE</Link>
               </h5>
             </div>
           </div>
@@ -224,7 +224,7 @@ const Home = () => {
         <p className="contact_text drop-left">
           Complete the form below Or Call Us 24/7
           <br />
-          <a href="tel:+91 9876543210">+91 9876543210</a>
+          <Link to="tel:+91 9876543210">+91 9876543210</Link>
         </p>
       </div>
       <div className="row">

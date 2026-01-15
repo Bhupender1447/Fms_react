@@ -126,7 +126,7 @@ const Iftalisting = () => {
     };
 
     fetchExpenses();
-  }, []);
+  }, [api]);
 
   return (
     <div  className="content-wrapper" style={{ minHeight: 440 }}>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import {Link } from 'react-router-dom';
 
 const Createads = () => {
   // State management for form fields
@@ -49,9 +50,9 @@ const Createads = () => {
         </h1>
         <ol className="breadcrumb">
           <li>
-            <a href="../cpanel/">
+            <Link to="../cpanel/">
               <i className="fa fa-dashboard" /> Home
-            </a>
+            </Link>
           </li>
         </ol>
       </section>
@@ -219,9 +220,9 @@ const Createads = () => {
                   <button type="submit" className="btn btn-primary">
                     Save Changes
                   </button>
-                  <a href="/customers/" className="btn btn-warning">
+                  <Link to="/customers/" className="btn btn-warning">
                     Back
-                  </a>
+                  </Link>
                 </div>
               </form>
             </div>

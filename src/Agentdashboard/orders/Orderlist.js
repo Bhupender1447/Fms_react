@@ -35,7 +35,7 @@ const Orderlist = () => {
           <small>orders</small>
         </h1>
         <ol className="breadcrumb">
-          <li><a href="#"><i className="fa fa-dashboard"></i> Home</a></li>
+          <li><Link to="#"><i className="fa fa-dashboard"></i> Home</Link></li>
           <li className="active">Orders</li>
         </ol>
       </section>
@@ -119,20 +119,20 @@ const Orderlist = () => {
                               <td>{item.pickup_address}</td>
                               <td>{item.delivery_address}</td>
                               <td>
-                                <a
+                                <Link
                                   target="_blank"
-                                  href={`https://isovia.ca/fms_api/pdf/invoice.php?id=${item.id}`}
+                                  to={`https://isovia.ca/fms_api/pdf/invoice.php?id=${item.id}`}
                                   className="btn btn-danger btn-sm"
                                 >
                                   Confirmation
-                                </a>
-                                <a
+                                </Link>
+                                <Link
                                   target="_blank"
-                                  href={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
+                                  to={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
                                   className="btn btn-warning btn-xs"
                                 >
                                   Invoice
-                                </a>
+                                </Link>
                                 <Link
                                   to={"/agentupdate/"+item.id}
                                   className="btn btn-default btn-sm"

@@ -1,5 +1,5 @@
-import React from 'react'
-
+/* eslint-disable jsx-a11y/no-redundant-roles */
+import { Link } from "react-router-dom";
 const Userinfoset = () => {
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
@@ -11,9 +11,9 @@ const Userinfoset = () => {
       </h1>
       <ol className="breadcrumb">
         <li>
-          <a href="#">
+          <Link to="#">
             <i className="fa fa-dashboard" /> Home
-          </a>
+          </Link>
         </li>
         <li className="active">Setting</li>
       </ol>
@@ -158,12 +158,12 @@ const Userinfoset = () => {
                 <button type="submit" className="btn btn-primary">
                   Save Changes
                 </button>
-                <a
-                  href="https://isovia.ca/fms/users/"
+                <Link
+                  to="https://isovia.ca/fms/users/"
                   className="btn btn-warning"
                 >
                   Back
-                </a>
+                </Link>
               </div>
             </form>
           </div>

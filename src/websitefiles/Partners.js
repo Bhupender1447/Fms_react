@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom';
 
 const Partners = () => {
   return (
@@ -27,9 +28,9 @@ const Partners = () => {
             logistics to field services, food production, energy, construction,
             local governments, and manufacturing.
           </p>
-          <a href="#" className="btn btn-outline-light px-4">
+          <Link to="#" className="btn btn-outline-light px-4">
             Visit Our Partner
-          </a>
+          </Link>
         </div>
       </div>
       {/* Motive */}
@@ -48,9 +49,9 @@ const Partners = () => {
             leading fleet management platform, we are bringing trucks online and
             fundamentally changing the way freight is moved on our roads.
           </p>
-          <a href="#" className="btn btn-outline-light px-4">
+          <Link to="#" className="btn btn-outline-light px-4">
             Visit Our Partner
-          </a>
+          </Link>
         </div>
       </div>
       {/* Trimble */}
@@ -69,9 +70,9 @@ const Partners = () => {
             solutions.Enables Isovia to deliver real-time vehicle and asset
             tracking.
           </p>
-          <a href="#" className="btn btn-outline-light px-4">
+          <Link to="#" className="btn btn-outline-light px-4">
             Visit Our Partner
-          </a>
+          </Link>
         </div>
       </div>
       {/* Google */}
@@ -87,9 +88,9 @@ const Partners = () => {
             solutions.Enables Isovia to deliver real-time vehicle and asset
             tracking.
           </p>
-          <a href="#" className="btn btn-outline-light px-4">
+          <Link to="#" className="btn btn-outline-light px-4">
             Visit Our Partner
-          </a>
+          </Link>
         </div>
       </div>
     </div>

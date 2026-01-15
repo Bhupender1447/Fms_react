@@ -57,7 +57,8 @@ const Expense = () => {
     }
   };
 
-  const fetchExpenses = async () => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps, no-undef
+  const fetchExpenses = useCallback(async () => {
     try {
       const res = await axios.get('https://isovia.ca/fms_api/api/getExpense', {
         headers: { Cookie: cookie },
@@ -78,7 +79,7 @@ const Expense = () => {
     } catch (err) {
       console.error('Error fetching expenses', err);
     }
-  };
+  });
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this expense?')) return;
@@ -183,7 +184,7 @@ const Expense = () => {
     if (drivers.length > 0 && trips.length > 0) {
       fetchExpenses();
     }
-  }, [drivers, trips]);
+  }, [drivers, fetchExpenses, trips]);
 
   // Chart Data
   const getChartData = () => {

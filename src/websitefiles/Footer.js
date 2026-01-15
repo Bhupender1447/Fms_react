@@ -1,4 +1,5 @@
-import React from 'react'
+
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
@@ -11,9 +12,9 @@ const Footer = () => {
           <div className="row">
             <div className="col-lg-4 col-md-4 col-sm-12 ">
               <div className="logo-footer">
-                <a href="#">
+                <Link to="#">
                   <img src="images/logo.png" alt="" />{" "}
-                </a>
+                </Link>
               </div>
             </div>
             <div className="col-lg-8 col-md-8 col-sm-12 ">
@@ -33,19 +34,19 @@ const Footer = () => {
                     <div className="social-media-links">
                       <ul className="social-links">
                         <li>
-                          <a href="#">
+                          <Link to="#">
                             <i className="fa-brands fa-facebook-f" />
-                          </a>
+                          </Link>
                         </li>
                         <li>
-                          <a href="#">
+                          <Link to="#">
                             <i className="fa-brands fa-instagram" />
-                          </a>
+                          </Link>
                         </li>
                         <li>
-                          <a href="#">
+                          <Link to="#">
                             <i className="fa-brands fa-linkedin-in" />
-                          </a>
+                          </Link>
                         </li>
                       </ul>
                     </div>
@@ -53,14 +54,14 @@ const Footer = () => {
                       <div className="software-links-list ">
                         <ul className="list-software">
                           <h4>Softwares</h4>
-                          <a href="#">
+                          <Link to="#">
                             <li className="software-1">
                               Isovia Freight Management System
                             </li>
-                          </a>
-                          <a href="#">
+                          </Link>
+                          <Link to="#">
                             <li>Isovia Fleet Management System</li>
-                          </a>
+                          </Link>
                         </ul>
                       </div>
                     </div>
@@ -73,19 +74,19 @@ const Footer = () => {
           <div className="navigation-icons">
             <ul className="list-navigation">
               <li className="navigation-footer">
-                <a href="#">Home</a>
+                <Link to="#">Home</Link>
               </li>
               <li className="navigation-footer">
-                <a href="#">About</a>
+                <Link to="#">About</Link>
               </li>
               <li className="navigation-footer">
-                <a href="#">Login</a>
+                <Link to="#">Login</Link>
               </li>
               <li className="navigation-footer">
-                <a href="#">Register</a>
+                <Link to="#">Register</Link>
               </li>
               <li className="navigation-footer">
-                <a href="#">Contact Us</a>
+                <Link to="#">Contact Us</Link>
               </li>
             </ul>
             <span className="footer-copyright">

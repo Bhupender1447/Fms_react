@@ -16,7 +16,7 @@ const Orders = () => {
       <small>orders</small>
     </h1>
     <ol className="breadcrumb">
-      <li><a href="#"><i className="fa fa-dashboard"></i> Home</a></li>
+      <li><Link to="#"><i className="fa fa-dashboard"></i> Home</Link></li>
       <li className="active">Orders</li>
     </ol>
   </section>
@@ -28,7 +28,7 @@ const Orders = () => {
       <Link to={"/createorder"} className="btn btn-primary">
         Add orders
       </Link>
-      {/*        <a href="" className="btn btn-success">View Motors</a> */}
+      {/*        <Link to="" className="btn btn-success">View Motors</Link> */}
       <br /> <br />
       <div className="box">
         <div className="box-header">
@@ -165,20 +165,20 @@ const Orders = () => {
                        {item.delivery_address}
                       </td>
                       <td>
-                        <a
+                        <Link
                           target="_blank"
-                          href="/pdf/invoice.php?id=30"
+                          to="/pdf/invoice.php?id=30"
                           className="btn btn-danger btn-sm"
                         >
                           Confirmation
-                        </a>
-                        <a
+                        </Link>
+                        <Link
                           target="_blank"
-                          href="/pdf/invoice_orders.php?id=30"
+                          to="/pdf/invoice_orders.php?id=30"
                           className="btn btn-warning btn-xs"
                         >
                           Invoice
-                        </a>
+                        </Link>
                         <Link
                           to={"/update/"+item.id}
                           className="btn btn-default btn-sm"
@@ -228,37 +228,37 @@ const Orders = () => {
                       className="paginate_button previous disabled"
                       id="manageTable_previous"
                     >
-                      <a
-                        href="#"
+                      <Link
+                        to="#"
                         aria-controls="manageTable"
                         data-dt-idx={0}
                         tabIndex={0}
                       >
                         Previous
-                      </a>
+                      </Link>
                     </li>
                     <li className="paginate_button active">
-                      <a
-                        href="#"
+                      <Link
+                        to="#"
                         aria-controls="manageTable"
                         data-dt-idx={1}
                         tabIndex={0}
                       >
                         1
-                      </a>
+                      </Link>
                     </li>
                     <li
                       className="paginate_button next disabled"
                       id="manageTable_next"
                     >
-                      <a
-                        href="#"
+                      <Link
+                        to="#"
                         aria-controls="manageTable"
                         data-dt-idx={2}
                         tabIndex={0}
                       >
                         Next
-                      </a>
+                      </Link>
                     </li>
                   </ul>
                 </div>

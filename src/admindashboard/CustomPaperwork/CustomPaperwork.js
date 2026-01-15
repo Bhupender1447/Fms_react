@@ -148,37 +148,7 @@ console.log(formData);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this document?")) return;
-    try {
-      const res = await fetch("https://isovia.ca/fms_api/api/deleteCustompaper", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      const data = await res.json();
-      if (data.status === "success") {
-        alert(data.message);
-        fetchPaperworks();
-      } else alert(data.message);
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
-  const handleEdit = (doc) => {
-    setFormData({
-      id: doc.id,
-      driver_id: doc.driver_id,
-      broker_id: doc.broker_id,
-      forward_date: doc.forward_date,
-      upload_date: doc.upload_date,
-      user_id: doc.user_id,
-      custom_paper: null,
-    });
-    setIsUpdate(true);
-    setShowModal(true);
-  };
 
   return (
     <div  className="content-wrapper" style={{ minHeight: 440 }}>

@@ -31,7 +31,6 @@ import Fleets from "./admindashboard/fleets/Fleets";
 import Createfleets from "./admindashboard/fleets/Create";
 import Employees from "./admindashboard/employees/Employees";
 import Createemployees from "./admindashboard/employees/Create";
-import Assign from "./admindashboard/order/Assign";
 import Update from "./admindashboard/order/Update";
 import Vendors from "./admindashboard/vendors/Vendors";
 import Createvendors from "./admindashboard/vendors/Create";
@@ -131,7 +130,7 @@ import TripViewer from "./admindashboard/trips/TripViewer";
 import SplitRoutes from "./admindashboard/trips/Splitetrip";
 import Driverpaylist from "./admindashboard/accounting/Driverpaylist";
 import NetIncomeTable from "./admindashboard/accounting/NetIncomeTable";
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import TripRecalculateForm from "./Driverdashboard/trips/TripRecalculateForm";
 import TripStatusForm from "./Driverdashboard/trips/TripStatusForm";
@@ -200,7 +199,7 @@ import AddAdditionalStop from "./admindashboard/trips/AddAdditionalStop";
 
 function App() {
 
-  const [currentPageUrl, setCurrentPageUrl] = useState("");
+  const [, setCurrentPageUrl] = useState("");
   let location = useLocation();
   useEffect(() => {
     setCurrentPageUrl(location.pathname);

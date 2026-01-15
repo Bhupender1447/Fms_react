@@ -11,9 +11,9 @@ const Update = () => {
       </h1>
       <ol className="breadcrumb">
         <li>
-          <a href="#">
+          <Link to="#">
             <i className="fa fa-dashboard" /> Home
-          </a>
+          </Link>
         </li>
         <li className="active">Orders</li>
       </ol>
@@ -654,12 +654,12 @@ const Update = () => {
                 <div className="col-md-4 col-xs-12 pull pull-left">
                   <div className="form-group">
                     <label htmlFor="username">Add Locations</label>
-                    <a
-                      href="/locations/create"
+                    <Link
+                      to="/locations/create"
                       className="btn btn-warning"
                     >
                       Add{" "}
-                    </a>
+                    </Link>
                   </div>
                 </div>
                 <div className="col-md-12 col-xs-12 pull pull-left">
@@ -1062,9 +1062,9 @@ const Update = () => {
         <button type="submit" className="btn btn-primary">
           Save
         </button>
-        <a href="/orders/" className="btn btn-warning">
+        <Link to="/orders/" className="btn btn-warning">
           Back
-        </a>
+        </Link>
       </div>
     </section>
   </div>

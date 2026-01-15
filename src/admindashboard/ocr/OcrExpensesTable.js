@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import {Link } from 'react-router-dom';
+
 
 const OcrExpensesTable = () => {
   const [data, setData] = useState([]);
@@ -110,13 +112,13 @@ const OcrExpensesTable = () => {
                   <td>{row.amount}</td>
                   <td>{row.ocr_json?.invoice?.mileage || "-"}</td>
                   <td>
-                    <a
-                      href={`https://isovia.ca/fms_api/${row.file_path}`}
+                    <Link
+                      to={`https://isovia.ca/fms_api/${row.file_path}`}
                       target="_blank"
                       rel="noreferrer"
                     >
                       View
-                    </a>
+                    </Link>
                   </td>
                 </tr>
               ))

@@ -1,4 +1,9 @@
+/* eslint-disable jsx-a11y/iframe-has-title */
+/* eslint-disable react/jsx-no-comment-textnodes */
+/* eslint-disable jsx-a11y/no-redundant-roles */
 import React, { useState } from 'react'
+import {Link } from 'react-router-dom';
+
 
 const Createeqptypes = () => {
 
@@ -46,9 +51,9 @@ const Createeqptypes = () => {
       </h1>
       <ol className="breadcrumb">
         <li>
-          <a href="../cpanel/">
+          <Link to="../cpanel/">
             <i className="fa fa-dashboard" /> Home
-          </a>
+          </Link>
         </li>
       </ol>
     </section>
@@ -100,193 +105,193 @@ const Createeqptypes = () => {
                       <label htmlFor="description">Remarks</label>
                       <ul className="wysihtml5-toolbar" style={{}}>
                         <li className="dropdown">
-                          <a
+                          <Link
                             className="btn btn-default dropdown-toggle "
                             data-toggle="dropdown"
                           >
                             <span className="glyphicon glyphicon-font" />
                             <span className="current-font">Normal text</span>
                             <b className="caret" />
-                          </a>
+                          </Link>
                           <ul className="dropdown-menu">
                             <li>
-                              <a
+                              <Link
                                 data-wysihtml5-command="formatBlock"
                                 data-wysihtml5-command-value="p"
                                 tabIndex={-1}
-                                href="javascript:;"
+                                to="#"
                                 unselectable="on"
                               >
                                 Normal text
-                              </a>
+                              </Link>
                             </li>
                             <li>
-                              <a
+                              <Link
                                 data-wysihtml5-command="formatBlock"
                                 data-wysihtml5-command-value="h1"
                                 tabIndex={-1}
-                                href="javascript:;"
+                                to="#"
                                 unselectable="on"
                               >
                                 Heading 1
-                              </a>
+                              </Link>
                             </li>
                             <li>
-                              <a
+                              <Link
                                 data-wysihtml5-command="formatBlock"
                                 data-wysihtml5-command-value="h2"
                                 tabIndex={-1}
-                                href="javascript:;"
+                                to="#"
                                 unselectable="on"
                               >
                                 Heading 2
-                              </a>
+                              </Link>
                             </li>
                             <li>
-                              <a
+                              <Link
                                 data-wysihtml5-command="formatBlock"
                                 data-wysihtml5-command-value="h3"
                                 tabIndex={-1}
-                                href="javascript:;"
+                                to="#"
                                 unselectable="on"
                               >
                                 Heading 3
-                              </a>
+                              </Link>
                             </li>
                             <li>
-                              <a
+                              <Link
                                 data-wysihtml5-command="formatBlock"
                                 data-wysihtml5-command-value="h4"
                                 tabIndex={-1}
-                                href="javascript:;"
+                                to="#"
                                 unselectable="on"
                               >
                                 Heading 4
-                              </a>
+                              </Link>
                             </li>
                             <li>
-                              <a
+                              <Link
                                 data-wysihtml5-command="formatBlock"
                                 data-wysihtml5-command-value="h5"
                                 tabIndex={-1}
-                                href="javascript:;"
+                                to="#"
                                 unselectable="on"
                               >
                                 Heading 5
-                              </a>
+                              </Link>
                             </li>
                             <li>
-                              <a
+                              <Link
                                 data-wysihtml5-command="formatBlock"
                                 data-wysihtml5-command-value="h6"
                                 tabIndex={-1}
-                                href="javascript:;"
+                                to="#"
                                 unselectable="on"
                               >
                                 Heading 6
-                              </a>
+                              </Link>
                             </li>
                           </ul>
                         </li>
                         <li>
                           <div className="btn-group">
-                            <a
+                            <Link
                               className="btn  btn-default"
                               data-wysihtml5-command="bold"
                               title="CTRL+B"
                               tabIndex={-1}
-                              href="javascript:;"
+                              to="#"
                               unselectable="on"
                             >
                               Bold
-                            </a>
-                            <a
+                            </Link>
+                            <Link
                               className="btn  btn-default"
                               data-wysihtml5-command="italic"
                               title="CTRL+I"
                               tabIndex={-1}
-                              href="javascript:;"
+                              to="#"
                               unselectable="on"
                             >
                               Italic
-                            </a>
-                            <a
+                            </Link>
+                            <Link
                               className="btn  btn-default"
                               data-wysihtml5-command="underline"
                               title="CTRL+U"
                               tabIndex={-1}
-                              href="javascript:;"
+                              to="#"
                               unselectable="on"
                             >
                               Underline
-                            </a>
-                            <a
+                            </Link>
+                            <Link
                               className="btn  btn-default"
                               data-wysihtml5-command="small"
                               title="CTRL+S"
                               tabIndex={-1}
-                              href="javascript:;"
+                              to="#"
                               unselectable="on"
                             >
                               Small
-                            </a>
+                            </Link>
                           </div>
                         </li>
                         <li>
-                          <a
+                          <Link
                             className="btn  btn-default"
                             data-wysihtml5-command="formatBlock"
                             data-wysihtml5-command-value="blockquote"
                             data-wysihtml5-display-format-name="false"
                             tabIndex={-1}
-                            href="javascript:;"
+                            to="#"
                             unselectable="on"
                           >
                             <span className="glyphicon glyphicon-quote" />
-                          </a>
+                          </Link>
                         </li>
                         <li>
                           <div className="btn-group">
-                            <a
+                            <Link
                               className="btn  btn-default"
                               data-wysihtml5-command="insertUnorderedList"
                               title="Unordered list"
                               tabIndex={-1}
-                              href="javascript:;"
+                              to="#"
                               unselectable="on"
                             >
                               <span className="glyphicon glyphicon-list" />
-                            </a>
-                            <a
+                            </Link>
+                            <Link
                               className="btn  btn-default"
                               data-wysihtml5-command="insertOrderedList"
                               title="Ordered list"
                               tabIndex={-1}
-                              href="javascript:;"
+                              to="#"
                               unselectable="on"
                             >
                               <span className="glyphicon glyphicon-th-list" />
-                            </a>
-                            <a
+                            </Link>
+                            <Link
                               className="btn  btn-default"
                               data-wysihtml5-command="Outdent"
                               title="Outdent"
                               tabIndex={-1}
-                              href="javascript:;"
+                              to="#"
                               unselectable="on"
                             >
                               <span className="glyphicon glyphicon-indent-right" />
-                            </a>
-                            <a
+                            </Link>
+                            <Link
                               className="btn  btn-default"
                               data-wysihtml5-command="Indent"
                               title="Indent"
                               tabIndex={-1}
-                              href="javascript:;"
+                              to="#"
                               unselectable="on"
                             >
                               <span className="glyphicon glyphicon-indent-left" />
-                            </a>
+                            </Link>
                           </div>
                         </li>
                         <li>
@@ -297,9 +302,9 @@ const Createeqptypes = () => {
                             <div className="modal-dialog ">
                               <div className="modal-content">
                                 <div className="modal-header">
-                                  <a className="close" data-dismiss="modal">
+                                  <Link className="close" data-dismiss="modal">
                                     ×
-                                  </a>
+                                  </Link>
                                   <h3>Insert link</h3>
                                 </div>
                                 <div className="modal-body">
@@ -307,7 +312,7 @@ const Createeqptypes = () => {
                                     <input
                                       defaultValue="http://"
                                       className="bootstrap-wysihtml5-insert-link-url form-control"
-                                      data-wysihtml5-dialog-field="href"
+                                      data-wysihtml5-dialog-field="to"
                                     />
                                   </div>
                                   <div className="checkbox">
@@ -322,36 +327,36 @@ const Createeqptypes = () => {
                                   </div>
                                 </div>
                                 <div className="modal-footer">
-                                  <a
+                                  <Link
                                     className="btn btn-default"
                                     data-dismiss="modal"
                                     data-wysihtml5-dialog-action="cancel"
-                                    href="#"
+                                    to="#"
                                   >
                                     Cancel
-                                  </a>
-                                  <a
-                                    href="#"
+                                  </Link>
+                                  <Link
+                                    to="#"
                                     className="btn btn-primary"
                                     data-dismiss="modal"
                                     data-wysihtml5-dialog-action="save"
                                   >
                                     Insert link
-                                  </a>
+                                  </Link>
                                 </div>
                               </div>
                             </div>
                           </div>
-                          <a
+                          <Link
                             className="btn  btn-default"
                             data-wysihtml5-command="createLink"
                             title="Insert link"
                             tabIndex={-1}
-                            href="javascript:;"
+                            to="#"
                             unselectable="on"
                           >
                             <span className="glyphicon glyphicon-share" />
-                          </a>
+                          </Link>
                         </li>
                         <li>
                           <div
@@ -361,9 +366,9 @@ const Createeqptypes = () => {
                             <div className="modal-dialog ">
                               <div className="modal-content">
                                 <div className="modal-header">
-                                  <a className="close" data-dismiss="modal">
+                                  <Link className="close" data-dismiss="modal">
                                     ×
-                                  </a>
+                                  </Link>
                                   <h3>Insert image</h3>
                                 </div>
                                 <div className="modal-body">
@@ -376,36 +381,36 @@ const Createeqptypes = () => {
                                   </div>
                                 </div>
                                 <div className="modal-footer">
-                                  <a
+                                  <Link
                                     className="btn btn-default"
                                     data-dismiss="modal"
                                     data-wysihtml5-dialog-action="cancel"
-                                    href="#"
+                                    to="#"
                                   >
                                     Cancel
-                                  </a>
-                                  <a
+                                  </Link>
+                                  <Link
                                     className="btn btn-primary"
                                     data-dismiss="modal"
                                     data-wysihtml5-dialog-action="save"
-                                    href="#"
+                                    to="#"
                                   >
                                     Insert image
-                                  </a>
+                                  </Link>
                                 </div>
                               </div>
                             </div>
                           </div>
-                          <a
+                          <Link
                             className="btn  btn-default"
                             data-wysihtml5-command="insertImage"
                             title="Insert image"
                             tabIndex={-1}
-                            href="javascript:;"
+                            to="#"
                             unselectable="on"
                           >
                             <span className="glyphicon glyphicon-picture" />
-                          </a>
+                          </Link>
                         </li>
                       </ul>
                       <textarea
@@ -478,12 +483,12 @@ const Createeqptypes = () => {
                 <button type="submit" className="btn btn-primary">
                   Save Changes
                 </button>
-                <a
-                  href="/customers/"
+                <Link
+                  to="/customers/"
                   className="btn btn-warning"
                 >
                   Back
-                </a>
+                </Link>
               </div>
             </form>
             {/* /.box-body */}

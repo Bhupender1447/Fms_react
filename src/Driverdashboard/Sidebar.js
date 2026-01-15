@@ -9,13 +9,14 @@ useEffect(()=>{
  // Check if login data exists in local storage
  const loginData = JSON.parse(localStorage.getItem("logindetail"));
 
+ // eslint-disable-next-line eqeqeq
  if (loginData&&loginData.role=='driver') {
    
  } else {
      // No data, redirect to login page
      navigate('/login');
  }
-},[update])
+},[navigate, update])
 
 
 let logout=()=>{
@@ -31,9 +32,9 @@ let logout=()=>{
     <ul className="sidebar-menu tree" data-widget="tree">
       {/*
   <li  className="nav-item" id="dashboardMainMenu">
-    <a href="/dashboard">
+    <Link to="/dashboard">
       <i class="fa fa-dashboard"></i> <span>Dashboard</span>
-    </a>
+    </Link>
   </li>
   */}
        <li  className="nav-item" id="manageOrderSubMenu">
@@ -82,9 +83,9 @@ let logout=()=>{
             </Link>
           </li>
           <li>
-        <a onClick={logout}>
+        <Link onClick={logout}>
           <i className="glyphicon glyphicon-log-out" /> <span>Logout</span>
-        </a>
+        </Link>
       </li>
     </ul>
 

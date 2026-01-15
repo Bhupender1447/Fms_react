@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom';
 
 const IsoviaFreightManagementSystem2 = () => {
   return (
@@ -10,10 +11,10 @@ const IsoviaFreightManagementSystem2 = () => {
           <h2>Isovia Fleet Management System</h2>
         </div>
         <div className="scrol-down-button">
-          <a href="#">
+          <Link to="#">
             <span> Scroll Down </span>
             <i className="fa-solid fa-angles-down" />
-          </a>
+          </Link>
         </div>
       </div>
     </div>
@@ -39,61 +40,61 @@ const IsoviaFreightManagementSystem2 = () => {
           <div className="key-points-section-textarea">
             <div className="key-points-section-textarea-title">
               <ul className="list-keypoints-software">
-                <a href="#">
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Enhanced Fleet Oversight:</span>
                     Promote real-time GPS tracking and monitoring features.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Driver Safety Focus:</span>
                     Emphasize driver performance tracking and safety warnings.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Cost Control:</span>Highlight fuel tracking,
                     maintenance scheduling, and payroll automation for reduced
                     operational costs.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Proactive Maintenance:</span>Stress the importance of
                     reduced downtime with predictive servicing.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Regulatory Adherence:</span> Simplify compliance with
                     FMCSA and other industry regulations.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Customizable Dashboards:</span>Showcase the ease of
                     generating actionable insights through analytics.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Accounts and Payroll:</span>
                     Integrate financial tools to reduce administrative overhead.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Partnership Ecosystem:</span>Underscore compatibility
                     with industry-standard platforms like Samsara and GoMotive.
                   </li>
-                </a>
-                <a href="#">
+                </Link>
+                <Link to="#">
                   <li className="list-software-item-1">
                     <span>Scalable for Growth:</span>Market the product’s
                     ability to grow with businesses of any size.
                   </li>
-                </a>
+                </Link>
               </ul>
             </div>
           </div>

@@ -11,9 +11,9 @@ const Assign = () => {
       </h1>
       <ol className="breadcrumb">
         <li>
-          <a href="#">
+          <Link to="#">
             <i className="fa fa-dashboard" /> Home
-          </a>
+          </Link>
         </li>
         <li className="active">Crriers</li>
       </ol>
@@ -315,9 +315,9 @@ const Assign = () => {
                 <button type="submit" className="btn btn-primary">
                   Confirm Order
                 </button>
-                <a href="/trips/" className="btn btn-warning">
+                <Link to="/trips/" className="btn btn-warning">
                   Cancel Order
-                </a>
+                </Link>
               </div>
             </form>
             {/* /.box-body */}

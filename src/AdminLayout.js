@@ -107,7 +107,7 @@ const AdminLayout = ({ children }) => {
 
     return () => {
       cssLinks.forEach((href) => {
-        const link = document.querySelector(`link[href="${href}"]`);
+        const link = document.querySelector(`link[to="${href}"]`);
         if (link) link.remove();
       });
     };

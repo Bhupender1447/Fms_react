@@ -1,9 +1,8 @@
+/* eslint-disable react/jsx-no-undef */
 // components/Dashboard.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import RevenueExpenses from './RevenueExpenses';
-import AccountsPayableReceivable from './AccountsPayableReceivable';
-import PayrollManagement from './PayrollManagement';
 import NetIncomeChart from './NetIncomeChart';
 import PayrollChart from './PayrollChart';
 

@@ -1,7 +1,7 @@
-import axios from 'axios';
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import ReactPaginate from 'react-paginate';
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import ReactPaginate from "react-paginate";
 
 const Triplist = () => {
   const [list, setList] = useState([]);
@@ -9,11 +9,12 @@ const Triplist = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/tipsfetchProductData/1')
-      .then(res => setList(res.data))
-      .catch(err => console.log(err));
+    axios
+      .get("https://isovia.ca/fms_api/api/tipsfetchProductData/1")
+      .then((res) => setList(res.data))
+      .catch((err) => console.log(err));
   }, []);
-console.log(list)
+  console.log(list);
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
   };
@@ -28,7 +29,7 @@ console.log(list)
   const pageCount = Math.ceil(list.length / itemsPerPage);
 
   return (
-    <div className='content-wrapper'>
+    <div className="content-wrapper">
       <section className="content-header">
         <h1>
           Manage
@@ -36,9 +37,9 @@ console.log(list)
         </h1>
         <ol className="breadcrumb">
           <li>
-            <a href="#">
+            <Link to="#">
               <i className="fa fa-dashboard" /> Home
-            </a>
+            </Link>
           </li>
           <li className="active">Orders</li>
         </ol>
@@ -54,10 +55,16 @@ console.log(list)
                 <h3 className="box-title">Manage trips</h3>
               </div>
               <div className="box-body">
-                <div id="manageTable_wrapper" className="dataTables_wrapper form-inline dt-bootstrap no-footer">
+                <div
+                  id="manageTable_wrapper"
+                  className="dataTables_wrapper form-inline dt-bootstrap no-footer"
+                >
                   <div className="row">
                     <div className="col-sm-6">
-                      <div className="dataTables_length" id="manageTable_length">
+                      <div
+                        className="dataTables_length"
+                        id="manageTable_length"
+                      >
                         <label>
                           Show{" "}
                           <select
@@ -77,7 +84,10 @@ console.log(list)
                       </div>
                     </div>
                     <div className="col-sm-6">
-                      <div id="manageTable_filter" className="dataTables_filter">
+                      <div
+                        id="manageTable_filter"
+                        className="dataTables_filter"
+                      >
                         <label>
                           Search:
                           <input
@@ -110,7 +120,11 @@ console.log(list)
                         </thead>
                         <tbody>
                           {currentItems.map((item, index) => (
-                            <tr role="row" key={index} className={index % 2 === 0 ? 'even' : 'odd'}>
+                            <tr
+                              role="row"
+                              key={index}
+                              className={index % 2 === 0 ? "even" : "odd"}
+                            >
                               <td>{item.customer_orderno}</td>
                               <td>{item.company}</td>
                               <td>{item.pickup_address}</td>
@@ -127,46 +141,52 @@ console.log(list)
                                 >
                                   Split
                                 </Link>
-                                <Link to={`/trips/update/${item.id}`} className="btn btn-default btn-xs">
+                                <Link
+                                  to={`/trips/update/${item.id}`}
+                                  className="btn btn-default btn-xs"
+                                >
                                   <i className="fa fa-pencil" />
                                 </Link>
-                                <a
+                                <Link
                                   target="_blank"
-                                  href={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
+                                  to={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
                                   className="btn btn-danger btn-xs"
                                 >
                                   Dispatch
-                                </a>
-                                {item.tmsTriptId&&<Link to={`/tripviewer/${item.tmsTriptId}`} className="btn btn-default btn-xs">
-                                  Map
-                                </Link>}
-                                <a
+                                </Link>
+                                {item.tmsTriptId && (
+                                  <Link
+                                    to={`/tripviewer/${item.tmsTriptId}`}
+                                    className="btn btn-default btn-xs"
+                                  >
+                                    Map
+                                  </Link>
+                                )}
+                                <Link
                                   target="_blank"
-                                  href={`https://isovia.ca/fms_api/pdf/invoice_orders.php?id=${item.id}`}
+                                  to={`https://isovia.ca/fms_api/pdf/invoice_orders.php?id=${item.id}`}
                                   className="btn btn-warning btn-xs"
                                 >
                                   Invoice
-                                </a>
+                                </Link>
                                 <Link
                                   to={`/trips/assign/${item.id}`}
                                   className="btn btn-success btn-xs"
                                 >
                                   Logistics
                                 </Link>
-                                                            <Link
-                              to={`/trips/split/${item.id}`}
-                              className="btn btn-xs btn-warning"
-                            >
-                              Split Trip
-                            </Link>
-                            <Link
-                            to={`/trips/add-stop/${item.id}`}
-                            className="btn btn-xs btn-info"
-                          >
-                            Add Stop
-                          </Link>
-
-
+                                <Link
+                                  to={`/trips/split/${item.id}`}
+                                  className="btn btn-xs btn-warning"
+                                >
+                                  Split Trip
+                                </Link>
+                                <Link
+                                  to={`/trips/add-stop/${item.id}`}
+                                  className="btn btn-xs btn-info"
+                                >
+                                  Add Stop
+                                </Link>
                               </td>
                             </tr>
                           ))}
@@ -176,23 +196,30 @@ console.log(list)
                   </div>
                   <div className="row">
                     <div className="col-sm-5">
-                      <div className="dataTables_info" id="manageTable_info" role="status" aria-live="polite">
-                        Showing {offset + 1} to {Math.min(offset + itemsPerPage, list.length)} of {list.length} entries
+                      <div
+                        className="dataTables_info"
+                        id="manageTable_info"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        Showing {offset + 1} to{" "}
+                        {Math.min(offset + itemsPerPage, list.length)} of{" "}
+                        {list.length} entries
                       </div>
                     </div>
                     <div className="col-sm-7">
                       <ReactPaginate
-                        previousLabel={'Previous'}
-                        nextLabel={'Next'}
-                        breakLabel={'...'}
-                        breakClassName={'break-me'}
+                        previousLabel={"Previous"}
+                        nextLabel={"Next"}
+                        breakLabel={"..."}
+                        breakClassName={"break-me"}
                         pageCount={pageCount}
                         marginPagesDisplayed={2}
                         pageRangeDisplayed={5}
                         onPageChange={handlePageClick}
-                        containerClassName={'pagination'}
-                        subContainerClassName={'pages pagination'}
-                        activeClassName={'active'}
+                        containerClassName={"pagination"}
+                        subContainerClassName={"pages pagination"}
+                        activeClassName={"active"}
                       />
                     </div>
                   </div>
@@ -208,6 +235,6 @@ console.log(list)
       </section>
     </div>
   );
-}
+};
 
 export default Triplist;

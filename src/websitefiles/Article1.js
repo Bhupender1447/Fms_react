@@ -1,4 +1,4 @@
-import React from 'react'
+import { Link } from 'react-router-dom';
 
 const Article1 = () => {
   return (
@@ -75,7 +75,7 @@ const Article1 = () => {
             </div>
             <div className="text-side-container-main-data">
               <ol className="list-main-sec">
-                <a href="#" className="main-setion-list-anchor">
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Cargo monitoring</h2>
                     <p>
@@ -86,8 +86,8 @@ const Article1 = () => {
                       customers on a constant basis.
                     </p>
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Intelligent dispatch and route optimization</h2>
                     <p>
@@ -99,8 +99,8 @@ const Article1 = () => {
                       changes.
                     </p>
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Integrated partner ecosystems</h2>
                     <p>
@@ -112,8 +112,8 @@ const Article1 = () => {
                       increases efficiency.
                     </p>
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Driver and Fleet Monitoring</h2>
                     <p>
@@ -125,8 +125,8 @@ const Article1 = () => {
                       law.
                     </p>
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Regulatory Compliance</h2>
                     <p>
@@ -137,8 +137,8 @@ const Article1 = () => {
                       management is always within the law.
                     </p>
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Comprehensive reporting and analytics</h2>
                     <p>
@@ -149,7 +149,7 @@ const Article1 = () => {
                       strategic and informative management.
                     </p>
                   </li>
-                </a>
+                </Link>
               </ol>
             </div>
           </div>
@@ -163,7 +163,7 @@ const Article1 = () => {
             </div>
             <div className="text-side-container-main-data">
               <ul className="list-main-sec">
-                <a href="#" className="main-setion-list-anchor">
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Increasing operational efficiency:</h2>
                     <p>
@@ -173,8 +173,8 @@ const Article1 = () => {
                       resources used.
                     </p>
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Improved safety: </h2>
                     <p>
@@ -184,8 +184,8 @@ const Article1 = () => {
                       is within safety standards.
                     </p>
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Cost reduction:</h2>
                     <p>
@@ -195,8 +195,8 @@ const Article1 = () => {
                       the need for manual intervention.
                     </p>
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Customer satisfaction:</h2>
                     <p>
@@ -206,8 +206,8 @@ const Article1 = () => {
                       confidence.
                     </p>
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Operational planning:</h2>
                     <p>
@@ -217,7 +217,7 @@ const Article1 = () => {
                       vehicle can continue operating.
                     </p>
                   </li>
-                </a>
+                </Link>
               </ul>
             </div>
           </div>
@@ -232,7 +232,7 @@ const Article1 = () => {
             </div>
             <div className="text-side-container-main-data">
               <ul className="list-main-sec">
-                <a href="#" className="main-setion-list-anchor">
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Freight brokers</h2>
                     <p>
@@ -246,8 +246,8 @@ const Article1 = () => {
                       process, making it more agile.
                     </p>
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Carriers </h2>
                     <p>
@@ -260,8 +260,8 @@ const Article1 = () => {
                       high-level tracking.
                     </p>
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item">
                     <h2>Business autonomy</h2>
                     <p>
@@ -274,8 +274,8 @@ const Article1 = () => {
                       competitive advantage for the company's expansion.
                     </p>
                   </li>
-                </a>
-                <a href="#" className="main-setion-list-anchor">
+                </Link>
+                <Link to="#" className="main-setion-list-anchor">
                   <li className="main-list-item conslusion-">
                     <h2 className="Conclusion">Conclusion</h2>
                     <p>
@@ -290,7 +290,7 @@ const Article1 = () => {
                       position in the competitive logistics market.
                     </p>
                   </li>
-                </a>
+                </Link>
               </ul>
             </div>
           </div>

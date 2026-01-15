@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
 
@@ -35,7 +35,7 @@ const Orderhistory = () => {
           <small>Orderhistory</small>
         </h1>
         <ol className="breadcrumb">
-          <li><a href="#"><i className="fa fa-dashboard"></i> Home</a></li>
+          <li><Link to="#"><i className="fa fa-dashboard"></i> Home</Link></li>
           <li className="active">Orders History</li>
         </ol>
       </section>
@@ -127,20 +127,20 @@ const Orderhistory = () => {
                               <td>{item.email}</td>
                               <td>{item.role}</td>
                               {/* <td>
-                                <a
+                                <Link
                                   target="_blank"
-                                  href={`https://isovia.ca/fms_api/pdf/invoice.php?id=${item.id}`}
+                                  to={`https://isovia.ca/fms_api/pdf/invoice.php?id=${item.id}`}
                                   className="btn btn-danger btn-sm"
                                 >
                                   Confirmation
-                                </a>
-                                <a
+                                </Link>
+                                <Link
                                   target="_blank"
-                                  href={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
+                                  to={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
                                   className="btn btn-warning btn-xs"
                                 >
                                   Invoice
-                                </a>
+                                </Link>
                                 <Link
                                   to={"/update/"+item.id}
                                   className="btn btn-default btn-sm"

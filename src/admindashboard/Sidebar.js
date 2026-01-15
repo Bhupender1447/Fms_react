@@ -43,9 +43,9 @@ const Sidebar = () => {
         <ul className="sidebar-menu tree" data-widget="tree">
           {/* Dashboard */}
           <li className="nav-item dropdown" id="dashboardMainMenu">
-            <a href="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
+            <Link to="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-dashboard" /> <span>Dashboard</span>
-            </a>
+            </Link>
             <ul className="dropdown-menu bg-dark text-light">
               <li className="nav-item"><Link className="dropdown-item" to="/accounting"><i className="fa fa-circle-o" /> Accounting</Link></li>
               <li className="nav-item"><Link className="dropdown-item" to="/admin"><i className="fa fa-circle-o" /> Control Panel</Link></li>
@@ -88,10 +88,10 @@ const Sidebar = () => {
           </li>
          
           <li className="nav-item dropdown" id="InvoiceMainNav">
-            <a href="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
+            <Link to="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-files-o" />
               <span>Invoices</span>
-            </a>
+            </Link>
             <ul className="dropdown-menu bg-dark text-light">
               <li className="nav-item" id="manageInvoiceSubMenu">
                 <Link className="dropdown-item" to={'/invoices'}>
@@ -102,10 +102,10 @@ const Sidebar = () => {
           </li>
 
           <li className="nav-item dropdown" id="InvoiceMainNav">
-            <a href="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
+            <Link to="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-files-o" />
               <span>Go Motive Data</span>
-            </a>
+            </Link>
             <ul className="dropdown-menu bg-dark text-light">
               <li className="nav-item" id="manageInvoiceSubMenu">
                 <Link className="dropdown-item" to={'/gomotive/vehicletable'}>
@@ -126,10 +126,10 @@ const Sidebar = () => {
           </li>
 
           <li className="nav-item dropdown" id="InvoiceMainNav">
-            <a href="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
+            <Link to="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-files-o" />
               <span>Samsara Data</span>
-            </a>
+            </Link>
             <ul className="dropdown-menu bg-dark text-light">
               <li className="nav-item" id="manageInvoiceSubMenu">
                 <Link className="dropdown-item" to={'/samsara/samsarausers'}>
@@ -141,9 +141,9 @@ const Sidebar = () => {
 
           {/* Agents */}
           <li className="nav-item dropdown" id="agentMainMenu">
-            <a href="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
+            <Link to="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-user" /> <span>Agents</span>
-            </a>
+            </Link>
             <ul className="dropdown-menu bg-dark text-light">
               <li className="nav-item"><Link className="dropdown-item" to="/createagent"><i className="fa fa-circle-o" /> Create Agent</Link></li>
               <li className="nav-item"><Link className="dropdown-item" to="/agentlist"><i className="fa fa-circle-o" /> Agent List</Link></li>
@@ -152,9 +152,9 @@ const Sidebar = () => {
 
           {/* Orders */}
           <li className="nav-item dropdown" id="OrderMainNav">
-            <a href="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
+            <Link to="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-files-o" /> <span>Orders</span>
-            </a>
+            </Link>
             <ul className="dropdown-menu bg-dark text-light">
               <li className="nav-item"><Link className="dropdown-item" to="/createorder"><i className="fa fa-circle-o" /> Create Orders</Link></li>
               <li className="nav-item"><Link className="dropdown-item" to="/orderlist"><i className="fa fa-circle-o" /> Manage Orders</Link></li>
@@ -163,9 +163,9 @@ const Sidebar = () => {
 
           {/* Trips */}
           <li className="nav-item dropdown" id="TripMainNav">
-            <a href="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
+            <Link to="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-map" /> <span>Trips</span>
-            </a>
+            </Link>
             <ul className="dropdown-menu bg-dark text-light">
               <li className="nav-item"><Link className="dropdown-item" to="/tripsmap"><i className="fa fa-circle-o" /> Live Update Map</Link></li>
               <li className="nav-item"><Link className="dropdown-item" to="/createtrips"><i className="fa fa-circle-o" /> Create Trips</Link></li>
@@ -177,12 +177,12 @@ const Sidebar = () => {
 
           {/* Reports */}
           <li className="nav-item dropdown" id="ReportMainNav">
-            <a href="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
+            <Link to="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-files-o" /> <span>Reports</span>
-            </a>
+            </Link>
             <ul className="dropdown-menu bg-dark text-light">
-              <li className="nav-item"><a className="dropdown-item" href="#"><i className="fa fa-circle-o" /> Product Wise</a></li>
-              <li className="nav-item"><a className="dropdown-item" href="#"><i className="fa fa-circle-o" /> Total Store Wise</a></li>
+              <li className="nav-item"><Link className="dropdown-item" to="#"><i className="fa fa-circle-o" /> Product Wise</Link></li>
+              <li className="nav-item"><Link className="dropdown-item" to="#"><i className="fa fa-circle-o" /> Total Store Wise</Link></li>
             </ul>
           </li>
 
@@ -198,9 +198,9 @@ const Sidebar = () => {
 
           {/* Logout */}
           <li className="nav-item">
-            <a className="nav-link" onClick={logout} style={{cursor: 'pointer'}}>
+            <Link className="nav-link" onClick={logout} style={{cursor: 'pointer'}}>
               <i className="glyphicon glyphicon-log-out" /> <span>Logout</span>
-            </a>
+            </Link>
           </li>
         </ul>
       </section>

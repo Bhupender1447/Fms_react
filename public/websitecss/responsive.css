@@ -107,6 +107,7 @@
     margin-top: 0px;
     display: flex;
     align-items: center;
+    gap: 10px;
 }
 .carousel-control-next-icon, .carousel-control-prev-icon {
 
@@ -168,9 +169,6 @@
 .number-list-services-text.active {
     color: #d9d9d9;
     border-bottom: none;
-}
-section.services-section {
-    margin-top: 25px;
 }
 .services-section {
     padding: 21px 15px;
@@ -383,9 +381,6 @@ section.counter-section {
     margin-top: 20px;
   }
 
-  .software-section-bg {
-    height: auto; /* allow height to adjust naturally */
-  }
 
   .software-section-bg::after {
     height: 100%; /* match new dynamic height */
@@ -407,6 +402,7 @@ section.counter-section {
   .title-software h2 {
     font-size: 2rem; /* smaller heading */
     margin-top: 20px;
+    color: #fff;
   }
 
   .software-section-description-softwares {

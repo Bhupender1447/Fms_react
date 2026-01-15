@@ -44,25 +44,25 @@ const Header = () => {
           <div className="col header-quick-link">
             <ul>
               <li>
-                <a href="mailto:Isoviafreightmanagement@gmail.com" target="_top">
+                <Link to="mailto:Isoviafreightmanagement@gmail.com" target="_top">
                   <i className="fas fa-envelope" aria-hidden="true" />
                   Isoviafreightmanagement@gmail.com
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="tel:+16472415999" target="_top">
+                <Link to="tel:+16472415999" target="_top">
                   <i className="fa-solid fa-phone" aria-hidden="true" />
                   +16472415999
-                </a>
+                </Link>
               </li>
             </ul>
             {/* </div>
     <div class="col-md-7 header-quick-link"> */}
             <ul>
               <li>
-                <a href="contact.html" className="border-r">
+                <Link to="contact.html" className="border-r">
                   Contact
-                </a>
+                </Link>
               </li>
               <li>
                 <Link to={'/login'} className="border-r">
@@ -84,34 +84,34 @@ const Header = () => {
                   Login Agent
                 </Link>
               </li>
-              {/* <li class="dropdown"> <a href="#" class="dropdown-toggle" id="dropdownMenu1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Sofware <span class="caret"></span> </a>
+              {/* <li class="dropdown"> <Link to="#" class="dropdown-toggle" id="dropdownMenu1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Sofware <span class="caret"></span> </Link>
           <ul class="dropdown-menu p-0" aria-labelledby="dropdownMenu1">
-            <li><a class="dropdown-item" href="#" target="_blank">A</a></li>
-            <li><a class="dropdown-item" href="#" target="_blank">B</a></li>
-            <li><a class="dropdown-item" href="#" target="_blank">C</a></li>
+            <li><Link class="dropdown-item" to="#" target="_blank">A</Link></li>
+            <li><Link class="dropdown-item" to="#" target="_blank">B</Link></li>
+            <li><Link class="dropdown-item" to="#" target="_blank">C</Link></li>
           </ul>
         </li> */}
               <li>
                 <ul className="flag-icon">
                   <li>
-                    <a target="_blank" href="#">
+                    <Link target="_blank" to="#">
                       <i className="fab fa-facebook-f" aria-hidden="true" />
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a target="_blank" href="#">
+                    <Link target="_blank" to="#">
                       <i className="fa-brands fa-x-twitter" aria-hidden="true" />
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a target="_blank" href="#">
+                    <Link target="_blank" to="#">
                       <i className="fab fa-linkedin-in" aria-hidden="true" />
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a target="_blank" href="#">
+                    <Link target="_blank" to="#">
                       <i className="fab fa-instagram" aria-hidden="true" />
-                    </a>
+                    </Link>
                   </li>
                 </ul>
               </li>
@@ -214,12 +214,12 @@ const Header = () => {
       <section className="header_section">
         <div className="container">
           <nav className="navbar navbar-expand-lg custom_nav-container d-lg-none" >
-            <a className="navbar-brand" href="#">
+            <Link className="navbar-brand" to="#">
               <div className="logo-box">
                 <img src="images/logo.png" alt="" />
                 <span>ISOVIA INC</span>
               </div>
-            </a>
+            </Link>
             <button
               className="navbar-toggler"
               type="button"
@@ -234,34 +234,34 @@ const Header = () => {
             <div className="collapse navbar-collapse" id="navbarSupportedContent">
               <ul className="navbar-nav">
                 <li className="nav-item active">
-                  <a className="nav-link" href="index.html">
+                  <Link className="nav-link" to="index.html">
                     Home <span className="sr-only">(current)</span>
-                  </a>
+                  </Link>
                 </li>
                 <li className="nav-item">
-                  <a className="nav-link" href="about.html">
+                  <Link className="nav-link" to="about.html">
                     About
-                  </a>
+                  </Link>
                 </li>
                 <li className="nav-item">
-                  <a className="nav-link" href="service.html">
+                  <Link className="nav-link" to="service.html">
                     Service
-                  </a>
+                  </Link>
                 </li>
                 <li className="nav-item">
-                  <a className="nav-link" href="shop.html">
+                  <Link className="nav-link" to="shop.html">
                     Shop
-                  </a>
+                  </Link>
                 </li>
                 <li className="nav-item">
-                  <a className="nav-link" href="company.html">
+                  <Link className="nav-link" to="company.html">
                     Company
-                  </a>
+                  </Link>
                 </li>
                 <li className="nav-item">
-                  <a className="nav-link" href="contact.html">
+                  <Link className="nav-link" to="contact.html">
                     Contact us
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -274,39 +274,39 @@ const Header = () => {
             <div>
               <div className="header_top">
                 <div className="header_top-contact">
-                  <a href="" className="ml-4">
+                  <Link to="" className="ml-4">
                     <div>
                       <img src="images/phone.png" alt="" />
                     </div>
                     <span>+16472415999</span>
-                  </a>
-                  <a href="" className="ml-4">
+                  </Link>
+                  <Link to="" className="ml-4">
                     <div>
                       <img src="images/mail.png" alt="" />
                     </div>
                     <span>Isoviafreightmanagement@gmail.com</span>
-                  </a>
+                  </Link>
                 </div>
                 <div className="header_top-social">
                   <div>
-                    <a href="">
+                    <Link to="">
                       <img src="images/fb.png" alt="" />
-                    </a>
+                    </Link>
                   </div>
                   <div>
-                    <a href="">
+                    <Link to="">
                       <img src="images/twitter.png" alt="" />
-                    </a>
+                    </Link>
                   </div>
                   <div>
-                    <a href="">
+                    <Link to="">
                       <img src="images/g-plus.png" alt="" />
-                    </a>
+                    </Link>
                   </div>
                   <div>
-                    <a href="">
+                    <Link to="">
                       <img src="images/linkedin.png" alt="" />
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -414,16 +414,16 @@ const Header = () => {
                               <h1>{item.title}</h1>
                               <div className="d-flex">
                                 <div>
-                                  <a href="" className="read-btn">
+                                  <Link to="" className="read-btn">
                                     <span>{item.buttonText1}</span>
                                     <img src="images/white-next.png" alt="" />
-                                  </a>
+                                  </Link>
                                 </div>
                                 <div className="ml-3">
-                                  <a href="" className="quote-btn">
+                                  <Link to="" className="quote-btn">
                                     <span>{item.buttonText2}</span>
                                     <img src="images/white-next.png" alt="" />
-                                  </a>
+                                  </Link>
                                 </div>
                               </div>
                             </div>
