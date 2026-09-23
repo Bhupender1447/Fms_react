@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
@@ -7,9 +8,9 @@ const Trailors = () => {
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10); // Adjust this value to set the number of items per page
-const[update,setupdate]=useState(0)
+  const [update, setupdate] = useState(0)
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/fetchtrailorsProductData')
+    axios.get(`${BASE_URL}api/fetchtrailorsProductData`)
       .then(res => setData(res.data))
       .catch(err => console.log(err));
   }, [update]);
@@ -21,7 +22,7 @@ const[update,setupdate]=useState(0)
   const handleRemove = async (id) => {
     try {
       const response = await axios.post(
-        'https://isovia.ca/fms_api/api/remove',
+        `${BASE_URL}api/remove`,
         new URLSearchParams({
           id: id,
           type: 'fms_trailors'
@@ -34,7 +35,7 @@ const[update,setupdate]=useState(0)
         }
       );
       console.log("Response:", response.data);
-      setupdate(update+1)
+      setupdate(update + 1)
     } catch (error) {
       console.error("Error removing item:", error);
     }
@@ -227,7 +228,7 @@ const[update,setupdate]=useState(0)
                             <tr role="row" className="odd" key={index}>
                               <td>
                                 <img
-                                  src={`https://isovia.ca/fms_api/` + item.image}
+                                  src={`${BASE_URL}${item.image}`}
                                   alt="FS120"
                                   className="img-circle"
                                   width={50}

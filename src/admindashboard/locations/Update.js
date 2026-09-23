@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
-import  { useEffect, useRef, useState } from 'react';
-import { useParams,Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 
 const UpdateLocation = () => {
   const nameRef = useRef(null);
@@ -14,7 +14,7 @@ const UpdateLocation = () => {
   const [lng, setLng] = useState('');
   const [country, setCountry] = useState('');
 
-  const {id} = useParams();
+  const { id } = useParams();
   useEffect(() => {
     // Fetch existing location data
     const fetchLocationData = async () => {
@@ -74,7 +74,7 @@ const UpdateLocation = () => {
       initializeAutocomplete();
     } else {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDiMQK2Czy_Dqw8lymFu8wCzVuLh27fRwA&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY_ALT}&libraries=places`;
       script.async = true;
       script.onload = () => initializeAutocomplete();
       document.body.appendChild(script);

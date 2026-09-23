@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { BASE_URL } from "../../config";
 import "./AssignForm.css";
 
-const AssignForm = ({ onClose ,selectedTripId}) => {
+const AssignForm = ({ onClose, selectedTripId }) => {
   const [brokers, setBrokers] = useState([]);
 
   const [form, setForm] = useState({
@@ -24,7 +25,7 @@ const AssignForm = ({ onClose ,selectedTripId}) => {
     portof_entry: "",
     eta: "",
     documents_attached: "",
-    documents:[],
+    documents: [],
     notes: "",
     sign: "",
     sign_date: "",
@@ -35,26 +36,26 @@ const AssignForm = ({ onClose ,selectedTripId}) => {
   });
 
   const handleCheckboxChange = (e) => {
-  const { value, checked } = e.target;
-  setForm((prev) => {
-    if (checked) {
-      // नया document जोड़ना
-      return { ...prev, documents: [...prev.documents, value] };
-    } else {
-      // document हटाना
-      return {
-        ...prev,
-        documents: prev.documents.filter((doc) => doc !== value),
-      };
-    }
-  });
-};
+    const { value, checked } = e.target;
+    setForm((prev) => {
+      if (checked) {
+        // नया document जोड़ना
+        return { ...prev, documents: [...prev.documents, value] };
+      } else {
+        // document हटाना
+        return {
+          ...prev,
+          documents: prev.documents.filter((doc) => doc !== value),
+        };
+      }
+    });
+  };
   const fetchTripDetails = async () => {
     try {
       if (!selectedTripId) return;
-   
+
       const res = await axios.get(
-        `https://isovia.ca/fms_api/api/getTripDetailsById/${selectedTripId}`
+        `${BASE_URL}api/getsingleTrip/${selectedTripId}`
       );
       if (res.data?.status === "success") {
         const trip = res.data.data;
@@ -67,15 +68,15 @@ const AssignForm = ({ onClose ,selectedTripId}) => {
       console.error("Error fetching trip details:", err);
     }
   };
-    useEffect(() => {
-  
+  useEffect(() => {
+
     fetchTripDetails(); // ✅ trip details भी ले आओ
   }, [selectedTripId]);
   // fetch brokers
   const fetchBrokers = async () => {
     try {
-      const res = await fetch("https://isovia.ca/fms_api/api/listBrokers");
-      const data = await res.json();
+      const res = await axios.get(`${BASE_URL}api/listBrokers`);
+      const data = res.data;
       if (data.status === "success") {
         setBrokers(data.data || []);
       }
@@ -119,13 +120,13 @@ const AssignForm = ({ onClose ,selectedTripId}) => {
       });
 
       const res = await axios.post(
-        "https://isovia.ca/fms_api/api/addCoversheet",
+        `${BASE_URL}api/addCoversheet`,
         formData,
         {
           headers: {
             Accept: "application/json",
-            // यहाँ पर अगर session cookie ज़रूरी है तो manually डालनी पड़ेगी
-            Cookie: "ci_session=kbm8vlk1v467g7tdka9ril1j4hsqk865",
+            // Use environment variable for session cookie if present, otherwise fallback
+            Cookie: `ci_session=${process.env.REACT_APP_CI_SESSION || "kbm8vlk1v467g7tdka9ril1j4hsqk865"}`,
           },
         }
       );
@@ -193,8 +194,8 @@ const AssignForm = ({ onClose ,selectedTripId}) => {
                     onChange={handleChange}
                   />
                 </div>
-            
-              
+
+
                 <div className="line-input">
                   PAPS EMAIL:{" "}
                   <input
@@ -306,26 +307,26 @@ const AssignForm = ({ onClose ,selectedTripId}) => {
 
               {/* Documents Attached */}
               <h6 className="section-title">Documents Attached</h6>
-             <div className="checkbox-group">
-  {[
-    "Commercial Invoice",
-    "Bill of Lading",
-    "Packing List",
-    "Certificate of Origin",
-    "Customs Invoice (B3 / CI1)",
-    "Other",
-  ].map((doc, i) => (
-    <label key={i}>
-      <input
-        type="checkbox"
-        value={doc}
-        checked={form.documents.includes(doc)}
-        onChange={handleCheckboxChange} // ✅ अलग handler
-      />
-      {doc}
-    </label>
-  ))}
-</div>
+              <div className="checkbox-group">
+                {[
+                  "Commercial Invoice",
+                  "Bill of Lading",
+                  "Packing List",
+                  "Certificate of Origin",
+                  "Customs Invoice (B3 / CI1)",
+                  "Other",
+                ].map((doc, i) => (
+                  <label key={i}>
+                    <input
+                      type="checkbox"
+                      value={doc}
+                      checked={form.documents.includes(doc)}
+                      onChange={handleCheckboxChange} // ✅ अलग handler
+                    />
+                    {doc}
+                  </label>
+                ))}
+              </div>
 
 
               {/* Notes */}

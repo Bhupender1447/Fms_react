@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, { useState, useEffect, useRef } from 'react';
 
-const api_key = "D487078091664D428AA781953AE84DF1";
+const api_key = process.env.REACT_APP_TRIMBLE_API_KEY;
 
 const Distance = () => {
   const [place1, setPlace1] = useState('');
@@ -106,7 +106,7 @@ const Distance = () => {
       const routeDistance = await fetchRouteDistance(coords1.lat, coords1.lon, coords2.lat, coords2.lon);
       if (routeDistance) {
         setDistance(routeDistance);
-console.log(routeDistance)
+        console.log(routeDistance)
         if (map) {
           const TrimbleMaps = window.TrimbleMaps;
           if (route) {

@@ -10,15 +10,15 @@ const TripViewer = () => {
 
   useEffect(() => {
     const fetchTripData = async () => {
-  
+
       try {
         const response = await axios.get(
           `https://tripmanagement.trimblemaps.com/api/trip/${tripId}/viewer/url`,
           {
             headers: {
-              Authorization: "D487078091664D428AA781953AE84DF1",
+              Authorization: process.env.REACT_APP_TRIMBLE_API_KEY,
               "Content-Type": "application/json",
-              Cookie: "ASP.NET_SessionId=cx001fyj3yu2a0tysgi323sv",
+              Cookie: `ASP.NET_SessionId=${process.env.REACT_APP_TRIMBLE_SESSION_ID || "cx001fyj3yu2a0tysgi323sv"}`,
             },
           }
         );

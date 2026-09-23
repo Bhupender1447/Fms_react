@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 
 const DriverHOS = () => {
   const { id } = useParams();
@@ -24,7 +25,7 @@ const DriverHOS = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const hosResponse = await axios.get(`https://isovia.ca/fms_api/api/list_trips?driver_id=${id}`);
+        const hosResponse = await axios.get(`${BASE_URL}api/list_trips?driver_id=${id}`);
         if (hosResponse.data.status !== 'success') throw new Error(hosResponse.data.message);
         const hosResults = hosResponse.data.data;
         setHosData(hosResults);
@@ -42,28 +43,28 @@ const DriverHOS = () => {
   const calculateRemainingHours = (trip) => {
     const shiftHours = 8.5; // 8 hours 30 minutes
     const loginTime = new Date(trip.login_time);
-    
+
     if (trip.status === 'on') {
       const elapsedMs = currentTime - loginTime;
       const elapsedHours = elapsedMs / (1000 * 60 * 60);
       const remaining = shiftHours - elapsedHours;
-      
-      return remaining > 0 
-        ? `${remaining.toFixed(2)} hrs` 
+
+      return remaining > 0
+        ? `${remaining.toFixed(2)} hrs`
         : <span className="text-danger">-{Math.abs(remaining).toFixed(2)} hrs</span>;
     }
-    
+
     if (trip.logout_time) {
       const logoutTime = new Date(trip.logout_time);
       const elapsedMs = logoutTime - loginTime;
       const elapsedHours = elapsedMs / (1000 * 60 * 60);
       const remaining = shiftHours - elapsedHours;
-      
-      return remaining > 0 
-        ? `${remaining.toFixed(2)} hrs` 
+
+      return remaining > 0
+        ? `${remaining.toFixed(2)} hrs`
         : <span className="text-danger">-{Math.abs(remaining).toFixed(2)} hrs</span>;
     }
-    
+
     return 'N/A';
   };
 
@@ -71,7 +72,7 @@ const DriverHOS = () => {
     setLoadingDetails(true);
     try {
       const tripResponse = await axios.get(
-        `https://isovia.ca/fms_api/api/getTripDetailsById/${tripId}`
+        `${BASE_URL}api/getTripDetailsById/${tripId}`
       );
       if (tripResponse.data.status === 'success') {
         setSelectedTripDetails(tripResponse.data.data);
@@ -90,7 +91,7 @@ const DriverHOS = () => {
   };
 
   const handleImageClick = (url) => {
-    setZoomImage(`https://isovia.ca/fms_api/${url}`);
+    setZoomImage(`${BASE_URL}${url}`);
   };
 
   useEffect(() => {
@@ -230,7 +231,7 @@ const DriverHOS = () => {
                           <th>Logout Time</th>
                           <th>Status</th>
                           <th>Remaining Hours</th> {/* Added column */}
-                           <th>Pre Trip Inspection</th> 
+                          <th>Pre Trip Inspection</th>
                           <th>Images</th>
                           <th className="text-end">Actions</th>
                         </tr>
@@ -255,22 +256,22 @@ const DriverHOS = () => {
                           <td>
                             {calculateRemainingHours(trip)}
                           </td>
-                            <td>
-    {trip.pre_trip_inspection === 'yes' || trip.pre_trip_inspection === true ? (
-      <span className="badge bg-success">Yes</span>
-    ) : trip.pre_trip_inspection === 'no' || trip.pre_trip_inspection === false ? (
-      <span className="badge bg-danger">No</span>
-    ) : (
-      <span className="text-muted">N/A</span>
-    )}
-  </td>
+                          <td>
+                            {trip.pre_trip_inspection === 'yes' || trip.pre_trip_inspection === true ? (
+                              <span className="badge bg-success">Yes</span>
+                            ) : trip.pre_trip_inspection === 'no' || trip.pre_trip_inspection === false ? (
+                              <span className="badge bg-danger">No</span>
+                            ) : (
+                              <span className="text-muted">N/A</span>
+                            )}
+                          </td>
                           <td>
                             {trip.image_urls && trip.image_urls.length > 0 ? (
                               <div className="d-flex">
                                 {trip.image_urls.slice(0, 2).map((url, index) => (
                                   <img
                                     key={index}
-                                    src={`https://isovia.ca/fms_api/${url}`}
+                                    src={`${BASE_URL}${url}`}
                                     alt={`Trip ${trip.trip_id} image ${index + 1}`}
                                     className="img-thumbnail me-1"
                                     style={{ width: '50px', height: '50px', objectFit: 'cover', cursor: 'zoom-in' }}
@@ -339,7 +340,7 @@ const DriverHOS = () => {
                           {selectedTripDetails.image_urls.map((url, index) => (
                             <div key={index} className="position-relative">
                               <img
-                                src={`https://isovia.ca/fms_api/${url}`}
+                                src={`${BASE_URL}${url}`}
                                 alt={`Trip ${selectedTripDetails.trip_id} image ${index + 1}`}
                                 className="img-thumbnail"
                                 style={{ width: '150px', height: '150px', objectFit: 'cover', cursor: 'zoom-in' }}

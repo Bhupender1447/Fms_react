@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
+import { BASE_URL } from "../../config";
 
 const AddAdditionalStop = () => {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ const AddAdditionalStop = () => {
 
     try {
       await axios.post(
-        "https://isovia.ca/fms_api/api/addAdditionalStop",
+        `${BASE_URL}api/addAdditionalStop`,
         payload,
         {
           headers: { "Content-Type": "application/json" },

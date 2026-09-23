@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import jsPDF from 'jspdf';
@@ -17,7 +18,7 @@ const NetIncomeTable = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('https://isovia.ca/fms_api/api/getlocationIncome');
+        const response = await axios.get(`${BASE_URL}api/getlocationIncome`);
         console.log(response);
         // Filter out entries with null or zero values
         const filteredData = response.data.filter(entry => entry.value && parseFloat(entry.value) > 0);
@@ -42,22 +43,22 @@ const NetIncomeTable = () => {
   const handleFilter = () => {
     let filtered = incomeData;
     if (searchLocation) {
-      filtered = filtered.filter(entry => 
+      filtered = filtered.filter(entry =>
         entry.name.toLowerCase().includes(searchLocation.toLowerCase())
       );
     }
     if (searchValue) {
-      filtered = filtered.filter(entry => 
+      filtered = filtered.filter(entry =>
         entry.value && entry.value.toString().includes(searchValue)
       );
     }
     if (searchDate) {
-      filtered = filtered.filter(entry => 
+      filtered = filtered.filter(entry =>
         entry.date && entry.date.includes(searchDate)
       );
     }
     if (searchCompany) {
-      filtered = filtered.filter(entry => 
+      filtered = filtered.filter(entry =>
         entry.company && entry.company.toLowerCase().includes(searchCompany.toLowerCase())
       );
     }
@@ -109,37 +110,37 @@ const NetIncomeTable = () => {
       <h2 className="mb-4">Net Income by Location</h2>
       <div className="row g-3 mb-3">
         <div className="col-md-3">
-          <input 
-            type="text" 
-            className="form-control" 
-            placeholder="Search by Location" 
-            value={searchLocation} 
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search by Location"
+            value={searchLocation}
             onChange={(e) => setSearchLocation(e.target.value)}
           />
         </div>
         <div className="col-md-3">
-          <input 
-            type="text" 
-            className="form-control" 
-            placeholder="Search by Company" 
-            value={searchCompany} 
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search by Company"
+            value={searchCompany}
             onChange={(e) => setSearchCompany(e.target.value)}
           />
         </div>
         <div className="col-md-3">
-          <input 
-            type="text" 
-            className="form-control" 
-            placeholder="Search by Value" 
-            value={searchValue} 
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search by Value"
+            value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
           />
         </div>
         <div className="col-md-3">
-          <input 
-            type="date" 
-            className="form-control" 
-            value={searchDate} 
+          <input
+            type="date"
+            className="form-control"
+            value={searchDate}
             onChange={(e) => setSearchDate(e.target.value)}
           />
         </div>

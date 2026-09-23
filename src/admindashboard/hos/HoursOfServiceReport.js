@@ -10,19 +10,19 @@ const HoursOfServiceForm = () => {
       ReportingOptions: {
         UseTollData: true,
         Language: 0,
-        EstimatedTimeOptions: { 
-          ETAETD: 1, 
-          DateOption: 0, 
-          DateAndTime: null 
+        EstimatedTimeOptions: {
+          ETAETD: 1,
+          DateOption: 0,
+          DateAndTime: null
         },
         UseTraffic: true
       },
       Stops: [{
-        Address: { 
-          StreetAddress: "", 
-          City: "", 
-          State: "", 
-          Zip: "", 
+        Address: {
+          StreetAddress: "",
+          City: "",
+          State: "",
+          Zip: "",
           Country: null,
           SPLC: null,
           CountryPostalFilter: 0,
@@ -32,12 +32,12 @@ const HoursOfServiceForm = () => {
         Region: 4,
         Label: "",
         PlaceName: null,
-        Costs: { 
-          CostOfStop: 0, 
-          HoursPerStop: 0.5, 
-          Loaded: true, 
-          OnDuty: true, 
-          UseOrigin: false 
+        Costs: {
+          CostOfStop: 0,
+          HoursPerStop: 0.5,
+          Loaded: true,
+          OnDuty: true,
+          UseOrigin: false
         },
         IsViaPoint: false
       }],
@@ -45,14 +45,14 @@ const HoursOfServiceForm = () => {
         VehicleType: 0,
         RoutingType: 0,
         HighwayOnly: false,
-        TruckCfg: { 
+        TruckCfg: {
           Units: 0,
-          Height: "13'6\"", 
-          Length: "53'", 
-          Width: "96\"", 
-          Weight: "80000", 
-          Axles: 5, 
-          LCV: false 
+          Height: "13'6\"",
+          Length: "53'",
+          Width: "96\"",
+          Weight: "80000",
+          Axles: 5,
+          LCV: false
         },
         HubRouting: false,
         HoSOptions: {
@@ -74,8 +74,8 @@ const HoursOfServiceForm = () => {
             CycleResetBreakDuration: 144000
           },
           PreferredSearchTypes: {
-            LongBreakType: [55,25],
-            ShortBreakType: [41,34]
+            LongBreakType: [55, 25],
+            ShortBreakType: [41, 34]
           }
         }
       }
@@ -102,7 +102,7 @@ const HoursOfServiceForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    
+
     setLoading(true);
     try {
       const response = await axios.post(
@@ -111,7 +111,7 @@ const HoursOfServiceForm = () => {
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'D487078091664D428AA781953AE84DF1'
+            'Authorization': process.env.REACT_APP_TRIMBLE_API_KEY
           }
         }
       );
@@ -128,12 +128,12 @@ const HoursOfServiceForm = () => {
     const updatedStops = [...formData.ReportRoutes[0].Stops];
     updatedStops[index] = {
       ...updatedStops[index],
-      [field]: typeof value === 'object' ? { 
-        ...updatedStops[index][field], 
-        ...value 
+      [field]: typeof value === 'object' ? {
+        ...updatedStops[index][field],
+        ...value
       } : value
     };
-    
+
     setFormData({
       ...formData,
       ReportRoutes: [{
@@ -149,10 +149,10 @@ const HoursOfServiceForm = () => {
       ReportRoutes: [{
         ...formData.ReportRoutes[0],
         Stops: [...formData.ReportRoutes[0].Stops, {
-          Address: { 
-            StreetAddress: "", 
-            City: "", 
-            State: "", 
+          Address: {
+            StreetAddress: "",
+            City: "",
+            State: "",
             Zip: "",
             Country: null,
             SPLC: null,
@@ -163,12 +163,12 @@ const HoursOfServiceForm = () => {
           Region: 4,
           Label: "",
           PlaceName: null,
-          Costs: { 
-            CostOfStop: 0, 
-            HoursPerStop: 0.5, 
-            Loaded: true, 
-            OnDuty: true, 
-            UseOrigin: false 
+          Costs: {
+            CostOfStop: 0,
+            HoursPerStop: 0.5,
+            Loaded: true,
+            OnDuty: true,
+            UseOrigin: false
           },
           IsViaPoint: false
         }]
@@ -186,7 +186,7 @@ const HoursOfServiceForm = () => {
   return (
     <div className="content-wrapper">
       <h2 className="mb-4">Route Planning Form</h2>
-      
+
       <form onSubmit={handleSubmit}>
         {/* Route ID */}
         <div className="mb-3">
@@ -220,7 +220,7 @@ const HoursOfServiceForm = () => {
                     value={stop.Label}
                     onChange={(e) => handleStopChange(index, 'Label', e.target.value)}
                   />
-                  {errors[`label-${index}`] && 
+                  {errors[`label-${index}`] &&
                     <div className="invalid-feedback">{errors[`label-${index}`]}</div>}
                 </div>
 
@@ -235,7 +235,7 @@ const HoursOfServiceForm = () => {
                       StreetAddress: e.target.value
                     })}
                   />
-                  {errors[`streetAddress-${index}`] && 
+                  {errors[`streetAddress-${index}`] &&
                     <div className="invalid-feedback">{errors[`streetAddress-${index}`]}</div>}
                 </div>
 
@@ -250,7 +250,7 @@ const HoursOfServiceForm = () => {
                       City: e.target.value
                     })}
                   />
-                  {errors[`city-${index}`] && 
+                  {errors[`city-${index}`] &&
                     <div className="invalid-feedback">{errors[`city-${index}`]}</div>}
                 </div>
 
@@ -265,7 +265,7 @@ const HoursOfServiceForm = () => {
                       State: e.target.value
                     })}
                   />
-                  {errors[`state-${index}`] && 
+                  {errors[`state-${index}`] &&
                     <div className="invalid-feedback">{errors[`state-${index}`]}</div>}
                 </div>
 
@@ -287,8 +287,8 @@ const HoursOfServiceForm = () => {
         ))}
 
         <div className="mb-3">
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn btn-outline-secondary"
             onClick={addNewStop}
           >
@@ -389,8 +389,8 @@ const HoursOfServiceForm = () => {
           </div>
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className="btn btn-primary"
           disabled={loading}
         >
@@ -407,7 +407,7 @@ const HoursOfServiceForm = () => {
       {apiResponse && (
         <div className="mt-5">
           <h3 className="mb-4">Route Report: {apiResponse.RouteID}</h3>
-          
+
           <div className="card mb-4">
             <div className="card-header">Driver Hours Summary</div>
             <div className="card-body">
@@ -444,7 +444,7 @@ const HoursOfServiceForm = () => {
                       <td>{index + 1}</td>
                       <td>{stop.Label}</td>
                       <td>
-                        {stop.Address.StreetAddress},<br/>
+                        {stop.Address.StreetAddress},<br />
                         {stop.Address.City}, {stop.Address.State} {stop.Address.Zip}
                       </td>
                       <td>{stop.EstimatedTimeOfArrival || '-'}</td>

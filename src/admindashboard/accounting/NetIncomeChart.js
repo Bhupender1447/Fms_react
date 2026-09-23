@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, Tooltip, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 
@@ -10,10 +11,13 @@ const NetIncomeChart = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('https://isovia.ca/fms_api/api/getlocationIncome');
+        const response = await axios.get(`${BASE_URL}api/getlocationIncome`);
+
+        // Check if response.data is an array
+        const rawData = Array.isArray(response.data) ? response.data : [];
 
         // Filter out entries with null or zero values
-        const filteredData = response.data.filter(entry => entry.value && parseFloat(entry.value) > 0);
+        const filteredData = rawData.filter(entry => entry.value && parseFloat(entry.value) > 0);
 
         // Convert value to number
         const formattedData = filteredData.map(entry => ({

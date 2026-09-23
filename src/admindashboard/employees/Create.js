@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/iframe-has-title */
 /* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from "axios";
+import { BASE_URL } from "../../config";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -56,7 +57,7 @@ const Createemployees = () => {
 
     try {
       const response = await axios.post(
-        "https://isovia.ca/fms_api/api/employeecreate",
+        `${BASE_URL}api/employeecreate`,
         formDataToSend
       );
 

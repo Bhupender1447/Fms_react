@@ -1,17 +1,28 @@
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { BASE_URL } from '../../config';
 import ReactPaginate from 'react-paginate';
 
 const Fleets = () => {
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [loading, setLoading] = useState(true); // Added loading state
+
+  const fetchProductData = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}api/fetchfleetsProductData`);
+      setData(response.data); // Using setData to match existing state variable
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching product data:', error);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/fetchfleetsProductData')
-      .then(res => setData(res.data))
-      .catch(err => console.log(err));
+    fetchProductData();
   }, []);
 
   const handlePageClick = (event) => {
@@ -19,25 +30,28 @@ const Fleets = () => {
   };
 
   const handleRemove = async (id) => {
-    try {
-      const response = await axios.post(
-        'https://isovia.ca/fms_api/api/remove',
-        new URLSearchParams({
-          id: id,
-          type: 'fms_fleets'  // Adjust the type if necessary
-        }).toString(),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Cookie': 'ci_session=06vlfcjjenfs9pp507kpsbcetr7h8va3'
+    const confirmRemove = window.confirm('Are you sure you want to remove this product?');
+    if (confirmRemove) {
+      try {
+        const response = await axios.post(
+          `${BASE_URL}api/remove`,
+          new URLSearchParams({
+            id: id,
+            type: 'fms_fleets' // Adjust the type if necessary
+          }).toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Cookie': 'ci_session=06vlfcjjenfs9pp507kpsbcetr7h8va3'
+            }
           }
-        }
-      );
-      console.log("Response:", response.data);
-      // Remove the item from the state after successful deletion
-      setData(data.filter(item => item.id !== id));
-    } catch (error) {
-      console.error("Error removing item:", error);
+        );
+        console.log("Response:", response.data);
+        // Refresh product data after removal
+        fetchProductData();
+      } catch (error) {
+        console.error("Error removing item:", error);
+      }
     }
   };
 

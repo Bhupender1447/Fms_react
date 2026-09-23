@@ -94,7 +94,7 @@ function TripRecalculateForm() {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: 'D487078091664D428AA781953AE84DF1',
+            Authorization: process.env.REACT_APP_TRIMBLE_API_KEY,
           },
         }
       );
@@ -108,69 +108,69 @@ function TripRecalculateForm() {
 
   return (
     <div className="content-wrapper">
-    <div className="container mt-5">
-      <h2 className="mb-4">Trip Recalculate</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label className="form-label">Trip ID</label>
-          <input type="text" name="tmsTripId" className="form-control" onChange={handleChange} required />
-        </div>
-        <div className="row">
-          <div className="col-md-6 mb-3">
-            <label className="form-label">Latitude</label>
-            <input
-              type="text"
-              name="lat"
-              className="form-control"
-              value={formData.lat}
-              onChange={handleChange}
-              required
-              readOnly
-            />
+      <div className="container mt-5">
+        <h2 className="mb-4">Trip Recalculate</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label">Trip ID</label>
+            <input type="text" name="tmsTripId" className="form-control" onChange={handleChange} required />
           </div>
-          <div className="col-md-6 mb-3">
-            <label className="form-label">Longitude</label>
-            <input
-              type="text"
-              name="lon"
-              className="form-control"
-              value={formData.lon}
-              onChange={handleChange}
-              required
-              readOnly
-            />
+          <div className="row">
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Latitude</label>
+              <input
+                type="text"
+                name="lat"
+                className="form-control"
+                value={formData.lat}
+                onChange={handleChange}
+                required
+                readOnly
+              />
+            </div>
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Longitude</label>
+              <input
+                type="text"
+                name="lon"
+                className="form-control"
+                value={formData.lon}
+                onChange={handleChange}
+                required
+                readOnly
+              />
+            </div>
           </div>
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Current Time (ISO format)</label>
-          <input type="datetime-local" name="currentTime" className="form-control" onChange={handleChange} required />
-        </div>
-        <h5 className="mt-4">Stop Details</h5>
-        <div className="mb-3">
-          <label className="form-label">Street Address</label>
-          <input type="text" name="stopAddress" className="form-control" onChange={handleChange} required />
-        </div>
-        <div className="row">
-          <div className="col-md-4 mb-3">
-            <label className="form-label">City</label>
-            <input type="text" name="stopCity" className="form-control" onChange={handleChange} required />
+          <div className="mb-3">
+            <label className="form-label">Current Time (ISO format)</label>
+            <input type="datetime-local" name="currentTime" className="form-control" onChange={handleChange} required />
           </div>
-          <div className="col-md-4 mb-3">
-            <label className="form-label">State</label>
-            <input type="text" name="stopState" className="form-control" onChange={handleChange} required />
+          <h5 className="mt-4">Stop Details</h5>
+          <div className="mb-3">
+            <label className="form-label">Street Address</label>
+            <input type="text" name="stopAddress" className="form-control" onChange={handleChange} required />
           </div>
-          <div className="col-md-4 mb-3">
-            <label className="form-label">Zip</label>
-            <input type="text" name="stopZip" className="form-control" onChange={handleChange} required />
+          <div className="row">
+            <div className="col-md-4 mb-3">
+              <label className="form-label">City</label>
+              <input type="text" name="stopCity" className="form-control" onChange={handleChange} required />
+            </div>
+            <div className="col-md-4 mb-3">
+              <label className="form-label">State</label>
+              <input type="text" name="stopState" className="form-control" onChange={handleChange} required />
+            </div>
+            <div className="col-md-4 mb-3">
+              <label className="form-label">Zip</label>
+              <input type="text" name="stopZip" className="form-control" onChange={handleChange} required />
+            </div>
           </div>
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Stop Label</label>
-          <input type="text" name="stopLabel" className="form-control" onChange={handleChange} required />
-        </div>
-        <button type="submit" className="btn btn-primary">Recalculate Trip</button>
-      </form>
-    </div>
+          <div className="mb-3">
+            <label className="form-label">Stop Label</label>
+            <input type="text" name="stopLabel" className="form-control" onChange={handleChange} required />
+          </div>
+          <button type="submit" className="btn btn-primary">Recalculate Trip</button>
+        </form>
+      </div>
     </div>
   );
 }

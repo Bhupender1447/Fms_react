@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -29,7 +30,7 @@ const LogTable = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get('https://isovia.ca/fms_api/api/get_users');
+        const response = await axios.get(`${BASE_URL}api/get_users`);
         setUsers(response.data.users || []);
       } catch (err) {
         setError(err.message || 'Error fetching users');
@@ -48,7 +49,7 @@ const LogTable = () => {
     setLogs([]);
     try {
       const response = await axios.get(
-        `https://isovia.ca/fms_api/api/fetch_logs_data/${id}?start_date=${start}&end_date=${end}`
+        `${BASE_URL}api/fetch_logs_data/${id}?start_date=${start}&end_date=${end}`
       );
       setLogs(response.data.logs || []);
     } catch (err) {

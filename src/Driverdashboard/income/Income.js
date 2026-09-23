@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { BASE_URL } from '../../config';
 
 const Income = () => {
   const [incomes, setIncomes] = useState([]);
@@ -9,7 +10,7 @@ const Income = () => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
 
-  const baseURL = 'https://isovia.ca/fms_api/api';
+  const baseURL = `${BASE_URL}api`;
   const logindetail = JSON.parse(localStorage.getItem('logindetail'));
   const driverId = logindetail?.id;
 
@@ -26,12 +27,12 @@ const Income = () => {
         const trips = res.data.message;
         const formatted = Array.isArray(trips)
           ? trips.map(item => ({
-              driverName: `Driver #${item.driver_id}`,
-              trip: `${item.pickup_desc || 'Pickup'} → ${item.delivery_desc || 'Delivery'}`,
-              address: `${item.pickup_address} → ${item.delivery_address}`,
-              date: item.createdat?.split(' ')[0],
-              income: isNaN(parseFloat(item.net_amount)) ? 0 : parseFloat(item.net_amount),
-            }))
+            driverName: `Driver #${item.driver_id}`,
+            trip: `${item.pickup_desc || 'Pickup'} → ${item.delivery_desc || 'Delivery'}`,
+            address: `${item.pickup_address} → ${item.delivery_address}`,
+            date: item.createdat?.split(' ')[0],
+            income: isNaN(parseFloat(item.net_amount)) ? 0 : parseFloat(item.net_amount),
+          }))
           : [];
 
         setIncomes(formatted);

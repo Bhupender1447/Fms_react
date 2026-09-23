@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from 'recharts';
@@ -15,7 +16,7 @@ const OrderIncomeList = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        'https://isovia.ca/fms_api/api/getOrderincome',
+        `${BASE_URL}api/getOrderincome`,
         {},
         {
           headers: { Cookie: cookie },
@@ -48,7 +49,7 @@ const OrderIncomeList = () => {
       formData.append('todate', toDate);
 
       const res = await axios.post(
-        'https://isovia.ca/fms_api/api/orderIncomebyDate',
+        `${BASE_URL}api/orderIncomebyDate`,
         formData,
         {
           headers: { Cookie: cookie },
@@ -87,7 +88,7 @@ const OrderIncomeList = () => {
   }));
 
   return (
-    <div  className="content-wrapper" style={{ minHeight: 440 }}>
+    <div className="content-wrapper" style={{ minHeight: 440 }}>
       <h3>Order Income Records</h3>
 
       {/* Filter Inputs */}

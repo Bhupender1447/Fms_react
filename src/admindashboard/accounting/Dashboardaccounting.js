@@ -2,9 +2,11 @@
 // components/Dashboard.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import RevenueExpenses from './RevenueExpenses';
 import NetIncomeChart from './NetIncomeChart';
 import PayrollChart from './PayrollChart';
+import AccountsPayableReceivableChart from './AccountsPayableReceivable';
 
 const Dashboardaccounting = () => {
   const [showAlertPopup, setShowAlertPopup] = useState(false);
@@ -13,9 +15,9 @@ const Dashboardaccounting = () => {
 
   useEffect(() => {
     // Check if user just logged in (you might want to use your actual auth logic)
-    const hasJustLoggedIn = localStorage.getItem('hasJustLoggedIn') === 'true' || 
-                           sessionStorage.getItem('hasJustLoggedIn') === 'true';
-    
+    const hasJustLoggedIn = localStorage.getItem('hasJustLoggedIn') === 'true' ||
+      sessionStorage.getItem('hasJustLoggedIn') === 'true';
+
     if (hasJustLoggedIn) {
       fetchDriverAlerts();
       // Clear the login flag
@@ -27,10 +29,8 @@ const Dashboardaccounting = () => {
   const fetchDriverAlerts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        'https://isovia.ca/fms_api/api/driverdocumentsexpiryalert'
-      );
-      
+      const response = await axios.get(`${BASE_URL}api/getdriverAlerts`);
+
       if (response.data.status === 'success' && response.data.data.length > 0) {
         setAlertData(response.data);
         setShowAlertPopup(true);
@@ -53,7 +53,7 @@ const Dashboardaccounting = () => {
 
     const className = badgeClasses[status] || badgeClasses.default;
     const statusText = status.replace('_', ' ').toUpperCase();
-    
+
     return (
       <span className={`badge ${className}`}>
         {statusText}
@@ -70,7 +70,7 @@ const Dashboardaccounting = () => {
 
   const getPriorityAlerts = () => {
     if (!alertData?.data) return [];
-    
+
     // Priority order: expired > expiring_today > active > not_provided
     const priorityOrder = {
       'expired': 1,
@@ -102,9 +102,9 @@ const Dashboardaccounting = () => {
                   <i className="fa fa-exclamation-triangle mr-2"></i>
                   Driver Document Expiry Alerts
                 </h4>
-                <button 
-                  type="button" 
-                  className="close" 
+                <button
+                  type="button"
+                  className="close"
                   onClick={handleClosePopup}
                 >
                   <span aria-hidden="true">×</span>
@@ -121,10 +121,10 @@ const Dashboardaccounting = () => {
                 ) : (
                   <div>
                     <div className="alert alert-info">
-                      <strong>Total Alerts: {alertData.alert_count}</strong> | 
-                      <strong className="text-danger ml-2"> 
+                      <strong>Total Alerts: {alertData.alert_count}</strong> |
+                      <strong className="text-danger ml-2">
                         Expired: {alertData.data.filter(a => a.alert_status === 'expired').length}
-                      </strong> | 
+                      </strong> |
                       <strong className="text-warning ml-2">
                         Expiring Today: {alertData.data.filter(a => a.alert_status === 'expiring_today').length}
                       </strong>
@@ -161,8 +161,8 @@ const Dashboardaccounting = () => {
                               </td>
                               <td>
                                 <strong className={
-                                  alert.alert_status === 'expired' ? 'text-danger' : 
-                                  alert.alert_status === 'expiring_today' ? 'text-warning' : 'text-success'
+                                  alert.alert_status === 'expired' ? 'text-danger' :
+                                    alert.alert_status === 'expiring_today' ? 'text-warning' : 'text-success'
                                 }>
                                   {getDaysLeftText(alert.days_left)}
                                 </strong>
@@ -188,7 +188,7 @@ const Dashboardaccounting = () => {
                     )}
 
                     <div className="mt-3">
-                      <button 
+                      <button
                         className="btn btn-primary btn-sm"
                         onClick={() => {
                           // Navigate to driver management page or open detailed view
@@ -230,7 +230,7 @@ const Dashboardaccounting = () => {
 
       {/* Main Dashboard Content */}
       <h1>INTERNATIONAL ACCOUNTING STANDARDS</h1>
-      
+
       {/* Quick Alert Summary (if alerts exist) */}
       {alertData && alertData.alert_count > 0 && (
         <div className="alert alert-warning alert-dismissible">
@@ -239,10 +239,10 @@ const Dashboardaccounting = () => {
           </button>
           <strong>
             <i className="fa fa-exclamation-triangle mr-1"></i>
-            Document Alerts: 
-          </strong> 
-          You have {alertData.alert_count} document expiry alerts. 
-          <button 
+            Document Alerts:
+          </strong>
+          You have {alertData.alert_count} document expiry alerts.
+          <button
             className="btn btn-warning btn-sm ml-2"
             onClick={() => setShowAlertPopup(true)}
           >
@@ -253,11 +253,11 @@ const Dashboardaccounting = () => {
 
       <div style={{ display: 'flex', justifyContent: 'space-around' }}>
         <RevenueExpenses />
-        <AccountsPayableReceivable />
-        <NetIncomeChart/>
+        <AccountsPayableReceivableChart />
+        <NetIncomeChart />
       </div>
       {/* <PayrollManagement /> */}
-      <PayrollChart/>
+      <PayrollChart />
     </div>
   );
 };

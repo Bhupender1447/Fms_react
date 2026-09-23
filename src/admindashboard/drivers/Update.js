@@ -1,11 +1,154 @@
 /* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { useParams,Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { BASE_URL } from '../../config';
 
 const Updatedrivers = () => {
   const [message, setMessage] = useState('');
-  const [file, setFile] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [ocrMessage, setOcrMessage] = useState(null);
+
+  const flattenObject = (obj, prefix = "", res = {}) => {
+    for (let key in obj) {
+      const value = obj[key];
+      const newKey = prefix ? `${prefix}_${key}` : key;
+
+      if (typeof value === "object" && value !== null) {
+        flattenObject(value, newKey, res);
+      } else {
+        res[newKey.toLowerCase()] = String(value);
+      }
+    }
+    return res;
+  };
+
+  const handleOcrUpload = async () => {
+    if (!selectedFile) {
+      toast.error("Please select a file first");
+      return;
+    }
+
+    const ocrData = new FormData();
+    ocrData.append("file", selectedFile);
+    ocrData.append("module_type", "driver");
+    ocrData.append("prompt", "Extract all information in JSON format");
+
+    try {
+      const response = await axios.post(
+        `${BASE_URL}OCRController/simple_openai_process`,
+        ocrData,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        let matchCount = 0;
+        const gptData = response.data.gpt_response?.structured_json || {};
+        const ocrDataRaw = response.data.data || {};
+        const flatOCR = flattenObject(ocrDataRaw);
+
+        // --- UNIVERSAL MAPPING SOURCE GENERATION ---
+        const combinedSource = { ...flatOCR };
+
+        // 1. Support legacy synonym paths (gpt_name_0, rec_field, etc.)
+        if (gptData.names) gptData.names.forEach((n, i) => combinedSource[`gpt_name_${i}`] = n);
+        if (gptData.addresses) gptData.addresses.forEach((a, i) => combinedSource[`gpt_address_${i}`] = a);
+        if (gptData.dates) Object.entries(gptData.dates).forEach(([k, v]) => combinedSource[`gpt_date_${k}`] = v);
+        if (gptData.numbers) Object.entries(gptData.numbers).forEach(([k, v]) => combinedSource[`gpt_number_${k}`] = v);
+        if (gptData.records?.[0]) {
+          Object.entries(gptData.records[0]).forEach(([k, v]) => combinedSource[`rec_${k}`] = String(v));
+        }
+
+        // 2. Recursive flattening of everything in GPT response for maximum resilience
+        const flatGPT = flattenObject(gptData);
+        Object.entries(flatGPT).forEach(([k, v]) => {
+          combinedSource[`gpt_${k}`] = String(v);
+        });
+
+
+        setFormData(prev => {
+          const updated = { ...prev };
+          const sourceKeys = Object.keys(combinedSource);
+
+          const isFieldEmpty = (val) => {
+            if (val === null || val === undefined) return true;
+            const s = String(val).trim();
+            if (s === "") return true;
+            if (Array.isArray(val)) return val.length === 0 || (val.length === 1 && String(val[0]).trim() === "");
+            return false;
+          };
+
+          const getMatch = (synonyms) => {
+            const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
+            return key ? combinedSource[key] : null;
+          };
+
+          // 1. Map Name (fname, lname)
+          const fullName = getMatch(['rec_name', 'gpt_name_0', 'driver_name', 'names', 'nom']);
+          if (fullName && (isFieldEmpty(updated.fname) || isFieldEmpty(updated.lname))) {
+            const nameStr = String(fullName);
+            if (nameStr.includes(',')) {
+              const parts = nameStr.split(',').map(s => s.trim());
+              if (parts.length >= 2) {
+                updated.lname = parts[0];
+                updated.fname = parts.slice(1).join(" ");
+              }
+            } else {
+              const parts = nameStr.split(' ');
+              if (parts.length > 1) {
+                updated.fname = parts[0];
+                updated.lname = parts.slice(1).join(" ");
+              } else {
+                updated.fname = nameStr;
+              }
+            }
+            matchCount++;
+          }
+
+          // 2. Map Address (address1, city, state, zip, country)
+          const fullAddress = getMatch(['rec_address', 'gpt_address_0', 'driver_address', 'location', 'address', 'address1']);
+          if (fullAddress && isFieldEmpty(updated.address1)) {
+            const parts = String(fullAddress).split(',').map(s => s.trim());
+            if (parts.length >= 1) updated.address1 = parts[0];
+            if (parts.length >= 2) updated.city = parts[1];
+            if (parts.length >= 3) updated.state = parts[2];
+            if (parts.length >= 4) updated.zip = parts[3];
+            if (parts.length >= 5) updated.country = parts[4];
+            matchCount++;
+          }
+
+          // 4. Final catch-all for any other empty fields
+          Object.keys(updated).forEach(field => {
+            if (field === 'fname' || field === 'lname' || field === 'address1') return;
+            // For Update, we allow overwriting documentno
+            if (!isFieldEmpty(updated[field]) && field !== 'documentno') return;
+
+            const val = getMatch([field]);
+            if (val) {
+              updated[field] = String(val);
+              matchCount++;
+            }
+          });
+
+          if (matchCount > 0) {
+            toast.success(`OCR processed successfully. Mapped ${matchCount} details.`);
+          } else {
+            toast.warning("OCR processed but no matching fields found.");
+          }
+
+          return updated;
+        });
+      } else {
+        toast.error("OCR failed or no data found");
+      }
+
+    } catch (error) {
+      console.error("OCR error:", error);
+      toast.error("Error processing OCR");
+    }
+  };
+
   const { id } = useParams();
 
   const [formData, setFormData] = useState({
@@ -56,7 +199,7 @@ const Updatedrivers = () => {
   useEffect(() => {
     const fetchDriverData = async () => {
       try {
-        const response = await axios.get(`https://isovia.ca/fms_api/api/updatedrivers/${id}`);
+        const response = await axios.get(`${BASE_URL}api/updatedrivers/${id}`);
         if (response.data.product_data) {
           const data = response.data.product_data;
           setFormData({
@@ -115,7 +258,7 @@ const Updatedrivers = () => {
   // Handle input changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     if (type === 'checkbox') {
       setFormData(prev => ({
         ...prev,
@@ -131,30 +274,30 @@ const Updatedrivers = () => {
 
   // Handle file input change
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    setSelectedFile(e.target.files[0]);
   };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const formDataToSend = new FormData();
-    
+
     // Append all form data fields
     Object.keys(formData).forEach(key => {
       if (formData[key] !== null && formData[key] !== undefined) {
         formDataToSend.append(key, formData[key]);
       }
     });
-    
+
     // Append file if selected
-    if (file) {
-      formDataToSend.append('product_image', file);
+    if (selectedFile) {
+      formDataToSend.append('product_image', selectedFile);
     }
-    
+
     try {
       const response = await axios.post(
-        `https://isovia.ca/fms_api/api/updatedrivers/${id}`,
+        `${BASE_URL}api/updatedrivers/${id}`,
         formDataToSend,
         {
           headers: {
@@ -162,17 +305,17 @@ const Updatedrivers = () => {
           },
         }
       );
-      
+
       console.log('Update successful:', response.data);
       setMessage('Driver updated successfully!');
-      
+
       // Scroll to top to show success message
       window.scrollTo(0, 0);
-      
+
     } catch (error) {
       console.error('Error updating driver:', error);
       setMessage('Error updating driver. Please try again.');
-      
+
       // Scroll to top to show error message
       window.scrollTo(0, 0);
     }
@@ -207,6 +350,42 @@ const Updatedrivers = () => {
               </div>
             )}
 
+            {/* OCR UPLOAD SECTION */}
+            <div className="box box-solid" style={{ marginBottom: '10px' }}>
+              <div className="box-body">
+                <div className="form-group">
+                  <label>Upload Licence / PDF (OCR Auto-fill)</label>
+                  <div className="input-group">
+                    <input
+                      type="file"
+                      className="form-control"
+                      onChange={(e) => setSelectedFile(e.target.files[0])}
+                      accept=".pdf,.png,.jpg,.jpeg"
+                    />
+                    <span className="input-group-btn">
+                      <button
+                        type="button"
+                        className="btn btn-success"
+                        onClick={handleOcrUpload}
+                      >
+                        Scan & Auto-fill
+                      </button>
+                    </span>
+                  </div>
+                  <p className="help-block">Select a PDF or Image to auto-populate form fields.</p>
+                </div>
+                {ocrMessage && (
+                  <div className={`alert alert-${ocrMessage.status === 'error' ? 'danger' : (ocrMessage.status === 'warning' ? 'warning' : 'success')} alert-dismissible`} role="alert">
+                    <button type="button" className="close" onClick={() => setOcrMessage(null)}>
+                      <span aria-hidden="true">×</span>
+                    </button>
+                    {ocrMessage.message}
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* END OCR UPLOAD SECTION */}
+
             <div className="box">
               <div className="box-header">
                 <h3 className="box-title">Edit Driver</h3>
@@ -217,7 +396,7 @@ const Updatedrivers = () => {
                 <div className="box-body">
                   {/* Left Column */}
                   <div className="col-md-6 col-xs-12 pull pull-left">
-                    
+
                     {/* Image Upload */}
                     <div className="col-md-12 col-xs-12 pull pull-left">
                       <div className="form-group">
@@ -518,7 +697,7 @@ const Updatedrivers = () => {
 
                   {/* Right Column */}
                   <div className="col-md-6 col-xs-12 pull pull-right">
-                    
+
                     {/* Company Information */}
                     <div className="col-md-12 col-xs-12 pull pull-left">
                       <div className="form-group">

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { BASE_URL } from "../../config";
 
 const AceTripForm = () => {
   const [formData, setFormData] = useState({
@@ -40,24 +41,24 @@ const AceTripForm = () => {
     commodityWeightUnit: "L",
   });
 
- const handleChange = (e) => {
-  let { name, value } = e.target;
+  const handleChange = (e) => {
+    let { name, value } = e.target;
 
-  // Convert datetime-local value into "YYYY-MM-DD HH:mm:ss"
-  if (name === "estimatedArrivalDateTime") {
-    const date = new Date(value);
-    value = date.toISOString().slice(0, 19).replace("T", " ");
-  }
+    // Convert datetime-local value into "YYYY-MM-DD HH:mm:ss"
+    if (name === "estimatedArrivalDateTime") {
+      const date = new Date(value);
+      value = date.toISOString().slice(0, 19).replace("T", " ");
+    }
 
-  setFormData({ ...formData, [name]: value });
-};
+    setFormData({ ...formData, [name]: value });
+  };
 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const res = await axios.post(
-        "http://isovia.ca/fms_api/api/borderconnectsend",
+        `${BASE_URL}api/borderconnectsend`,
         formData
       );
       console.log(res.data);
@@ -69,7 +70,7 @@ const AceTripForm = () => {
   };
 
   return (
-    <div  className="content-wrapper" style={{ minHeight: 440 }}>
+    <div className="content-wrapper" style={{ minHeight: 440 }}>
       <h2 className="mb-4 text-center">ACE Trip Form</h2>
       <form onSubmit={handleSubmit}>
 

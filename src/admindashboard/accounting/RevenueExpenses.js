@@ -1,5 +1,6 @@
 // components/RevenueExpenses.js
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
@@ -10,18 +11,18 @@ const data = [
 ];
 
 const RevenueExpenses = () => {
-  const[payrollData,setpayrollData]=useState([])
-  useEffect(()=>{
+  const [payrollData, setpayrollData] = useState([])
+  useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('https://isovia.ca/fms_api/api/getRevenueExpenses');
-        setpayrollData(response.data);
+        const response = await axios.get(`${BASE_URL}api/getRevenueExpenses`);
+        setpayrollData(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     };
     fetchData();
-  },[])
+  }, [])
   return (
     <div>
       <h2>Revenue vs Expenses</h2>

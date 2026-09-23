@@ -1,4 +1,5 @@
 import axios from "axios";
+import { BASE_URL } from "../../config";
 import React, { useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
 
@@ -20,7 +21,7 @@ const LocationIncomeList = () => {
   const fetchLocationIncome = async () => {
     setLoading(true);
     try {
-      let url = `https://isovia.ca/fms_api/api/getLocationIncomelist?type=${filterType}`;
+      let url = `${BASE_URL}api/getLocationIncomelist?type=${filterType}`;
       if (fromDate && toDate) url += `&from=${fromDate}&to=${toDate}`;
 
       const res = await axios.get(url);
@@ -113,57 +114,57 @@ const LocationIncomeList = () => {
                   </div>
                 ) : (
                   <>
-               <table className="table table-bordered table-striped">
-  <thead>
-    <tr>
-      <th>Pickup</th>
-      <th>Delivery</th>
-      <th>Company</th>
-      <th>Period</th>
-      <th>Income</th>
-    </tr>
-  </thead>
-  <tbody>
-    {currentData.length > 0 ? (
-      currentData.map((item, i) => (
-        <tr
-          key={i}
-          style={
-            item.name === "Total"
-              ? { backgroundColor: "#e6f7ff", fontWeight: "bold" }
-              : {}
-          }
-        >
-          <td>{item.pickup_address || "-"}</td>
-          <td>{item.delivery_address || "-"}</td>
-          <td>{item.company || "-"}</td>
-          <td>{item.period || "-"}</td>
-          <td style={{ color: "green" }}>
-            ${Number(item.value || 0).toFixed(2)}
-          </td>
-        </tr>
-      ))
-    ) : (
-      <tr>
-        <td colSpan="5" className="text-center">
-          No records found
-        </td>
-      </tr>
-    )}
+                    <table className="table table-bordered table-striped">
+                      <thead>
+                        <tr>
+                          <th>Pickup</th>
+                          <th>Delivery</th>
+                          <th>Company</th>
+                          <th>Period</th>
+                          <th>Income</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentData.length > 0 ? (
+                          currentData.map((item, i) => (
+                            <tr
+                              key={i}
+                              style={
+                                item.name === "Total"
+                                  ? { backgroundColor: "#e6f7ff", fontWeight: "bold" }
+                                  : {}
+                              }
+                            >
+                              <td>{item.pickup_address || "-"}</td>
+                              <td>{item.delivery_address || "-"}</td>
+                              <td>{item.company || "-"}</td>
+                              <td>{item.period || "-"}</td>
+                              <td style={{ color: "green" }}>
+                                ${Number(item.value || 0).toFixed(2)}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="5" className="text-center">
+                              No records found
+                            </td>
+                          </tr>
+                        )}
 
-    {!data.some((d) => d.name === "Total") && (
-      <tr
-        style={{
-          backgroundColor: "#e6f7ff",
-          fontWeight: "bold",
-        }}
-      >
-        <td colSpan="4">Overall Total</td>
-        <td style={{ color: "green" }}>${totalIncome.toFixed(2)}</td>
-      </tr>
-    )}
-  </tbody>
-</table>
+                        {!data.some((d) => d.name === "Total") && (
+                          <tr
+                            style={{
+                              backgroundColor: "#e6f7ff",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            <td colSpan="4">Overall Total</td>
+                            <td style={{ color: "green" }}>${totalIncome.toFixed(2)}</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
 
 
                     {/* PAGINATION */}

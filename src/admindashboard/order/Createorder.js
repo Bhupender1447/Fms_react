@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Distancepopup from "../Distancepopup";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { BASE_URL } from "../../config";
 
 const Createorder = () => {
   const navigate = useNavigate();
@@ -11,19 +12,19 @@ const Createorder = () => {
   const [, seterror] = useState([]);
   const [getdataid, setgetdataid] = useState(0);
   let userdata = JSON.parse(localStorage.getItem("logindetail"));
-  const [formData, setFormData] = useState({
+  const initialState = {
     company: "",
     customerorderno: "",
-    shipmenttype: "",
+    shipmenttype: "Regular",
     loadtype: "",
     loadno: "",
     pickupnote: "",
     customer_id: "",
     salesman: "",
-    commodity: [],
-    weight: [],
-    unit: [],
-    package: [],
+    commodity: [""],
+    weight: [""],
+    unit: [""],
+    package: [""],
     trailortype: "",
     hazmat: "",
     refer: "",
@@ -54,7 +55,178 @@ const Createorder = () => {
     cst: "",
     cstamount: "",
     net_amount: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialState);
+  // OCR Logic
+  const [ocrFile, setOcrFile] = useState(null);
+
+  const flattenObject = (obj, prefix = "", res = {}) => {
+    for (let key in obj) {
+      const value = obj[key];
+      const newKey = prefix ? `${prefix}_${key}` : key;
+
+      if (typeof value === "object" && value !== null) {
+        flattenObject(value, newKey, res);
+      } else {
+        res[newKey.toLowerCase()] = String(value);
+      }
+    }
+    return res;
+  };
+
+  const handleOcrFileChange = (e) => {
+    setOcrFile(e.target.files[0]);
+  };
+
+  const handleOcrUpload = async () => {
+    if (!ocrFile) {
+      toast.error("Please select a file to upload");
+      return;
+    }
+    const ocrData = new FormData();
+    ocrData.append("file", ocrFile);
+    ocrData.append("module_type", "order");
+    ocrData.append("prompt", "Extract all information in JSON format");
+
+    try {
+      const response = await axios.post(
+        `${BASE_URL}OCRController/simple_openai_process`,
+        ocrData,
+        { withCredentials: true }
+      );
+
+      if (response.data && response.data.success) {
+        let matchCount = 0;
+        const gptData = response.data.gpt_response?.structured_json || {};
+        const ocrDataRaw = response.data.data || {};
+        const flatOCR = flattenObject(ocrDataRaw);
+
+        // --- UNIVERSAL MAPPING SOURCE GENERATION ---
+        const combinedSource = { ...flatOCR };
+
+        // 1. Support legacy synonym paths (gpt_name_0, rec_field, etc.)
+        if (gptData.names) gptData.names.forEach((n, i) => combinedSource[`gpt_name_${i}`] = n);
+        if (gptData.addresses) gptData.addresses.forEach((a, i) => combinedSource[`gpt_address_${i}`] = a);
+        if (gptData.dates) Object.entries(gptData.dates).forEach(([k, v]) => combinedSource[`gpt_date_${k}`] = v);
+        if (gptData.numbers) Object.entries(gptData.numbers).forEach(([k, v]) => combinedSource[`gpt_number_${k}`] = v);
+        if (gptData.records?.[0]) {
+          Object.entries(gptData.records[0]).forEach(([k, v]) => {
+            combinedSource[`rec_${k}`] = String(v);
+          });
+        }
+
+        // 2. Recursive flattening of everything in GPT response for maximum resilience
+        const flatGPT = flattenObject(gptData);
+        Object.entries(flatGPT).forEach(([k, v]) => {
+          combinedSource[`gpt_${k}`] = String(v);
+        });
+
+        setFormData((prev) => {
+          const updated = { ...prev };
+          const sourceKeys = Object.keys(combinedSource);
+
+          const isFieldEmpty = (val) => {
+            if (val === null || val === undefined) return true;
+            const s = String(val).trim();
+            if (s === "") return true;
+            if (Array.isArray(val)) return val.length === 0 || (val.length === 1 && String(val[0]).trim() === "");
+            return false;
+          };
+
+          const getMatch = (synonyms) => {
+            const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
+            return key ? combinedSource[key] : null;
+          };
+
+          // 1. Map Load Number & Salesman (Allow overwrite for loadno)
+          const loadVal = getMatch(['rec_load_number', 'gpt_number_load', 'loadno', 'load_number', 'load']);
+          if (loadVal) {
+            updated.loadno = String(loadVal);
+            matchCount++;
+          }
+
+          const customerVal = getMatch(['rec_name', 'gpt_name_0', 'customer', 'names', 'client', 'broker']);
+          if (customerVal && isFieldEmpty(updated.customer_id)) {
+            const cust = data.customers?.find(c => c.name?.toLowerCase().includes(String(customerVal).toLowerCase()));
+            if (cust) { updated.customer_id = cust.id; matchCount++; }
+          }
+
+          // 2. Map Addresses & Locations
+          const pickupAddr = getMatch(['rec_pickup_address', 'gpt_address_0', 'addresses', 'pickup_addr', 'shipper_address', 'origin_address', 'address']);
+          if (pickupAddr && isFieldEmpty(updated.pickup_address)) {
+            updated.pickup_address = String(pickupAddr);
+            matchCount++;
+          }
+
+          const pickupLoc = getMatch(['shipper', 'ship_from', 'pickup_loc', 'origin', 'pickup_from']);
+          if (pickupLoc && isFieldEmpty(updated.pickup_from)) {
+            const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(pickupLoc).toLowerCase()));
+            if (loc) { updated.pickup_from = loc.id; matchCount++; }
+          }
+
+          const deliveryAddr = getMatch(['rec_delivery_address', 'gpt_address_1', 'addresses', 'delivery_addr', 'consignee_address', 'destination_address']);
+          if (deliveryAddr && isFieldEmpty(updated.delivery_address)) {
+            updated.delivery_address = String(deliveryAddr);
+            matchCount++;
+          }
+
+          const deliveryLoc = getMatch(['consignee', 'ship_to', 'delivery_loc', 'destination', 'delivery']);
+          if (deliveryLoc && isFieldEmpty(updated.delivery)) {
+            const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(deliveryLoc).toLowerCase()));
+            if (loc) { updated.delivery = loc.id; matchCount++; }
+          }
+
+          // 3. Map Dates
+          const pickupDate = getMatch(['rec_pickup_date', 'gpt_date_pickup', 'pickup_date', 'iss']);
+          if (pickupDate && isFieldEmpty(updated.pickupdate)) {
+            updated.pickupdate = String(pickupDate);
+            matchCount++;
+          }
+
+          const deliveryDate = getMatch(['rec_delivery_date', 'gpt_date_delivery', 'delivery_date', 'exp']);
+          if (deliveryDate && isFieldEmpty(updated.deliverydate)) {
+            updated.deliverydate = String(deliveryDate);
+            matchCount++;
+          }
+
+          // 4. Final catch-all & Logic for Arrays/Numbers
+          Object.keys(updated).forEach(field => {
+            const isDefault = ["No", "Regular", "LTL", "Hazmat", "13", "0"].includes(String(updated[field]));
+            if (!isFieldEmpty(updated[field]) && !isDefault && field !== 'loadno') return;
+
+            const val = getMatch([field]);
+            if (val) {
+              if (Array.isArray(updated[field])) {
+                updated[field] = [String(val)];
+              } else if (!isNaN(prev[field]) && typeof prev[field] === 'number') {
+                updated[field] = String(val).replace(/[^\d.]/g, "");
+              } else {
+                updated[field] = String(val).substring(0, 300);
+              }
+              matchCount++;
+            }
+          });
+
+          if (matchCount > 0) {
+            toast.success(`OCR processed successfully. Mapped ${matchCount} details.`);
+          } else {
+            toast.warning("OCR processed but no matching fields found.");
+          }
+
+          return updated;
+        });
+
+      } else {
+        toast.error("OCR failed or no data found");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error processing OCR");
+    }
+  };
+
+
   const [stops, setStops] = useState([]);
   const addStop = () => {
     const newStop = {
@@ -68,6 +240,27 @@ const Createorder = () => {
     const updatedStops = [...stops];
     updatedStops[index][field] = value;
     setStops(updatedStops);
+  };
+
+  const handleRemoveRow = (index) => {
+    setFormData((prev) => {
+      const newData = { ...prev };
+      newData.commodity = prev.commodity.filter((_, i) => i !== index);
+      newData.weight = prev.weight.filter((_, i) => i !== index);
+      newData.unit = prev.unit.filter((_, i) => i !== index);
+      newData.package = prev.package.filter((_, i) => i !== index);
+      return newData;
+    });
+  };
+
+  const handleAddRow = () => {
+    setFormData((prev) => ({
+      ...prev,
+      commodity: [...prev.commodity, ""],
+      weight: [...prev.weight, ""],
+      unit: [...prev.unit, ""],
+      package: [...prev.package, ""],
+    }));
   };
   const [, setmessage] = useState();
   const [popup, setpopup] = useState(false);
@@ -156,18 +349,15 @@ const Createorder = () => {
 
   useEffect(() => {
     axios
-      .get("https://isovia.ca/fms_api/api/getOrderData")
+      .get(`${BASE_URL}api/getOrderData`)
       .then((res) => {
         setdata(res.data);
         setFormData({ customerorderno: res && res.data.orderno });
         console.log(res.data);
       })
       .catch((error) => seterror(error));
-    handleAddRow();
-    // eslint-disable-next-line no-use-before-define
-  }, [handleAddRow]);
-
-  const [, setRows] = useState([]);
+    // eslint-disable-next-line
+  }, []);
 
   let handleonSubmit = async (e) => {
     e.preventDefault();
@@ -220,11 +410,12 @@ const Createorder = () => {
 
     try {
       const response = await axios.post(
-        "https://isovia.ca/fms_api/api/create",
+        `${BASE_URL}api/create`,
         form
       );
       setmessage(response.data.message);
-      setFormData({});
+      setmessage(response.data.message);
+      setFormData(initialState);
 
       setgetdataid(response.data.id);
       toast.success("Successfully created", {
@@ -257,89 +448,14 @@ const Createorder = () => {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handleAddRow = () => {
-    setRows((prevRows) => [
-      ...prevRows,
-      <tr key={prevRows.length + 1}>
-        <td>
-          <input
-            type="text"
-            name={`commodity[${prevRows.length}]`}
-            placeholder="Enter Commodity"
-            className="form-control name_list"
-            required
-            value={formData?.commodity[prevRows.length] || ""}
-            onChange={(e) =>
-              handleInputChange2(e, prevRows.length, "commodity")
-            }
-          />
-        </td>
-        <td>
-          <input
-            type="text"
-            name={`weight[${prevRows.length}]`}
-            placeholder="Enter Weight"
-            className="form-control name_list"
-            required
-            value={formData?.weight[prevRows.length] || ""}
-            onChange={(e) => handleInputChange2(e, prevRows.length, "weight")}
-          />
-        </td>
-        <td>
-          <select
-            name={`unit[${prevRows.length}]`}
-            className="form-control name_list"
-            required
-            value={formData?.unit[prevRows.length] || ""}
-            onChange={(e) => handleInputChange2(e, prevRows.length, "unit")}
-          >
-            <option value="na" disabled>
-              Select Unit
-            </option>
-            <option value="Gallons">Gallons</option>
-            <option value="KG">KG</option>
-            <option value="TON">TON</option>
-            <option value="Metric Ton">Metric Ton</option>
-            <option value="Ounces">Ounces</option>
-            <option value="MBF">MBF</option>
-            <option value="Pounds">Pounds</option>
-          </select>
-        </td>
-        <td>
-          <input
-            type="text"
-            name={`package[${prevRows.length}]`}
-            placeholder="Enter No. of Packages"
-            className="form-control name_list"
-            required
-            value={formData?.package[prevRows.length] || ""}
-            onChange={(e) => handleInputChange2(e, prevRows.length, "package")}
-          />
-        </td>
-        <td>
-          <button
-            type="button"
-            name="remove"
-            className="btn btn-danger btn_remove"
-            onClick={() => handleRemoveRow(prevRows.length + 1)}
-          >
-            X
-          </button>
-        </td>
-      </tr>,
-    ]);
-  };
 
-  const handleRemoveRow = (index) => {
-    setRows((prevRows) => prevRows.filter((row, i) => i !== index - 1));
-  };
 
   return (
     <div className="content-wrapper">
       <section className="content-header">
         <h1>
           Manage
-          <small>Trips</small>
+          <small>Orders</small>
         </h1>
         <ol className="breadcrumb">
           <li>
@@ -354,6 +470,34 @@ const Createorder = () => {
         {/* Small boxes (Stat box) */}
         <div className="row">
           <div className="col-md-12 col-xs-12">
+
+            {/* OCR UPLOAD SECTION */}
+            <div className="box box-solid">
+              <div className="box-body">
+                <div className="form-group">
+                  <label>Upload Document (OCR Auto-fill)</label>
+                  <div className="input-group">
+                    <input
+                      type="file"
+                      className="form-control"
+                      onChange={handleOcrFileChange}
+                      accept=".pdf,.png,.jpg,.jpeg"
+                    />
+                    <span className="input-group-btn">
+                      <button
+                        type="button"
+                        className="btn btn-success"
+                        onClick={handleOcrUpload}
+                      >
+                        Scan & Auto-fill
+                      </button>
+                    </span>
+                  </div>
+                  <p className="help-block">Select a PDF or Image to auto-populate form fields.</p>
+                </div>
+              </div>
+            </div>
+            {/* END OCR UPLOAD SECTION */}
             <div id="messages" />
             <div className="box">
               <div className="col-md-12 col-xs-12 pull pull-left">
@@ -399,9 +543,6 @@ const Createorder = () => {
                       className="form-control"
                       id="customerorderno"
                       name="customerorderno"
-                      defaultValue={data && data.triprno}
-                      placeholder="Enter Customer Order #"
-                      autoComplete="off"
                       value={data && data.triprno}
                     />
                     <div className="col-md-6 col-xs-12 pull pull-left">
@@ -515,9 +656,6 @@ const Createorder = () => {
                           className="form-control"
                           id="scaleticketno"
                           name="scaleticketno"
-                          defaultValue={data && data.triprno}
-                          placeholder="Enter Scale Ticket #"
-                          autoComplete="off"
                           value={
                             formData.scaleticketno
                               ? formData.scaleticketno
@@ -535,9 +673,6 @@ const Createorder = () => {
                           className="form-control"
                           id="scaleticketno"
                           name="scaleticketno"
-                          defaultValue={data && data.loadno}
-                          placeholder="Enter Scale Ticket #"
-                          autoComplete="off"
                           value={
                             formData.loadno
                               ? formData.loadno
@@ -792,13 +927,12 @@ const Createorder = () => {
                     type="text"
                     className="form-control"
                     id="pickup_refno"
-                    defaultValue="ISV_TRIP-1230"
-                    name="pickup_refno"
-                    autoComplete="off"
                     value={
-                      formData.pickup_refno
+                      formData.pickup_refno !== undefined
                         ? formData.pickup_refno
                         : data && data.orderno
+                          ? data.orderno
+                          : "ISV_TRIP-1230"
                     }
                     onChange={handleInputChange}
                   />
@@ -832,9 +966,8 @@ const Createorder = () => {
                     name="pickup_desc"
                     placeholder="Enter Pickup Notes"
                     autoComplete="off"
-                    value={formData.pickup_desc}
+                    value={formData.pickup_desc || ""}
                     onChange={handleInputChange}
-                    defaultValue={"  "}
                   />
                 </div>
               </div>
@@ -1217,98 +1350,111 @@ const Createorder = () => {
             <div className="table-responsive">
               <table className="table table-bordered" id="dynamic_weight">
                 <tbody>
-                  <tr>
-                    <td>
-                      <div className="col-md-12 col-xs-12 pull pull-left">
-                        <div className="form-group">
-                          <label htmlFor="username">Commodities(s)</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="commodity[]"
-                            name="commodity[]"
-                            placeholder="Enter Commodity"
-                            autoComplete="off"
-                            value={formData.commodity}
-                            onChange={handleInputChange}
-                          />
+
+                  {formData.commodity?.map((item, index) => (
+                    <tr key={index}>
+                      <td>
+                        <div className="col-md-12 col-xs-12 pull pull-left">
+                          <div className="form-group">
+                            <label htmlFor={`commodity-${index}`}>Commodities(s)</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              id={`commodity-${index}`}
+                              name={`commodity[${index}]`}
+                              placeholder="Enter Commodity"
+                              autoComplete="off"
+                              value={formData.commodity[index]}
+                              onChange={(e) => handleInputChange2(e, index, "commodity")}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="col-md-12 col-xs-12 pull pull-left">
-                        <div className="form-group">
-                          <label htmlFor="username">Weight</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="weight[]"
-                            name="weight[]"
-                            placeholder="Enter Weight"
-                            autoComplete="off"
-                            value={formData.weight}
-                            onChange={handleInputChange}
-                          />
+                      </td>
+                      <td>
+                        <div className="col-md-12 col-xs-12 pull pull-left">
+                          <div className="form-group">
+                            <label htmlFor={`weight-${index}`}>Weight</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              id={`weight-${index}`}
+                              name={`weight[${index}]`}
+                              placeholder="Enter Weight"
+                              autoComplete="off"
+                              value={formData.weight[index]}
+                              onChange={(e) => handleInputChange2(e, index, "weight")}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="col-md-12 col-xs-12 pull pull-left">
-                        <div className="form-group">
-                          <label htmlFor="username">Packages(s)</label>
-                          <select
-                            className="form-control"
-                            id="unit[]"
-                            name="unit[]"
-                            value={formData.unit}
-                            onChange={handleInputChange}
-                            unit
-                          >
-                            <option value="Gallons">Gallons</option>
-                            <option value="Gallons">Gallons</option>
-                            <option value="Grams">Grams</option>
-                            <option value="KGs">KGs</option>
-                            <option value="MBF">MBF</option>
-                            <option value="Metric Ton">Metric Ton</option>
-                            <option value="Ounces">Ounces</option>
-                            <option value="Pounds">Pounds</option>
-                            <option value="Tons">Tons</option>
-                          </select>
+                      </td>
+                      <td>
+                        <div className="col-md-12 col-xs-12 pull pull-left">
+                          <div className="form-group">
+                            <label htmlFor={`unit-${index}`}>Unit</label>
+                            <select
+                              className="form-control"
+                              id={`unit-${index}`}
+                              name={`unit[${index}]`}
+                              value={formData.unit[index]}
+                              onChange={(e) => handleInputChange2(e, index, "unit")}
+                            >
+                              <option value="na" disabled>
+                                Select Unit
+                              </option>
+                              <option value="Gallons">Gallons</option>
+                              <option value="KG">KG</option>
+                              <option value="TON">TON</option>
+                              <option value="Metric Ton">Metric Ton</option>
+                              <option value="Ounces">Ounces</option>
+                              <option value="MBF">MBF</option>
+                              <option value="Pounds">Pounds</option>
+                            </select>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="col-md-12 col-xs-12 pull pull-left">
-                        <div className="form-group">
-                          <label htmlFor="username">Packages(s)</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="package[]"
-                            name="package[]"
-                            autoComplete="off"
-                            value={formData.package}
-                            onChange={handleInputChange}
-                          />
+                      </td>
+                      <td>
+                        <div className="col-md-12 col-xs-12 pull pull-left">
+                          <div className="form-group">
+                            <label htmlFor={`package-${index}`}>Packages(s)</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              id={`package-${index}`}
+                              name={`package[${index}]`}
+                              placeholder="Enter Packages"
+                              autoComplete="off"
+                              value={formData.package[index]}
+                              onChange={(e) => handleInputChange2(e, index, "package")}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="col-md-12 col-xs-12 pull pull-left">
-                        <div className="form-group">
-                          <label htmlFor="username">Add Rows</label>
-                          <button
-                            type="button"
-                            name="add1"
-                            id="add1"
-                            className="btn btn-success"
-                          >
-                            +
-                          </button>
+                      </td>
+                      <td>
+                        <div className="col-md-12 col-xs-12 pull pull-left">
+                          <div className="form-group">
+                            <label>Action</label>
+                            {index === formData.commodity.length - 1 ? (
+                              <button
+                                type="button"
+                                className="btn btn-success"
+                                onClick={handleAddRow}
+                              >
+                                +
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-danger"
+                                onClick={() => handleRemoveRow(index)}
+                              >
+                                X
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
               <div className="col-md-3 col-xs-12 pull pull-left">
@@ -1472,7 +1618,7 @@ const Createorder = () => {
                         <input
                           type="number"
                           name="ratevalue"
-                          onkeyup="sum();"
+                          onKeyUp={() => { }}
                           placeholder="Enter Qty"
                           className="form-control name_list"
                           required=""
@@ -1509,7 +1655,6 @@ const Createorder = () => {
                           className="form-control"
                           id="gross_amount"
                           name="gross_amount"
-                          defaultValue={0}
                           autoComplete="off"
                           value={formData.gross_amount}
                           onChange={handleInputChange}
@@ -1526,7 +1671,6 @@ const Createorder = () => {
                           className="form-control"
                           id="hst"
                           name="hst"
-                          defaultValue={0}
                           autoComplete="off"
                           value={formData.hst}
                           onChange={handleInputChange}
@@ -1539,7 +1683,6 @@ const Createorder = () => {
                           className="form-control"
                           id="hstamount"
                           name="hstamount"
-                          defaultValue={0}
                           autoComplete="off"
                           value={formData.hstamount}
                           onChange={handleInputChange}
@@ -1557,7 +1700,6 @@ const Createorder = () => {
                           className="form-control"
                           id="cst"
                           name="cst"
-                          defaultValue={0}
                           autoComplete="off"
                           value={formData.cst}
                           onChange={handleInputChange}
@@ -1569,7 +1711,6 @@ const Createorder = () => {
                           className="form-control"
                           id="cstamount"
                           name="cstamount"
-                          defaultValue={0}
                           autoComplete="off"
                           value={formData.cstamount}
                           onChange={handleInputChange}
@@ -1588,7 +1729,6 @@ const Createorder = () => {
                           className="form-control"
                           id="net_amount"
                           name="net_amount"
-                          defaultValue={0}
                           autoComplete="off"
                           value={formData.net_amount}
                           onChange={handleInputChange}
@@ -1616,7 +1756,7 @@ const Createorder = () => {
             Back
           </button>
         </div>
-      </section>
+      </section >
 
       {popup && (
         <div
@@ -1695,7 +1835,7 @@ const Createorder = () => {
           </div>
         </div>
       )}
-    </div>
+    </div >
   );
 };
 

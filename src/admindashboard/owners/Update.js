@@ -1,8 +1,10 @@
 /* eslint-disable jsx-a11y/iframe-has-title */
 /* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from "axios";
+import { BASE_URL } from "../../config";
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const Updateowners = () => {
   const { id } = useParams();
@@ -30,13 +32,202 @@ const Updateowners = () => {
     fax: "",
     fastno: "",
     fastexp: "",
+    // Compliance Fields
+    mc_no: "",
+    dot_no: "",
+    ins_policy: "",
+    ins_expiry: "",
+    w9_document: "",
+    permit_data: "",
+    safety_score: "",
   });
+
+  // OCR Logic
+  const [ocrFile, setOcrFile] = useState(null);
+
+  const flattenObject = (obj, prefix = "", res = {}) => {
+    for (let key in obj) {
+      const value = obj[key];
+      const newKey = prefix ? `${prefix}_${key}` : key;
+
+      if (typeof value === "object" && value !== null) {
+        flattenObject(value, newKey, res);
+      } else {
+        res[newKey.toLowerCase()] = String(value);
+      }
+    }
+    return res;
+  };
+
+  const handleOcrUpload = async () => {
+    if (!ocrFile) {
+      alert("Please select a file to upload");
+      return;
+    }
+    const ocrData = new FormData();
+    ocrData.append("file", ocrFile);
+    ocrData.append("module_type", "owner");
+    ocrData.append("prompt", "Extract all information in JSON format");
+
+    try {
+      const response = await axios.post(
+        `${BASE_URL}OCRController/simple_openai_process`,
+        ocrData,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        let matchCount = 0;
+        const gptData = response.data.gpt_response?.structured_json || {};
+        const ocrDataRaw = response.data.data || {};
+        const flatOCR = flattenObject(ocrDataRaw);
+
+        // --- UNIVERSAL MAPPING SOURCE GENERATION ---
+        const combinedSource = { ...flatOCR };
+
+        // 1. Support legacy synonym paths (gpt_name_0, rec_field, etc.)
+        if (gptData.names) gptData.names.forEach((n, i) => combinedSource[`gpt_name_${i}`] = n);
+        if (gptData.companies) gptData.companies.forEach((c, i) => combinedSource[`gpt_company_${i}`] = c);
+        if (gptData.addresses) gptData.addresses.forEach((a, i) => combinedSource[`gpt_address_${i}`] = a);
+        if (gptData.dates) Object.entries(gptData.dates).forEach(([k, v]) => combinedSource[`gpt_date_${k}`] = v);
+        if (gptData.records?.[0]) {
+          Object.entries(gptData.records[0]).forEach(([k, v]) => combinedSource[`rec_${k}`] = String(v));
+        }
+
+        // 2. Recursive flattening of everything in GPT response for maximum resilience
+        const flatGPT = flattenObject(gptData);
+        Object.entries(flatGPT).forEach(([k, v]) => {
+          combinedSource[`gpt_${k}`] = String(v);
+        });
+
+        setFormData(prev => {
+          const updated = { ...prev };
+          const sourceKeys = Object.keys(combinedSource);
+
+          const isFieldEmpty = (val) => {
+            if (val === null || val === undefined) return true;
+            const s = String(val).trim();
+            if (s === "") return true;
+            if (Array.isArray(val)) return val.length === 0 || (val.length === 1 && String(val[0]).trim() === "");
+            return false;
+          };
+
+          const getMatch = (synonyms) => {
+            const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
+            return key ? combinedSource[key] : null;
+          };
+
+          // 1. Map Name & Company
+          const nameVal = getMatch(['rec_name', 'gpt_name_0', 'owner_name', 'names', 'company']);
+          if (nameVal && isFieldEmpty(updated.name)) {
+            updated.name = String(nameVal);
+            matchCount++;
+          }
+
+          const companyVal = getMatch(['rec_company', 'gpt_company_0', 'companies', 'company_name']);
+          if (companyVal && isFieldEmpty(updated.company)) {
+            updated.company = String(companyVal);
+            matchCount++;
+          }
+
+          // 2. Map Address
+          const fullAddress = getMatch(['rec_address', 'gpt_address_0', 'addresses', 'location', 'address', 'address1']);
+          if (fullAddress && isFieldEmpty(updated.address1)) {
+            const parts = String(fullAddress).split(',').map(s => s.trim());
+            if (parts.length >= 1) updated.address1 = parts[0]; // Changed to address1
+            if (parts.length >= 2) updated.city = parts[1];
+            if (parts.length >= 3) updated.state = parts[2]; // Changed to state
+            if (parts.length >= 4) updated.zip = parts[3]; // Changed to zip
+            matchCount++;
+          }
+
+          // 3. Specific Field Mapping
+          const fieldMap = {
+            db: ['rec_date_of_birth', 'gpt_date_dob', 'birth', 'ddn'],
+            email: ['email', 'courriel'],
+            phone: ['phone', 'mobile'],
+            zip: ['postal', 'zip', 'pcode'] // Changed to zip
+          };
+
+          Object.entries(fieldMap).forEach(([field, synonyms]) => {
+            if (field === 'address1' || field === 'name' || field === 'company') return; // Changed to address1
+            if (updated[field] && updated[field] !== "") return;
+
+            const val = getMatch(synonyms);
+            if (val) {
+              updated[field] = val;
+              matchCount++;
+            }
+          });
+
+          // 4. Final catch-all
+          Object.keys(updated).forEach(field => {
+            if (field === 'address' || field === 'name' || field === 'company' || field === 'address1') return;
+            if (!isFieldEmpty(updated[field])) return;
+
+            const val = getMatch([field]);
+            if (val) {
+              updated[field] = String(val);
+              matchCount++;
+            }
+          });
+
+          return updated;
+        });
+
+        if (matchCount > 0) {
+          toast.success(`OCR processed successfully. Updated ${matchCount} fields.`);
+        } else {
+          toast.warning("OCR processed but no matching fields found.");
+        }
+      } else {
+        toast.error("OCR failed or no data found");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error processing OCR");
+    }
+  };
+
+  const handleFmcsaLookup = async () => {
+    const { mc_no, dot_no } = formData;
+    if (!mc_no && !dot_no) {
+      toast.warning("Please enter MC# or USDOT# for lookup");
+      return;
+    }
+
+    try {
+      const params = dot_no ? `dot=${dot_no}` : `mc=${mc_no}`;
+      const response = await axios.get(`${BASE_URL}api/fmcsa_lookup?${params}`, { withCredentials: true });
+
+      if (response.data && response.data.legal_name) {
+        const data = response.data;
+        setFormData(prev => ({
+          ...prev,
+          name: data.legal_name || prev.name,
+          legal: data.legal_name || prev.legal,
+          company: data.dba_name || prev.company,
+          address1: data.physical_address || prev.address1,
+          phone: data.phone || prev.phone,
+          dot_no: data.usdot || prev.dot_no,
+          mc_no: data.mc_mx_ff_numbers || prev.mc_no,
+          safety_score: data.safety_rating || ""
+        }));
+        toast.success("✅ FMCSA Carrier Data Verified!");
+      } else {
+        toast.error("❌ No carrier data found.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error connecting to FMCSA Lookup service");
+    }
+  };
 
   useEffect(() => {
     const fetchTrailerData = async () => {
       try {
         const response = await axios.get(
-          `https://isovia.ca/fms_api/api/updateowner/${id}`
+          `${BASE_URL}api/updateowner/${id}`
         );
         setFormData(response.data.product_data);
       } catch (error) {
@@ -62,7 +253,7 @@ const Updateowners = () => {
 
     try {
       const response = await axios.post(
-        `https://isovia.ca/fms_api/api/updateowner/${id}`,
+        `${BASE_URL}api/updateowner/${id}`,
         formDataToSend,
         {
           headers: {
@@ -110,6 +301,33 @@ const Updateowners = () => {
                 {message}
               </div>
             )}
+            {/* OCR UPLOAD SECTION */}
+            <div className="box box-solid" style={{ marginBottom: '10px' }}>
+              <div className="box-body">
+                <div className="form-group">
+                  <label>Upload Document (OCR Auto-fill)</label>
+                  <div className="input-group">
+                    <input
+                      type="file"
+                      className="form-control"
+                      onChange={(e) => setOcrFile(e.target.files[0])}
+                      accept=".pdf,.png,.jpg,.jpeg"
+                    />
+                    <span className="input-group-btn">
+                      <button
+                        type="button"
+                        className="btn btn-success"
+                        onClick={handleOcrUpload}
+                      >
+                        Scan & Auto-fill
+                      </button>
+                    </span>
+                  </div>
+                  <p className="help-block">Select a PDF or Image to auto-populate form fields.</p>
+                </div>
+              </div>
+            </div>
+            {/* END OCR UPLOAD SECTION */}
             <div className="box">
               <div className="box-header">
                 <h3 className="box-title">Add Truck Owners</h3>

@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
+import { BASE_URL } from '../../config';
 
 // DocumentChecklist Component
 const DocumentChecklist = ({ driverId, onClose }) => {
@@ -14,9 +15,9 @@ const DocumentChecklist = ({ driverId, onClose }) => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `https://isovia.ca/fms_api/api/checkDocumentList?id=${driverId}`
+          `${BASE_URL}api/checkDocumentList?id=${driverId}`
         );
-        
+
         if (response.data.status === 'success') {
           setDocumentData(response.data.data[0]);
         } else {
@@ -122,7 +123,7 @@ const DocumentChecklist = ({ driverId, onClose }) => {
                           <div className="flex-grow-1">
                             <h6 className="mb-1">{doc.document_type}</h6>
                             <small className="text-muted">
-                              <strong>Expiry:</strong> {new Date(doc.expiry_date).toLocaleDateString()} | 
+                              <strong>Expiry:</strong> {new Date(doc.expiry_date).toLocaleDateString()} |
                               <strong> Status:</strong> {getDaysText(doc.remaining_days)}
                             </small>
                           </div>
@@ -182,7 +183,7 @@ const Drivers = () => {
   const [selectedDriverForDocs, setSelectedDriverForDocs] = useState(null);
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/fetchdriversProductData')
+    axios.get(`${BASE_URL}api/fetchdriversProductData`)
       .then(res => setData(res.data))
       .catch(error => console.log(error));
   }, []);
@@ -194,7 +195,7 @@ const Drivers = () => {
   const handleRemove = async (id) => {
     try {
       const response = await axios.post(
-        'https://isovia.ca/fms_api/api/remove',
+        `${BASE_URL}api/remove`,
         new URLSearchParams({
           id: id,
           type: 'fms_drivers'
@@ -225,7 +226,7 @@ const Drivers = () => {
           <small>Drivers</small>
         </h1>
       </section>
-      
+
       {/* Main content */}
       <section className="content">
         <div className="row">
@@ -257,7 +258,7 @@ const Drivers = () => {
                   </button>
                 </div>
               </div>
-              
+
               {/* /.box-header */}
               <div className="box-body">
                 <div id="manageTable_wrapper" className="dataTables_wrapper form-inline dt-bootstrap no-footer">
@@ -296,7 +297,7 @@ const Drivers = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="row">
                     <div className="col-sm-12">
                       <table
@@ -403,7 +404,7 @@ const Drivers = () => {
                       </table>
                     </div>
                   </div>
-                  
+
                   {/* Pagination Footer */}
                   <div className="row">
                     <div className="col-sm-5">
@@ -448,15 +449,15 @@ const Drivers = () => {
                         </div>
                         <div className="pull-right">
                           <div className="btn-group">
-                            <button 
-                              type="button" 
+                            <button
+                              type="button"
                               className="btn btn-default btn-sm"
                               onClick={() => window.print()}
                             >
                               <i className="fa fa-print"></i> Print
                             </button>
-                            <button 
-                              type="button" 
+                            <button
+                              type="button"
                               className="btn btn-default btn-sm"
                               onClick={() => console.log('Export functionality')}
                             >
@@ -481,9 +482,9 @@ const Drivers = () => {
 
       {/* Document Checklist Modal */}
       {selectedDriverForDocs && (
-        <DocumentChecklist 
-          driverId={selectedDriverForDocs} 
-          onClose={() => setSelectedDriverForDocs(null)} 
+        <DocumentChecklist
+          driverId={selectedDriverForDocs}
+          onClose={() => setSelectedDriverForDocs(null)}
         />
       )}
     </div>

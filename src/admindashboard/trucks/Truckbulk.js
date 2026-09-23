@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
-import {Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { BASE_URL } from "../../config";
 
 const Truckbulk = () => {
   const [file, setFile] = useState(null);
@@ -35,7 +36,7 @@ const Truckbulk = () => {
 
     try {
       const response = await axios.post(
-        "https://isovia.ca/fms_api/truck-bulk/upload",
+        `${BASE_URL}truck-bulk/upload`,
         formData,
         {
           headers: {
@@ -179,13 +180,12 @@ const Truckbulk = () => {
         {/* Message Box */}
         {message && (
           <div
-            className={`mt-3 alert ${
-              message.includes("✅")
+            className={`mt-3 alert ${message.includes("✅")
                 ? "alert-success"
                 : message.includes("❌")
-                ? "alert-danger"
-                : "alert-warning"
-            } py-2`}
+                  ? "alert-danger"
+                  : "alert-warning"
+              } py-2`}
             style={{ borderRadius: "10px" }}
           >
             {message}

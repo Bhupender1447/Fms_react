@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { BASE_URL } from "../../config";
 
 const LiveLocationMap = () => {
   const mapRef = useRef(null);
@@ -12,7 +13,7 @@ const LiveLocationMap = () => {
     } else {
       const script = document.createElement("script");
       script.src =
-        "https://maps.googleapis.com/maps/api/js?key=AIzaSyBM3VgKsX8mEGsVYpSic7VLNKwEmZ7IABc";
+        `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`;
       script.async = true;
       script.defer = true;
       script.onload = callback;
@@ -41,24 +42,24 @@ const LiveLocationMap = () => {
   };
 
   const sendLocation = (lat, lng) => {
-    const {id} = JSON.parse(localStorage.getItem("logindetail"))
-  const driverId = id; 
+    const { id } = JSON.parse(localStorage.getItem("logindetail"))
+    const driverId = id;
 
-  fetch("https://isovia.ca/fms_api/api/getliveLocation", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: `lat=${lat}&long=${lng}&driverId=${driverId}`,
-  })
-    .then((res) => res.text())
-    .then((data) => {
-      setStatus(`Location sent: ${data}`);
+    fetch(`${BASE_URL}api/getliveLocation`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `lat=${lat}&long=${lng}&driverId=${driverId}`,
     })
-    .catch(() => {
-      setStatus("Failed to send location.");
-    });
-};
+      .then((res) => res.text())
+      .then((data) => {
+        setStatus(`Location sent: ${data}`);
+      })
+      .catch(() => {
+        setStatus("Failed to send location.");
+      });
+  };
 
   const handleLocationClick = () => {
     loadGoogleMapScript(() => {
@@ -84,7 +85,7 @@ const LiveLocationMap = () => {
   };
 
   return (
-      <div className='content-wrapper p-4'>
+    <div className='content-wrapper p-4'>
       <h2>Live Location Tracker</h2>
       <button onClick={handleLocationClick}>📍 Get My Location</button>
       <p>{status}</p>

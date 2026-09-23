@@ -4,10 +4,59 @@ import React, { useEffect, useState } from "react";
 import Distancepopup from "../Distancepopup";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { BASE_URL } from "../../config";
 
 const Createtrips = () => {
   const navigate = useNavigate();
   const [, setOcrRaw] = useState(null);
+  const [ocrFile, setOcrFile] = useState(null); // OCR State
+
+  const handleOcrUpload = async () => {
+    if (!ocrFile) {
+      toast.error("Please select a file to upload");
+      return;
+    }
+    const ocrData = new FormData();
+    ocrData.append("file", ocrFile);
+    ocrData.append("module_type", "trip");
+    const structuredPrompt = `Extract the trip information into a strict JSON format with the following keys exactly:
+{
+  "loadno": "Load or reference number",
+  "salesman": "Salesman or driver name",
+  "pickup_address": "Full pickup or shipper address",
+  "pickup_from": "Pickup company or location name",
+  "delivery_address": "Full delivery or consignee address",
+  "delivery": "Delivery company or location name",
+  "pickupdate": "Pickup date",
+  "deliverydate": "Delivery date",
+  "rate": "Rate or cost",
+  "gross_amount": "Total gross amount",
+  "trailortype": "Trailer type if mentioned",
+  "commodity": "Commodity description",
+  "weight": "Weight",
+  "unit": "Weight unit (LBS/KGS)"
+}
+Return ONLY valid JSON and do not include markdown formatting or extra text.`;
+    ocrData.append("prompt", structuredPrompt);
+
+    try {
+      const response = await axios.post(
+        `${BASE_URL}OCRController/simple_openai_process`,
+        ocrData,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setOcrRaw(response.data.data);
+        applyOCRToAllFields(response.data);
+      } else {
+        toast.error("OCR failed or no data found");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error processing OCR file");
+    }
+  };
 
   const [shipments, setShipments] = useState([
     {
@@ -28,6 +77,7 @@ const Createtrips = () => {
   const [showShipmentsPopup, setShowShipmentsPopup] = useState(false);
   const [activeShipmentIndex, setActiveShipmentIndex] = useState(0);
   const [data, setdata] = useState([]);
+  const [paperworkList, setPaperworkList] = useState([]);
   const [, seterror] = useState([]);
   let userdata = JSON.parse(localStorage.getItem("logindetail"));
   const [stops, setStops] = useState([]);
@@ -198,6 +248,7 @@ const Createtrips = () => {
     appt: "NO",
     pip: "NO",
     ctpat: "NO",
+    custom_paper: "",
 
     loadno: "",
 
@@ -267,24 +318,6 @@ const Createtrips = () => {
     }
   };
 
-  const uploadOcrFile = async (file) => {
-    const form = new FormData();
-    form.append("file", file);
-
-    try {
-      const res = await axios.post(
-        "https://isovia.ca/fms_api/OCRController/ocr_no_truck",
-        form
-      );
-
-      if (res.data?.success) {
-        setOcrRaw(res.data.data);
-        applyOCRToAllFields(res.data.data);
-      }
-    } catch (e) {
-      console.error("OCR failed", e);
-    }
-  };
 
   const flattenObject = (obj, prefix = "", res = {}) => {
     for (let key in obj) {
@@ -300,46 +333,130 @@ const Createtrips = () => {
     return res;
   };
 
-  const applyOCRToAllFields = (ocrData) => {
-    if (!ocrData) return;
+  const applyOCRToAllFields = (ocrResponse) => {
+    if (!ocrResponse) return;
 
-    const flatOCR = flattenObject(ocrData);
+    let matchCount = 0;
+    const gptData = ocrResponse.gpt_response?.structured_json || {};
+    const ocrDataRaw = ocrResponse.data || {};
+    const flatOCR = flattenObject(ocrDataRaw);
+
+    // --- UNIVERSAL MAPPING SOURCE GENERATION ---
+    const combinedSource = { ...flatOCR };
+
+    // 1. Support legacy synonym paths (gpt_name_0, rec_field, etc.)
+    if (gptData.names) gptData.names.forEach((n, i) => combinedSource[`gpt_name_${i}`] = n);
+    if (gptData.addresses) gptData.addresses.forEach((a, i) => combinedSource[`gpt_address_${i}`] = a);
+    if (gptData.dates) Object.entries(gptData.dates).forEach(([k, v]) => combinedSource[`gpt_date_${k}`] = v);
+    if (gptData.numbers) Object.entries(gptData.numbers).forEach(([k, v]) => combinedSource[`gpt_number_${k}`] = v);
+    if (gptData.records?.[0]) {
+      Object.entries(gptData.records[0]).forEach(([k, v]) => combinedSource[`rec_${k}`] = String(v));
+    }
+
+    // 2. Recursive flattening of everything in GPT response for maximum resilience
+    const flatGPT = flattenObject(gptData);
+    Object.entries(flatGPT).forEach(([k, v]) => {
+      combinedSource[`gpt_${k}`] = String(v);
+    });
 
     setFormData((prev) => {
       const updated = { ...prev };
+      const sourceKeys = Object.keys(combinedSource);
+      let localMatchCount = 0;
 
-      Object.keys(updated).forEach((field) => {
-        // agar field already filled hai → skip
-        if (
-          updated[field] !== "" &&
-          updated[field] !== null &&
-          updated[field]?.length !== 0
-        )
-          return;
+      const getMatch = (synonyms) => {
+        const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
+        return key ? combinedSource[key] : null;
+      };
 
-        const matchKey = Object.keys(flatOCR).find((k) =>
-          k.includes(field.toLowerCase())
-        );
+      const isFieldEmpty = (val) => {
+        if (val === null || val === undefined) return true;
+        const s = String(val).trim();
+        if (s === "") return true;
+        if (Array.isArray(val)) return val.length === 0 || (val.length === 1 && String(val[0]).trim() === "");
+        return false;
+      };
 
-        if (matchKey) {
-          // array fields
+      // 1. Map Load Number & Salesman (Allow overwrite for loadno)
+      const loadVal = getMatch(['rec_load_number', 'gpt_number_load', 'loadno', 'load_number', 'load']);
+      if (loadVal) {
+        updated.loadno = String(loadVal);
+        localMatchCount++;
+      }
+
+      const salesmanVal = getMatch(['rec_name', 'gpt_name_0', 'salesman', 'names', 'driver_name']);
+      if (salesmanVal && isFieldEmpty(updated.salesman)) {
+        updated.salesman = String(salesmanVal);
+        localMatchCount++;
+      }
+
+      // 2. Map Addresses & Locations
+      const pickupAddr = getMatch(['rec_pickup_address', 'gpt_address_0', 'addresses', 'pickup_addr', 'shipper_address', 'origin_address', 'address']);
+      if (pickupAddr && isFieldEmpty(updated.pickup_address)) {
+        updated.pickup_address = String(pickupAddr);
+        localMatchCount++;
+      }
+
+      const pickupLoc = getMatch(['shipper', 'ship_from', 'pickup_loc', 'origin', 'pickup_from']);
+      if (pickupLoc && isFieldEmpty(updated.pickup_from)) {
+        // Find ID in data.locations
+        const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(pickupLoc).toLowerCase()));
+        if (loc) { updated.pickup_from = loc.id; localMatchCount++; }
+      }
+
+      const deliveryAddr = getMatch(['rec_delivery_address', 'gpt_address_1', 'addresses', 'delivery_addr', 'consignee_address', 'destination_address']);
+      if (deliveryAddr && isFieldEmpty(updated.delivery_address)) {
+        updated.delivery_address = String(deliveryAddr);
+        localMatchCount++;
+      }
+
+      const deliveryLoc = getMatch(['consignee', 'ship_to', 'delivery_loc', 'destination', 'delivery']);
+      if (deliveryLoc && isFieldEmpty(updated.delivery)) {
+        const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(deliveryLoc).toLowerCase()));
+        if (loc) { updated.delivery = loc.id; localMatchCount++; }
+      }
+
+      // 3. Map Dates
+      const pickupDate = getMatch(['rec_pickup_date', 'gpt_date_pickup', 'pickup_date', 'iss']);
+      if (pickupDate && isFieldEmpty(updated.pickupdate)) {
+        updated.pickupdate = String(pickupDate);
+        localMatchCount++;
+      }
+
+      const deliveryDate = getMatch(['rec_delivery_date', 'gpt_date_delivery', 'delivery_date', 'exp']);
+      if (deliveryDate && isFieldEmpty(updated.deliverydate)) {
+        updated.deliverydate = String(deliveryDate);
+        localMatchCount++;
+      }
+
+      // 4. Final catch-all & Logic for Arrays/Numbers
+      Object.keys(updated).forEach(field => {
+        const isDefault = ["No", "Regular", "LTL", "Hazmat", "13", "0"].includes(String(updated[field]));
+        if (!isFieldEmpty(updated[field]) && !isDefault && field !== 'loadno') return;
+
+        const val = getMatch([field]);
+        if (val) {
           if (Array.isArray(updated[field])) {
-            updated[field] = [flatOCR[matchKey]];
+            updated[field] = [String(val)];
+          } else if (!isNaN(prev[field]) && typeof prev[field] === 'number') {
+            updated[field] = String(val).replace(/[^\d.]/g, "");
+          } else {
+            updated[field] = String(val).substring(0, 300);
           }
-          // number fields
-          else if (!isNaN(updated[field])) {
-            updated[field] = flatOCR[matchKey].replace(/[^\d.]/g, "");
-          }
-          // text fields
-          else {
-            updated[field] = flatOCR[matchKey].substring(0, 300);
-          }
+          localMatchCount++;
         }
       });
+
+      if (localMatchCount > 0) {
+        toast.success(`OCR processed successfully. Mapped ${localMatchCount} details.`);
+      } else {
+        toast.warning("OCR processed but no matching fields found.");
+      }
 
       return updated;
     });
   };
+
 
   const calculateAmounts = (name, value) => {
     const rate = parseFloat(name === "rate" ? value : formData.rate) || 0;
@@ -389,20 +506,49 @@ const Createtrips = () => {
     });
   };
 
+
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const [, setRows] = useState([]); // Correctly placed
+  const handleAddRow = () => {
+    // This function originally added JSX rows to state, which is an anti-pattern.
+    // However, given the existing codebase, I will fix the ReferenceError first.
+    // Ideally, this should rely on formData length, similar to Createorder.js.
+    // For now, to stop the crash:
+    setRows((prevRows) => [
+      ...prevRows,
+      // Placeholder to maintain count, actual rendering should be map-based
+      prevRows.length + 1
+    ]);
+  };
+
   useEffect(() => {
     axios
-      .get("https://isovia.ca/fms_api/api/getOrderData")
+      .get(`${BASE_URL}api/getOrderData`)
       .then((res) => {
         setdata(res.data);
         setFormData({ customerorderno: res && res.data.triprno });
         console.log(res.data);
       })
       .catch((error) => seterror(error));
-    handleAddRow();
-    // eslint-disable-next-line no-use-before-define
-  }, [handleAddRow]);
 
-  const [, setRows] = useState([]);
+    // Call handleAddRow if needed for initialization
+    // handleAddRow(); 
+    // Commented out because simply initializing state is safer than calling a state updater in effect without deps
+    fetchPaperworks();
+  }, []);
+
+  const fetchPaperworks = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}api/listCustompapers`);
+      const data = res.data;
+      if (data.status === "success") setPaperworkList(data.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+
 
   let handleonSubmit = async (e) => {
     e.preventDefault();
@@ -431,7 +577,11 @@ const Createtrips = () => {
     form.append("shipments", JSON.stringify(normalizeShipments()));
 
     try {
-
+      const response = await axios.post(
+        `${BASE_URL}api/create`,
+        form
+      );
+      setmessage(response.data.message);
       toast.success("Successfully created", {
         position: "top-right",
         autoClose: 3000,
@@ -465,7 +615,7 @@ const Createtrips = () => {
 
     try {
       const response = await axios.post(
-        "https://isovia.ca/fms_api/api/create",
+        `${BASE_URL}api/create`,
         form
       );
       setmessage(response.data.message);
@@ -497,78 +647,7 @@ const Createtrips = () => {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handleAddRow = () => {
-    setRows((prevRows) => [
-      ...prevRows,
-      <tr key={prevRows.length + 1}>
-        <td>
-          <input
-            type="text"
-            name={`commodity[${prevRows.length}]`}
-            placeholder="Enter Commodity"
-            className="form-control name_list"
-            required
-            value={formData?.commodity[prevRows.length] || ""}
-            onChange={(e) =>
-              handleInputChange2(e, prevRows.length, "commodity")
-            }
-          />
-        </td>
-        <td>
-          <input
-            type="text"
-            name={`weight[${prevRows.length}]`}
-            placeholder="Enter Weight"
-            className="form-control name_list"
-            required
-            value={formData?.weight[prevRows.length] || ""}
-            onChange={(e) => handleInputChange2(e, prevRows.length, "weight")}
-          />
-        </td>
-        <td>
-          <select
-            name={`unit[${prevRows.length}]`}
-            className="form-control name_list"
-            required
-            value={formData?.unit[prevRows.length] || ""}
-            onChange={(e) => handleInputChange2(e, prevRows.length, "unit")}
-          >
-            <option value="na" disabled>
-              Select Unit
-            </option>
-            <option value="Gallons">Gallons</option>
-            <option value="KG">KG</option>
-            <option value="TON">TON</option>
-            <option value="Metric Ton">Metric Ton</option>
-            <option value="Ounces">Ounces</option>
-            <option value="MBF">MBF</option>
-            <option value="Pounds">Pounds</option>
-          </select>
-        </td>
-        <td>
-          <input
-            type="text"
-            name={`package[${prevRows.length}]`}
-            placeholder="Enter No. of Packages"
-            className="form-control name_list"
-            required
-            value={formData?.package[prevRows.length] || ""}
-            onChange={(e) => handleInputChange2(e, prevRows.length, "package")}
-          />
-        </td>
-        <td>
-          <button
-            type="button"
-            name="remove"
-            className="btn btn-danger btn_remove"
-            onClick={() => handleRemoveRow(prevRows.length + 1)}
-          >
-            X
-          </button>
-        </td>
-      </tr>,
-    ]);
-  };
+
 
   const handleRemoveRow = (index) => {
     setRows((prevRows) => prevRows.filter((row, i) => i !== index - 1));
@@ -578,8 +657,7 @@ const Createtrips = () => {
     <div className="content-wrapper">
       <section className="content-header">
         <div className="form-group">
-          <label htmlFor="product_image">Upload Licence / PDF</label>
-
+          <label>Upload Document (OCR Auto-fill)</label>
           <div className="input-group">
             <input
               type="file"
@@ -587,9 +665,19 @@ const Createtrips = () => {
               name="product_image"
               accept=".png,.jpg,.jpeg,.pdf"
               className="form-control"
-              onChange={(e) => uploadOcrFile(e.target.files[0])}
+              onChange={(e) => setOcrFile(e.target.files[0])}
             />
+            <span className="input-group-btn">
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={handleOcrUpload}
+              >
+                Scan & Auto-fill
+              </button>
+            </span>
           </div>
+          <p className="help-block">Select a PDF or Image to auto-populate form fields.</p>
         </div>
 
         <h1>
@@ -687,6 +775,25 @@ const Createtrips = () => {
                           onChange={handleInputChange}
                         >
                           <option value="Order">Order</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="col-md-12 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="custom_paper">Custom Paper</label>
+                        <select
+                          className="form-control"
+                          id="custom_paper"
+                          name="custom_paper"
+                          value={formData.custom_paper}
+                          onChange={handleInputChange}
+                        >
+                          <option value="">-- Select Custom Paper --</option>
+                          {paperworkList.map((paper) => (
+                            <option key={paper.id} value={paper.id}>
+                              {paper.custom_paper?.split("/").pop() || "Paper " + paper.id}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -1523,9 +1630,8 @@ const Createtrips = () => {
                       {shipments.map((_, index) => (
                         <li key={index} className="nav-item">
                           <button
-                            className={`nav-link ${
-                              activeShipmentIndex === index ? "active" : ""
-                            }`}
+                            className={`nav-link ${activeShipmentIndex === index ? "active" : ""
+                              }`}
                             onClick={() => setActiveShipmentIndex(index)}
                           >
                             Shipment {index + 1}
@@ -1559,9 +1665,8 @@ const Createtrips = () => {
                       {shipments.map((shipment, index) => (
                         <div
                           key={index}
-                          className={`tab-pane ${
-                            activeShipmentIndex === index ? "active" : ""
-                          }`}
+                          className={`tab-pane ${activeShipmentIndex === index ? "active" : ""
+                            }`}
                         >
                           {/* Shipment Form - Similar to your existing shipment section */}
                           <div className="table-responsive">

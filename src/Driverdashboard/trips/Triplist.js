@@ -1,17 +1,18 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { BASE_URL } from '../../config'
 
 const TripDriverlist = () => {
   const [list, setList] = useState([])
 
   useEffect(() => {
-    let{ id }= JSON.parse(localStorage.getItem('logindetail'))
-    axios.get(`https://isovia.ca/fms_api/api/tipsdriverfetchProductData/${id}`)
+    let { id } = JSON.parse(localStorage.getItem('logindetail'))
+    axios.get(`${BASE_URL}api/tipsdriverfetchProductData/${id}`)
       .then(res => setList(res.data))
       .catch(err => console.log(err))
   }, [])
-console.log(list)
+  console.log(list)
   return (
     <div className='content-wrapper'>
       <section className="content-header">
@@ -99,25 +100,25 @@ console.log(list)
                               <td>{item.pickup_address}</td>
                               <td>{item.delivery_address}</td>
                               <td>
-                               
+
                                 <Link
                                   target="_blank"
-                                  to={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
+                                  to={`${BASE_URL}pdf/invoice_log.php?id=${item.id}`}
                                   className="btn btn-danger btn-xs"
                                 >
                                   Dispatch
                                 </Link>
                                 <Link
                                   target="_blank"
-                                  to={`https://isovia.ca/fms_api/pdf/invoice_orders.php?id=${item.id}`}
+                                  to={`${BASE_URL}pdf/invoice_orders.php?id=${item.id}`}
                                   className="btn btn-warning btn-xs"
                                 >
                                   Invoice
                                 </Link>
-                              
+
                                 <Link to={{ pathname: '/tripdetails', state: { value: item } }}>
-                Go to Trip Details
-            </Link>
+                                  Go to Trip Details
+                                </Link>
                               </td>
                             </tr>
                           ))}

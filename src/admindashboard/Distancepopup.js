@@ -2,7 +2,7 @@ import axios from "axios";
 import React, { useState, useEffect, useRef } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
-const api_key = "D487078091664D428AA781953AE84DF1";
+const api_key = process.env.REACT_APP_TRIMBLE_API_KEY;
 
 const expenseOptions = [
   "Layover",
@@ -329,7 +329,7 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
             (() => {
               const lastReportLine =
                 distance[0]?.ReportLines?.[
-                  distance[0].ReportLines.length - 1
+                distance[0].ReportLines.length - 1
                 ];
 
               if (!lastReportLine) return <p>No valid distance data found.</p>;

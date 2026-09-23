@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
@@ -9,7 +10,7 @@ const Employees = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/fetchEmployeeData')
+    axios.get(`${BASE_URL}api/fetchEmployeeData`)
       .then(res => setData(res.data))
       .catch(error => console.log(error));
   }, []);
@@ -21,7 +22,7 @@ const Employees = () => {
   const handleRemove = async (id) => {
     try {
       const response = await axios.post(
-        'https://isovia.ca/fms_api/api/remove',
+        `${BASE_URL}api/remove`,
         new URLSearchParams({
           id: id,
           type: 'fms_employee'  // Adjust the type if necessary
@@ -290,7 +291,7 @@ const Employees = () => {
                             <tr role="row" className="odd" key={item.id}>
                               <td>
                                 <img
-                                  src={`https://isovia.ca/fms_api/${item.image}`}
+                                  src={`${BASE_URL}${item.image}`}
                                   alt="Employee"
                                   className="img-circle"
                                   width={50}

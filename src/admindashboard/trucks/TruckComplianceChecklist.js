@@ -1,5 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
+import { BASE_URL } from "../../config";
 
 const TruckComplianceChecklist = () => {
   const [truckList, setTruckList] = useState([]);
@@ -11,7 +12,7 @@ const TruckComplianceChecklist = () => {
   /* ✅ Get Trucks */
   useEffect(() => {
     axios
-      .get("https://isovia.ca/fms_api/api/getTrucks")
+      .get(`${BASE_URL}api/getTrucks`)
       .then(res => {
         if (res.data.status === "success") {
           setTruckList(res.data.data);
@@ -30,7 +31,7 @@ const TruckComplianceChecklist = () => {
         setError(null);
 
         const res = await axios.get(
-          `https://isovia.ca/fms_api/api/truckComplianceList?id=${selectedTruck}`
+          `${BASE_URL}api/truckComplianceList?id=${selectedTruck}`
         );
 
         if (res.data.status === "success") {
@@ -115,20 +116,19 @@ const TruckComplianceChecklist = () => {
                           {doc.remaining_days === null
                             ? "N/A"
                             : doc.remaining_days === 0
-                            ? "Expired"
-                            : `${doc.remaining_days} days`}
+                              ? "Expired"
+                              : `${doc.remaining_days} days`}
                         </td>
                         <td>
                           <span
-                            className={`label ${
-                              doc.status === "active"
+                            className={`label ${doc.status === "active"
                                 ? "label-success"
                                 : doc.status === "expired"
-                                ? "label-danger"
-                                : doc.status === "expiring soon"
-                                ? "label-warning"
-                                : "label-default"
-                            }`}
+                                  ? "label-danger"
+                                  : doc.status === "expiring soon"
+                                    ? "label-warning"
+                                    : "label-default"
+                              }`}
                           >
                             {doc.status}
                           </span>

@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import ReactPaginate from 'react-paginate';
-import {Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { BASE_URL } from '../../config';
 
 const Invoices = () => {
   const [data, setData] = useState([]);
@@ -9,7 +10,7 @@ const Invoices = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/tipsfetchProductData')
+    axios.get(`${BASE_URL}api/tipsfetchProductData`)
       .then(res => setData(res.data))
       .catch(err => console.log(err));
   }, []);
@@ -170,7 +171,7 @@ const Invoices = () => {
                               <td>
                                 <Link
                                   target="_blank"
-                                  to={`https://isovia.ca/fms_api/pdf/invoice_orders.php?id=${item.id}`}
+                                  to={`${BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL}/pdf/invoice_orders.php?id=${item.id}`}
                                   className="btn btn-success btn-xs"
                                 >
                                   Invoice

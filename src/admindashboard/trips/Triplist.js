@@ -2,6 +2,8 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ReactPaginate from "react-paginate";
+import { toast } from "react-toastify";
+import { BASE_URL } from "../../config";
 
 const Triplist = () => {
   const [list, setList] = useState([]);
@@ -10,13 +12,37 @@ const Triplist = () => {
 
   useEffect(() => {
     axios
-      .get("https://isovia.ca/fms_api/api/tipsfetchProductData/1")
+      .get(`${BASE_URL}api/tipsfetchProductData/1`)
       .then((res) => setList(res.data))
       .catch((err) => console.log(err));
   }, []);
   console.log(list);
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
+  };
+
+  const handleRemove = async (id) => {
+    if (window.confirm("Are you sure you want to remove this trip?")) {
+      try {
+        await axios.post(
+          `${BASE_URL}api/remove`,
+          new URLSearchParams({
+            id: id,
+            type: 'fms_trips'
+          }).toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            }
+          }
+        );
+        setList(list.filter(item => item.id !== id));
+        toast.success("Trip removed successfully");
+      } catch (error) {
+        console.error("Error removing item:", error);
+        toast.error("Error removing trip");
+      }
+    }
   };
 
   const handleItemsPerPageChange = (e) => {
@@ -115,6 +141,7 @@ const Triplist = () => {
                             <th style={{ width: "79.2px" }}>Company</th>
                             <th style={{ width: "397.2px" }}>Pickup</th>
                             <th style={{ width: "331.2px" }}>Delivery</th>
+                            <th style={{ width: "120px" }}>Custom Paper</th>
                             <th style={{ width: 178 }}>Action</th>
                           </tr>
                         </thead>
@@ -129,14 +156,11 @@ const Triplist = () => {
                               <td>{item.company}</td>
                               <td>{item.pickup_address}</td>
                               <td>{item.delivery_address}</td>
+                              <td>{item.custom_paper_name || item.custom_paper || "N/A"}</td>
                               <td>
                                 <Link
                                   type="button"
                                   className="btn btn-info btn-xs"
-                                  // onClick={() => removeFunc2(item.id)}
-                                  data-id={item.id}
-                                  data-toggle="modal"
-                                  data-target="#removeModal2"
                                   to={`/tripsplit/${item.id}`}
                                 >
                                   Split
@@ -149,7 +173,7 @@ const Triplist = () => {
                                 </Link>
                                 <Link
                                   target="_blank"
-                                  to={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
+                                  to={`${BASE_URL}pdf/invoice_log.php?id=${item.id}`}
                                   className="btn btn-danger btn-xs"
                                 >
                                   Dispatch
@@ -164,7 +188,7 @@ const Triplist = () => {
                                 )}
                                 <Link
                                   target="_blank"
-                                  to={`https://isovia.ca/fms_api/pdf/invoice_orders.php?id=${item.id}`}
+                                  to={`${BASE_URL}pdf/invoice_orders.php?id=${item.id}`}
                                   className="btn btn-warning btn-xs"
                                 >
                                   Invoice
@@ -187,6 +211,13 @@ const Triplist = () => {
                                 >
                                   Add Stop
                                 </Link>
+                                <button
+                                  type="button"
+                                  className="btn btn-danger btn-xs"
+                                  onClick={() => handleRemove(item.id)}
+                                >
+                                  <i className="fa fa-trash" />
+                                </button>
                               </td>
                             </tr>
                           ))}

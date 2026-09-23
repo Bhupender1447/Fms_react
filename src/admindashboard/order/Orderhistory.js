@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
+import { BASE_URL } from '../../config';
 
 const Orderhistory = () => {
   const [list, setList] = useState([]);
@@ -9,7 +10,7 @@ const Orderhistory = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/getordershistory')
+    axios.get(`${BASE_URL}api/getordershistory`)
       .then(res => setList(res.data))
       .catch(err => console.log(err));
   }, []);
@@ -129,14 +130,14 @@ const Orderhistory = () => {
                               {/* <td>
                                 <Link
                                   target="_blank"
-                                  to={`https://isovia.ca/fms_api/pdf/invoice.php?id=${item.id}`}
+                                  to={`${BASE_URL}pdf/invoice.php?id=${item.id}`}
                                   className="btn btn-danger btn-sm"
                                 >
                                   Confirmation
                                 </Link>
                                 <Link
                                   target="_blank"
-                                  to={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
+                                  to={`${BASE_URL}pdf/invoice_log.php?id=${item.id}`}
                                   className="btn btn-warning btn-xs"
                                 >
                                   Invoice

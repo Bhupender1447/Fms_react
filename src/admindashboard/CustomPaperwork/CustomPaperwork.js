@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { BASE_URL } from "../../config";
 import AssignForm from "./AssignForm";
 
 const CustomPaperwork = () => {
@@ -11,6 +13,8 @@ const CustomPaperwork = () => {
     upload_date: "",
     user_id: "",
     custom_paper: null, // file
+    trip_id: "",
+    type: "", // new
   });
   const [showModal, setShowModal] = useState(false);
   const [isUpdate, setIsUpdate] = useState(false);
@@ -18,53 +22,65 @@ const CustomPaperwork = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [drivers, setDrivers] = useState([]);
- const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [trips, setTrips] = useState([]);
+  const [selectedTripFilter, setSelectedTripFilter] = useState("");
 
-const [selectedTripId, setSelectedTripId] = useState(null);
+  const [selectedTripId, setSelectedTripId] = useState(null);
 
-const fetchDrivers = async () => {
-  try {
-    const res = await fetch("https://isovia.ca/fms_api/api/fetchdriversProductData");
-    const data = await res.json();
-    if (Array.isArray(data)) {
-      setDrivers(data);
+  const fetchDrivers = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}api/fetchdriversProductData`);
+      const data = res.data;
+      if (Array.isArray(data)) {
+        setDrivers(data);
+      }
+    } catch (err) {
+      console.error("Error fetching drivers:", err);
     }
-  } catch (err) {
-    console.error("Error fetching drivers:", err);
+  };
+
+  const fetchTrips = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}api/tipsfetchProductData/1`);
+      setTrips(res.data || []);
+    } catch (err) {
+      console.error("Error fetching trips:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchDrivers();
+    fetchPaperworks(); // existing paperwork fetch
+    fetchTrips();
+  }, []);
+
+  const onClose = () => {
+    setShowAssignModal(false);
+
   }
-};
-
-useEffect(() => {
-  fetchDrivers();
-  fetchPaperworks(); // existing paperwork fetch
-}, []);
-
-const onClose = () => {
-  setShowAssignModal(false);
-
-}
 
   // Fetch list
   const fetchPaperworks = async () => {
     try {
-      const res = await fetch("https://isovia.ca/fms_api/api/listCustompapers");
-      const data = await res.json();
+      const res = await axios.get(`${BASE_URL}api/listCustompapers`);
+      const data = res.data;
       if (data.status === "success") setPaperworkList(data.data || []);
     } catch (err) {
       console.error(err);
     }
   };
   const fetchBrokers = async () => {
-  try {
-    const res = await fetch("https://isovia.ca/fms_api/api/listBrokers");
-    const data = await res.json();
-    if (data.status === "success") {
-      setBrokers(data.data || []); // data.data should be array of brokers
+    try {
+      const res = await axios.get(`${BASE_URL}api/listBrokers`);
+      const data = res.data;
+      if (data.status === "success") {
+        setBrokers(data.data || []); // data.data should be array of brokers
+      }
+    } catch (err) {
+      console.error("Error fetching brokers:", err);
     }
-  } catch (err) {
-    console.error("Error fetching brokers:", err);
-  }
-};
+  };
 
 
   useEffect(() => {
@@ -81,6 +97,10 @@ const onClose = () => {
     }));
   };
 
+  const handleTripFilterChange = (e) => {
+    setSelectedTripFilter(e.target.value);
+  };
+
   const resetForm = () => {
     setFormData({
       id: "",
@@ -90,6 +110,8 @@ const onClose = () => {
       upload_date: "",
       user_id: "",
       custom_paper: null,
+      trip_id: "",
+      type: "",
     });
     setIsUpdate(false);
   };
@@ -97,7 +119,7 @@ const onClose = () => {
   // Add / Update
   const handleSubmit = async (e) => {
     e.preventDefault();
-console.log(formData);
+    console.log(formData);
     if (
       !formData.driver_id ||
       !formData.broker_id ||
@@ -116,6 +138,8 @@ console.log(formData);
     fd.append("forward_date", formData.forward_date);
     fd.append("upload_date", formData.upload_date);
     fd.append("user_id", formData.user_id);
+    fd.append("trip_id", formData.trip_id);
+    fd.append("type", formData.type);
 
     // File upload key must match backend
     if (formData.custom_paper) fd.append("custom_paper", formData.custom_paper);
@@ -128,13 +152,9 @@ console.log(formData);
       }
     }
 
-    const url = isUpdate
-      ? "https://isovia.ca/fms_api/api/updateCustompaper"
-      : "https://isovia.ca/fms_api/api/addCustompaper";
-
     try {
-      const res = await fetch(url, { method: "POST", body: fd });
-      const data = await res.json();
+      const res = await axios.post(isUpdate ? `${BASE_URL}api/updateCustompaper` : `${BASE_URL}api/addCustompaper`, fd);
+      const data = res.data;
       if (data.status === "success") {
         alert(data.message);
         fetchPaperworks();
@@ -151,69 +171,136 @@ console.log(formData);
 
 
   return (
-    <div  className="content-wrapper" style={{ minHeight: 440 }}>
+    <div className="content-wrapper" style={{ minHeight: 440 }}>
       <h3>Custom Paperwork</h3>
-      <button className="btn btn-success mb-3" onClick={() => { resetForm(); setShowModal(true); }}>Add New</button>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <button className="btn btn-success" onClick={() => { resetForm(); setShowModal(true); }}>Add New</button>
+        <div className="d-flex align-items-center">
+          <label className="me-2 mb-0">Filter by Trip:</label>
+          <select
+            className="form-select"
+            style={{ width: "auto" }}
+            value={selectedTripFilter}
+            onChange={handleTripFilterChange}
+          >
+            <option value="">-- All Trips --</option>
+            {trips.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.customer_orderno} - {t.pickup_address} to {t.delivery_address}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <table className="table table-bordered">
         <thead>
           <tr>
+            <th>Trip/Order</th>
             <th>Driver</th>
             <th>Broker</th>
+            <th>Document Type</th>
             <th>File</th>
             <th>Upload Date</th>
             <th>Forward Date</th>
-            {/* <th>Actions</th> */}
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {paperworkList.length === 0 ? (
-            <tr><td colSpan="6">No documents</td></tr>
-          ) : paperworkList.map((doc) => (
-            <tr key={doc.id}>
-            <td>
-  {drivers.find((d) => d.id === doc.driver_id)
-    ? `${drivers.find((d) => d.id === doc.driver_id).fname} ${drivers.find((d) => d.id === doc.driver_id).lname}`
-    : "Unknown Driver"}
-</td>
+          {(() => {
+            const filteredDocs = paperworkList.filter(
+              (doc) => !selectedTripFilter || String(doc.trip_id) === String(selectedTripFilter)
+            );
 
-             <td>
-  {(() => {
-    const broker = brokers.find((b) => b.id === doc.broker_id);
-    return broker ? broker.Broker : "Unknown Broker";
-  })()}
-</td>
+            if (filteredDocs.length === 0) {
+              return (
+                <tr>
+                  <td colSpan="8" className="text-center">No documents</td>
+                </tr>
+              );
+            }
 
-             <td>
-  {doc.custom_paper && (
-    <img
-      src={doc.custom_paper}
-      alt={doc.custom_paper}
-      style={{ width: "60px", height: "60px", objectFit: "cover", cursor: "pointer", borderRadius: "4px" }}
-      onClick={() => {
-        setPreviewImage(doc.custom_paper);
-        setShowPreviewModal(true);
-      }}
-    />
-  )}
-</td>
-              <td>{doc.upload_date}</td>
-              <td>{doc.forward_date}</td>
-              <td>
-                  <button
-                    className="btn btn-warning btn-sm"
-                   onClick={() => {
-                      setSelectedTripId(doc.trip_id); // set trip/document id
-                      setShowAssignModal(true);
-                    }}
-                  >
-                    Assign
-                  </button>
-                {/* <button className="btn btn-primary me-2 btn-sm" onClick={() => handleEdit(doc.id)}>Edit</button>
-                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(doc.id)}>Delete</button> */}
-              </td>
-            </tr>
-          ))}
+            // Group filteredDocs by trip_id
+            const grouped = filteredDocs.reduce((acc, doc) => {
+              const tripId = doc.trip_id || "unassigned";
+              if (!acc[tripId]) acc[tripId] = [];
+              acc[tripId].push(doc);
+              return acc;
+            }, {});
+
+            return Object.keys(grouped).map((tripId) => {
+              const tripDocs = grouped[tripId];
+              const tripInfo = trips.find((t) => String(t.id) === String(tripId));
+              const tripLabel = tripInfo
+                ? `${tripInfo.customer_orderno} - ${tripInfo.pickup_address} to ${tripInfo.delivery_address}`
+                : "Unassigned / General";
+
+              return (
+                <React.Fragment key={tripId}>
+                  <tr className="table-secondary">
+                    <td colSpan="8" className="fw-bold">
+                      Trip: {tripLabel}
+                    </td>
+                  </tr>
+                  {tripDocs.map((doc) => (
+                    <tr key={doc.id}>
+                      <td>
+                        {tripInfo ? tripInfo.customer_orderno : "N/A"}
+                      </td>
+                      <td>
+                        {(() => {
+                          const driver = drivers.find((d) => String(d.id) === String(doc.driver_id));
+                          return driver ? `${driver.fname} ${driver.lname}` : "Unknown Driver";
+                        })()}
+                      </td>
+
+                      <td>
+                        {(() => {
+                          const broker = brokers.find((b) => String(b.id) === String(doc.broker_id));
+                          return broker ? broker.Broker : "Unknown Broker";
+                        })()}
+                      </td>
+
+                      <td>{doc.type}</td>
+
+                      <td>
+                        {doc.custom_paper && (
+                          <img
+                            src={doc.custom_paper}
+                            alt={doc.custom_paper}
+                            style={{
+                              width: "60px",
+                              height: "60px",
+                              objectFit: "cover",
+                              cursor: "pointer",
+                              borderRadius: "4px",
+                            }}
+                            onClick={() => {
+                              setPreviewImage(doc.custom_paper);
+                              setShowPreviewModal(true);
+                            }}
+                          />
+                        )}
+                      </td>
+                      <td>{doc.upload_date}</td>
+                      <td>{doc.forward_date}</td>
+                      <td>
+                        <button
+                          className="btn btn-warning btn-sm"
+                          onClick={() => {
+                            setSelectedTripId(doc.trip_id); // set trip/document id
+                            setShowAssignModal(true);
+                          }}
+                        >
+                          Assign
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
+              );
+            });
+          })()}
         </tbody>
       </table>
 
@@ -227,32 +314,60 @@ console.log(formData);
               </div>
               <div className="modal-body">
                 <form onSubmit={handleSubmit}>
-                <select
-    className="form-select"
-    name="driver_id"
-    value={formData.driver_id}
-    onChange={handleChange}
-  >
-    <option value="">-- Select Driver --</option>
-    {drivers.map((d) => (
-      <option key={d.id} value={d.id}>
-        {d.fname} {d.lname} ({d.company})
-      </option>
-    ))}
-  </select>
-               <select
-  className="form-select"
-  name="broker_id"
-  value={formData.broker_id}
-  onChange={handleChange}
->
-  <option value="">-- Select Broker --</option>
-  {brokers.map((b) => (
-    <option key={b.id} value={b.id}>
-      {b.Broker}
-    </option>
-  ))}
-</select>
+                  <select
+                    className="form-select"
+                    name="driver_id"
+                    value={formData.driver_id}
+                    onChange={handleChange}
+                  >
+                    <option value="">-- Select Driver --</option>
+                    {drivers.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.fname} {d.lname} ({d.company})
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="form-select"
+                    name="broker_id"
+                    value={formData.broker_id}
+                    onChange={handleChange}
+                  >
+                    <option value="">-- Select Broker --</option>
+                    {brokers.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.Broker}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="form-select mb-2"
+                    name="trip_id"
+                    value={formData.trip_id}
+                    onChange={handleChange}
+                  >
+                    <option value="">-- Select Trip --</option>
+                    {trips.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.customer_orderno} ({t.pickup_address})
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    className="form-select mb-2"
+                    name="type"
+                    value={formData.type}
+                    onChange={handleChange}
+                  >
+                    <option value="">-- Select Type --</option>
+                    <option value="Commercial Invoice">Commercial Invoice</option>
+                    <option value="Bill of Lading">Bill of Lading</option>
+                    <option value="Packing List">Packing List</option>
+                    <option value="Certificate of Origin">Certificate of Origin</option>
+                    <option value="Customs Invoice (B3 / CI1)">Customs Invoice (B3 / CI1)</option>
+                    <option value="Other">Other</option>
+                  </select>
 
                   <input type="date" name="upload_date" value={formData.upload_date} onChange={handleChange} className="form-control mb-2" />
                   <input type="date" name="forward_date" value={formData.forward_date} onChange={handleChange} className="form-control mb-2" />
@@ -270,28 +385,28 @@ console.log(formData);
       )}
 
       {showPreviewModal && (
-  <div className="modal fade show d-block" tabIndex="-1">
-    <div className="modal-dialog modal-dialog-centered modal-lg">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h5 className="modal-title">Preview</h5>
-          <button type="button" className="btn-close" onClick={() => setShowPreviewModal(false)}></button>
+        <div className="modal fade show d-block" tabIndex="-1">
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Preview</h5>
+                <button type="button" className="btn-close" onClick={() => setShowPreviewModal(false)}></button>
+              </div>
+              <div className="modal-body text-center">
+                <img
+                  src={previewImage}
+                  alt="Preview"
+                  style={{ width: "100%", height: "auto", maxHeight: "80vh", objectFit: "contain" }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="modal-body text-center">
-          <img
-            src={previewImage}
-            alt="Preview"
-            style={{ width: "100%", height: "auto", maxHeight: "80vh", objectFit: "contain" }}
-          />
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
 
- {showAssignModal && (
-     <AssignForm onClose={onClose} selectedTripId={selectedTripId} />
+      {showAssignModal && (
+        <AssignForm onClose={onClose} selectedTripId={selectedTripId} />
       )}
     </div>
   );

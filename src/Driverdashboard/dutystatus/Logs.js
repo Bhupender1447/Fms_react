@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { BASE_URL } from "../../config";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaExclamationCircle } from "react-icons/fa";
 import {
@@ -49,11 +50,11 @@ const TripLogChart = () => {
   const [todayBlocks, setTodayBlocks] = useState([]);
   const [statusTotals, setStatusTotals] = useState({});
   const navigate = useNavigate();
-  const {id} =JSON.parse(localStorage.getItem("logindetail"));
+  const { id } = JSON.parse(localStorage.getItem("logindetail"));
   console.log(id)
 
   useEffect(() => {
-    axios.get(`https://isovia.ca/fms_api/api/list_trips?driver_id=${id}`)
+    axios.get(`${BASE_URL}api/list_trips?driver_id=${id}`)
       .then((res) => {
         if (res.data.status === "success") {
           setLogs(res.data.data);
@@ -139,22 +140,22 @@ const TripLogChart = () => {
       <div className="row">
         <div className="col-md-8 offset-md-2">
           <div className="dashboard-card">
-     
-            
-    
-           
-            
+
+
+
+
+
             {/* Chart Section */}
             <div className="chart-section">
               <Bar data={chartData} options={chartOptions} />
             </div>
-            
+
             <div className="divider"></div>
-            
+
             {/* Last 14 Days Section */}
             <div className="history-section">
               <h4>LAST 14 DAYS</h4>
-              
+
               {last14Dates.map((date, idx) => {
                 const blocks = buildBlocksForDate(logs, date);
                 const totals = getStatusTotals(blocks);
@@ -169,8 +170,8 @@ const TripLogChart = () => {
 
                 return (
                   <React.Fragment key={idx}>
-                    <div 
-                      className="day-item" 
+                    <div
+                      className="day-item"
                       onClick={() => navigate("/daily-log-detail", { state: { date, blocks } })}
                       style={{ cursor: 'pointer' }}
                     >

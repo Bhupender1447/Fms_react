@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { BASE_URL } from "../../config";
 
 const AutoSuspendCarriers = () => {
   const [carriers, setCarriers] = useState([]);
@@ -14,7 +15,7 @@ const AutoSuspendCarriers = () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        "https://isovia.ca/fms_api/api/autoSuspendCarriers",
+        `${BASE_URL}api/autoSuspendCarriers`,
         { withCredentials: true }
       );
 

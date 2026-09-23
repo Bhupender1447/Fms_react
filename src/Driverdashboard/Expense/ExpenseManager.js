@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import {Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { BASE_URL } from '../../config'
 
 
-const baseURL = 'https://isovia.ca/fms_api/api';
+const baseURL = `${BASE_URL}api`;
 
 const ExpenseManager = () => {
   const [expenses, setExpenses] = useState([]);
@@ -25,24 +26,24 @@ const ExpenseManager = () => {
       const response = await axios.get(`${baseURL}/getExpense`, {
         withCredentials: true
       });
-      const expensesData = Array.isArray(response.data?.message) 
-      ? response.data.message 
-      : [];
-      
-    setExpenses(expensesData);
+      const expensesData = Array.isArray(response.data?.message)
+        ? response.data.message
+        : [];
+
+      setExpenses(expensesData);
     } catch (error) {
       console.error('Error fetching expenses:', error);
     }
   };
 
   useEffect(() => {
-  const logindetail = JSON.parse(localStorage.getItem("logindetail"));
+    const logindetail = JSON.parse(localStorage.getItem("logindetail"));
 
- setNewExpense({ ...newExpense, from_id: logindetail?.id })
+    setNewExpense({ ...newExpense, from_id: logindetail?.id })
 
-     if (logindetail?.id) {
+    if (logindetail?.id) {
       axios
-        .get(`https://isovia.ca/fms_api/api/tipsdriverfetchProductData/${logindetail.id}`)
+        .get(`${BASE_URL}api/tipsdriverfetchProductData/${logindetail.id}`)
         .then((res) => setTripList(res.data))
         .catch((err) => console.log(err));
     }
@@ -111,7 +112,7 @@ const ExpenseManager = () => {
   };
 
   return (
-    <div  className="content-wrapper" style={{ minHeight: 440 }}>
+    <div className="content-wrapper" style={{ minHeight: 440 }}>
 
       <div className="container mt-4">
         <h2>Expense Management</h2>
@@ -126,7 +127,7 @@ const ExpenseManager = () => {
                 placeholder="From ID"
                 value={newExpense.from_id}
                 disabled
-              
+
               />
             </div>
             <div className="col-md-2">
@@ -137,20 +138,20 @@ const ExpenseManager = () => {
                 onChange={(e) => setNewExpense({ ...newExpense, to_id: e.target.value })}
               /> */}
               <select
-                    className="form-select "
-                    name="tripId"
-                      value={newExpense.to_id}
-                   onChange={(e) => setNewExpense({ ...newExpense, to_id: e.target.value })}
-                    required
-                  >
-                    <option value="">-- Select Trip --</option>
-                    {tripList.map((trip) => (
-                      <option key={trip.id} value={trip.id}>
-                        {trip.customer_orderno} - {trip.pickup_location} to{" "}
-                        {trip.destination_location}
-                      </option>
-                    ))}
-                  </select>
+                className="form-select "
+                name="tripId"
+                value={newExpense.to_id}
+                onChange={(e) => setNewExpense({ ...newExpense, to_id: e.target.value })}
+                required
+              >
+                <option value="">-- Select Trip --</option>
+                {tripList.map((trip) => (
+                  <option key={trip.id} value={trip.id}>
+                    {trip.customer_orderno} - {trip.pickup_location} to{" "}
+                    {trip.destination_location}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="col-md-2">
               <input
@@ -183,20 +184,20 @@ const ExpenseManager = () => {
                 value={newExpense.exp_for}
                 onChange={(e) => setNewExpense({ ...newExpense, exp_for: e.target.value })}
               /> */}
-                 <select
-                    className="form-select form-select-lg"
-                    name="motiveDetails"
-                    value={newExpense.exp_for}
-                   onChange={(e) => setNewExpense({ ...newExpense, exp_for: e.target.value })}
-                    required
-                  >
-                    <option value="">-- Select Status --</option>
-                    <option value="trip_start">Trip Start</option>
-                    <option value="break">Break</option>
-                    <option value="trip_end">Trip End</option>
-                    <option value="fuel-filling">Fuel Time</option>
-                    <option value="additionally">Additionally</option>
-                  </select>
+              <select
+                className="form-select form-select-lg"
+                name="motiveDetails"
+                value={newExpense.exp_for}
+                onChange={(e) => setNewExpense({ ...newExpense, exp_for: e.target.value })}
+                required
+              >
+                <option value="">-- Select Status --</option>
+                <option value="trip_start">Trip Start</option>
+                <option value="break">Break</option>
+                <option value="trip_end">Trip End</option>
+                <option value="fuel-filling">Fuel Time</option>
+                <option value="additionally">Additionally</option>
+              </select>
             </div>
             <div className="col-md-4">
               <input
@@ -307,7 +308,7 @@ const ExpenseManager = () => {
               expenses.map((exp) => (
                 <tr key={exp.id}>
                   <td>{exp.id}</td>
-                 <td >{exp.driver_fname} {exp.driver_lname}</td>
+                  <td >{exp.driver_fname} {exp.driver_lname}</td>
                   <td>{exp.customer_orderno}</td>
                   <td>{exp.amount}</td>
                   <td>{exp.reason}</td>

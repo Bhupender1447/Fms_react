@@ -1,6 +1,7 @@
 import axios from "axios";
+import { BASE_URL } from "../../config";
 import React, { useState } from "react";
-import { useNavigate ,Link} from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const CarrierDataPopup = ({ brokerData, popup, setpopup }) => {
   const [showModal] = useState(popup);
@@ -15,7 +16,7 @@ const CarrierDataPopup = ({ brokerData, popup, setpopup }) => {
     formData.append("usdot", CarrierData);
 
     try {
-      await axios.post("https://isovia.ca/fms_api/api/createcarriers", formData);
+      await axios.post(`${BASE_URL}api/createcarriers`, formData);
       setpopup(false);
       navigate("/carriers");
     } catch (error) {
@@ -42,7 +43,7 @@ const CarrierDataPopup = ({ brokerData, popup, setpopup }) => {
         style={{ display: showModal ? "block" : "none" }}
         aria-hidden={!showModal}
       >
-        <div className="modal-dialog modal-fullscreen" role="document"> 
+        <div className="modal-dialog modal-fullscreen" role="document">
           <div className="modal-content rounded-3 shadow-lg">
             <div className="modal-header">
               <h5 className="modal-title">{brokerData.legal_name}</h5>

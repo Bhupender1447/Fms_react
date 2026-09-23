@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -29,7 +30,7 @@ const LogTable = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get('https://isovia.ca/fms_api/api/get_users');
+        const response = await axios.get(`${BASE_URL}api/get_users`);
         setUsers(response.data.users || []);
       } catch (err) {
         setError(err.message || 'Error fetching users');
@@ -48,7 +49,7 @@ const LogTable = () => {
     setLogs([]);
     try {
       const response = await axios.get(
-        `https://isovia.ca/fms_api/api/fetch_logs_data/${id}?start_date=${start}&end_date=${end}`
+        `${BASE_URL}api/fetch_logs_data/${id}?start_date=${start}&end_date=${end}`
       );
       setLogs(response.data.logs || []);
     } catch (err) {
@@ -74,13 +75,13 @@ const LogTable = () => {
       driving: Array(24).fill(0),
       on_duty: Array(24).fill(0),
     };
-  
+
     events.forEach(({ event }) => {
       const start = new Date(event.start_time);
       const end = new Date(event.end_time || start);
       const startHour = start.getUTCHours();
       const endHour = end.getUTCHours();
-  
+
       for (let hour = startHour; hour <= endHour; hour++) {
         const hourDuration = Math.min(
           (end - Math.max(start, new Date(start.setUTCHours(hour, 0, 0)))) / 3600000,
@@ -92,7 +93,7 @@ const LogTable = () => {
         }
       }
     });
-  
+
     return {
       labels,
       datasets: [
@@ -119,7 +120,7 @@ const LogTable = () => {
       ],
     };
   };
-  
+
 
   return (
     <div className="container mt-4">
@@ -249,12 +250,12 @@ const LogTable = () => {
                         </td>
                       </tr>
                     )) || (
-                      <tr>
-                        <td colSpan="6" className="text-center">
-                          No events available.
-                        </td>
-                      </tr>
-                    )}
+                        <tr>
+                          <td colSpan="6" className="text-center">
+                            No events available.
+                          </td>
+                        </tr>
+                      )}
                   </tbody>
                 </table>
               </div>

@@ -1,5 +1,6 @@
 // components/AccountsPayableReceivableChart.js
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
@@ -11,18 +12,18 @@ const data = [
 ];
 
 const AccountsPayableReceivableChart = () => {
-  const[payrollData,setpayrollData]=useState([])
-  useEffect(()=>{
+  const [payrollData, setpayrollData] = useState([])
+  useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('https://isovia.ca/fms_api/api/getpayableReceivable');
-        setpayrollData(response.data);
+        const response = await axios.get(`${BASE_URL}api/getpayableReceivable`);
+        setpayrollData(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     };
     fetchData();
-  },[])
+  }, [])
   return (
     <div>
       <h2>Accounts Payable & Receivable Chart</h2>

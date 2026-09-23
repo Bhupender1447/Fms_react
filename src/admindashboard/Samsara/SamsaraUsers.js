@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 
 const SamsaraDrivers = () => {
   const [drivers, setDrivers] = useState([]);
@@ -14,7 +15,7 @@ const SamsaraDrivers = () => {
     const fetchDrivers = async () => {
       try {
         const response = await axios.get(
-          'https://isovia.ca/fms_api/api/get_samsara_drivers'
+          `${BASE_URL}api/get_samsara_drivers`
         );
         setDrivers(response.data.data);
         setPagination(response.data.pagination);
@@ -47,8 +48,8 @@ const SamsaraDrivers = () => {
 
   const displayedDrivers = filterStatus
     ? filteredDrivers.filter(
-        (driver) => driver.driverActivationStatus === filterStatus
-      )
+      (driver) => driver.driverActivationStatus === filterStatus
+    )
     : filteredDrivers;
 
   if (loading) {
@@ -105,11 +106,10 @@ const SamsaraDrivers = () => {
                 <td>{driver.timezone || 'N/A'}</td>
                 <td>
                   <span
-                    className={`badge ${
-                      driver.driverActivationStatus === 'active'
-                        ? 'bg-success'
-                        : 'bg-secondary'
-                    }`}
+                    className={`badge ${driver.driverActivationStatus === 'active'
+                      ? 'bg-success'
+                      : 'bg-secondary'
+                      }`}
                   >
                     {driver.driverActivationStatus}
                   </span>

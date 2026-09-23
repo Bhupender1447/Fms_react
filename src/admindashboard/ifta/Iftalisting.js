@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import * as XLSX from 'xlsx';
+import Adminheader from '../Adminheader';
 
 const Iftalisting = () => {
   const [data, setData] = useState(null);
@@ -10,7 +12,7 @@ const Iftalisting = () => {
   const [fullData, setFullData] = useState([]); // Stores complete parsed data for export
 
   const api = axios.create({
-    baseURL: 'https://isovia.ca',
+    baseURL: BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL,
     timeout: 30000,
     headers: {
       Cookie: 'ci_session=40a2k4qco7jhjdbei4vksmluienbgu2e',
@@ -22,13 +24,13 @@ const Iftalisting = () => {
   const exportToExcel = () => {
     // Create a new workbook
     const wb = XLSX.utils.book_new();
-    
+
     // Create a worksheet from the full data
     const ws = XLSX.utils.json_to_sheet(fullData);
-    
+
     // Add the worksheet to the workbook
     XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-    
+
     // Generate the Excel file and trigger download
     XLSX.writeFile(wb, "expenses_data.xlsx");
   };
@@ -77,7 +79,7 @@ const Iftalisting = () => {
               const maxLength = Math.max(
                 ...Object.values(etcParsed).map(arr => Array.isArray(arr) ? arr.length : 0)
               );
-              
+
               // Create one row for each index in the arrays
               for (let i = 0; i < maxLength; i++) {
                 const row = {
@@ -87,7 +89,7 @@ const Iftalisting = () => {
                   amount: item?.amount ?? '',
                   exp_date: item?.exp_date ?? '',
                 };
-                
+
                 // Add each etc field at current index
                 Object.keys(etcParsed).forEach(key => {
                   if (Array.isArray(etcParsed[key])) {
@@ -96,7 +98,7 @@ const Iftalisting = () => {
                     row[key] = etcParsed[key] ?? '';
                   }
                 });
-                
+
                 fullDataForExport.push(row);
               }
             } else {
@@ -117,8 +119,8 @@ const Iftalisting = () => {
       } catch (err) {
         setError(
           err?.response?.data?.message ||
-            err?.message ||
-            'Failed to fetch expenses'
+          err?.message ||
+          'Failed to fetch expenses'
         );
       } finally {
         setLoading(false);
@@ -129,11 +131,11 @@ const Iftalisting = () => {
   }, [api]);
 
   return (
-    <div  className="content-wrapper" style={{ minHeight: 440 }}>
+    <div className="content-wrapper" style={{ minHeight: 440 }}>
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h1 className="h4 mb-0">Iftalisting</h1>
         {!loading && !error && fullData.length > 0 && (
-          <button 
+          <button
             onClick={exportToExcel}
             className="btn btn-success"
           >

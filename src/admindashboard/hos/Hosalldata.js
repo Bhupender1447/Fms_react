@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import axios from "axios";
+import { BASE_URL } from "../../config";
 
 export default function VehicleDriverLogs() {
   const [logs, setLogs] = useState([]);
@@ -11,7 +12,7 @@ export default function VehicleDriverLogs() {
   });
 
   useEffect(() => {
-    axios.get("https://isovia.ca/fms_api/api/getVehicleDriverLogs")
+    axios.get(`${BASE_URL}api/getVehicleDriverLogs`)
       .then(res => {
         const data = res.data.data.map(item => ({
           ...item,

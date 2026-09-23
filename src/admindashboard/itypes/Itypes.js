@@ -1,4 +1,5 @@
-import axios from 'axios'
+import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -6,11 +7,21 @@ const Itypes = () => {
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [loading, setLoading] = useState(true); // Added loading state
+
+  const fetchItypesData = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}api/fetchitypesProductData`);
+      setData(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching insurance types data:', error);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/fetchitypesProductData')
-      .then(res => setData(res.data))
-      .catch(error => console.log(error));
+    fetchItypesData();
   }, []);
 
   // Pagination logic
@@ -23,27 +34,21 @@ const Itypes = () => {
 
   // Remove function
   const handleRemove = async (id) => {
-    try {
-      const response = await axios.post(
-        'https://isovia.ca/fms_api/api/remove',
-        new URLSearchParams({
-          id: id,
-          type: 'fms_itypes'  // Adjust the type if necessary
-        }).toString(),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Cookie': 'ci_session=06vlfcjjenfs9pp507kpsbcetr7h8va3'
-          }
-        }
-      );
-      console.log("Response:", response.data);
-      // Remove the item from the state after successful deletion
-      setData(data.filter(item => item.id !== id));
-    } catch (error) {
-      console.error("Error removing item:", error);
+    const confirmRemove = window.confirm('Are you sure you want to remove this item?');
+    if (confirmRemove) {
+      try {
+        await axios.post(`${BASE_URL}api/remove`, { id, table: 'itypes' }); // Changed payload and URL
+        // Refresh data after removal
+        fetchItypesData();
+      } catch (error) {
+        console.error('Error removing item:', error);
+      }
     }
   };
+
+  if (loading) {
+    return <div className="content-wrapper" style={{ minHeight: 440 }}>Loading...</div>;
+  }
 
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
@@ -121,7 +126,7 @@ const Itypes = () => {
                   <div className="col-sm-7">
                     <ul className="pagination">
                       {Array.from({ length: totalPages }, (_, index) => (
-                        <li key={index} className={`paginate_button ${currentPage === index + 1 ? 'active' : ''}`}>
+                        <li key={index} className={`paginate_button ${currentPage === index + 1 ? 'active' : ''} `}>
                           <button
                             onClick={() => paginate(index + 1)}
                             className="btn btn-default"

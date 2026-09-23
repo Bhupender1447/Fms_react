@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { BASE_URL } from "../../config";
 
 const AciTripForm = () => {
   const [formData, setFormData] = useState({
@@ -56,7 +57,7 @@ const AciTripForm = () => {
     e.preventDefault();
     try {
       const res = await axios.post(
-        "http://isovia.ca/fms_api/api/borderconnectsendACI",
+        `${BASE_URL}api/borderconnectsendACI`,
         formData
       );
       console.log(res.data);
@@ -68,7 +69,7 @@ const AciTripForm = () => {
   };
 
   return (
-    <div  className="content-wrapper" style={{ minHeight: 440 }}>
+    <div className="content-wrapper" style={{ minHeight: 440 }}>
       <h2 className="mb-4 text-center">ACI Trip Form</h2>
       <form onSubmit={handleSubmit}>
         {/* Trip Info */}

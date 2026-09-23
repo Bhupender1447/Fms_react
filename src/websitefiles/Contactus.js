@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Helmet } from "react-helmet-async";
 
 
 const Contactus = () => {
@@ -52,6 +53,10 @@ const Contactus = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Contact Isovia | Book Your Freight & Fleet Software</title>
+        <meta name="description" content="Contact Isovia to request a demo of our freight and fleet management software or speak to our software experts about your needs." />
+      </Helmet>
       <section className="contact-banner position-relative text-center text-white d-flex align-items-center justify-content-center">
         <video 
           ref={videoRef}

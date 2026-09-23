@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import axios from "axios";
+import { BASE_URL } from "../../config";
 
 const TruckFaults = () => {
   const [faults, setFaults] = useState([]);
@@ -13,7 +14,7 @@ const TruckFaults = () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        "https://isovia.ca/fms_api/api/get_truck_faults",
+        `${BASE_URL}api/get_truck_faults`,
         { withCredentials: true }
       );
 

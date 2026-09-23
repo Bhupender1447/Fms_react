@@ -1,9 +1,14 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
+import { Helmet } from "react-helmet-async";
 
 const IsoviaFreightManagementSystem = () => {
   return (
    <>
+      <Helmet>
+        <title>Freight Management Software for Brokers & Shippers | Isovia</title>
+        <meta name="description" content="Cloud freight management software for brokers, logistics teams and Shippers. Manage your freight operations efficiently with Isovia's cloud-based platform." />
+      </Helmet>
   <section className="software-bg-banner">
     <div className="software-bg-container">
       <div className="container">

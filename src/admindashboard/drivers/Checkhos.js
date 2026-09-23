@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { BASE_URL } from "../../config";
 
 const CheckHos = () => {
   const [drivers, setDrivers] = useState([]);
@@ -23,7 +24,7 @@ const CheckHos = () => {
   const fetchDrivers = async () => {
     try {
       const res = await axios.get(
-        "https://isovia.ca/fms_api/api/fetchdriversProductData",
+        `${BASE_URL}api/fetchdriversProductData`,
         {
           headers: { Cookie: cookie },
           withCredentials: true,
@@ -61,7 +62,7 @@ const CheckHos = () => {
       };
 
       const res = await axios.post(
-        "https://isovia.ca/fms_api/hos/check",
+        `${BASE_URL}hos/check`,
         payload,
         {
           headers: {

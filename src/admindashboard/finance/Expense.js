@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -31,11 +32,11 @@ const Expense = () => {
   const [toDate, setToDate] = useState('');
   const [isEditing, setIsEditing] = useState(false);
 
-  const cookie = 'ci_session=8ecio0n0r8ive2d86cgrn5cvf93rtj1o'; // replace as needed
+  const cookie = `ci_session=${process.env.REACT_APP_CI_SESSION || '8ecio0n0r8ive2d86cgrn5cvf93rtj1o'}`; // read from env or fallback
 
   const fetchDrivers = async () => {
     try {
-      const res = await axios.get('https://isovia.ca/fms_api/api/fetchdriversProductData', {
+      const res = await axios.get(`${BASE_URL}api/fetchdriversProductData`, {
         headers: { Cookie: cookie },
         withCredentials: true,
       });
@@ -47,7 +48,7 @@ const Expense = () => {
 
   const fetchTrips = async () => {
     try {
-      const res = await axios.get('https://isovia.ca/fms_api/api/tipsfetchProductData/1', {
+      const res = await axios.get(`${BASE_URL}api/tipsfetchProductData/1`, {
         headers: { Cookie: cookie },
         withCredentials: true,
       });
@@ -60,7 +61,7 @@ const Expense = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps, no-undef
   const fetchExpenses = useCallback(async () => {
     try {
-      const res = await axios.get('https://isovia.ca/fms_api/api/getExpense', {
+      const res = await axios.get(`${BASE_URL}api/getExpense`, {
         headers: { Cookie: cookie },
         withCredentials: true,
       });
@@ -88,7 +89,7 @@ const Expense = () => {
     form.append('id', id);
 
     try {
-      const res = await axios.post('https://isovia.ca/fms_api/api/deleteExpenses', form, {
+      const res = await axios.post(`${BASE_URL}api/deleteExpenses`, form, {
         headers: { Cookie: cookie },
         withCredentials: true,
       });
@@ -112,8 +113,8 @@ const Expense = () => {
     }
 
     const url = isEditing
-      ? 'https://isovia.ca/fms_api/api/updateExpenses'
-      : 'https://isovia.ca/fms_api/api/addExpenses';
+      ? `${BASE_URL}api/updateExpenses`
+      : `${BASE_URL}api/addExpenses`;
 
     try {
       const res = await axios.post(url, data, {
@@ -154,7 +155,7 @@ const Expense = () => {
     form.append('todate', toDate);
 
     try {
-      const res = await axios.post('https://isovia.ca/fms_api/api/expenseByDate', form, {
+      const res = await axios.post(`${BASE_URL}api/expenseByDate`, form, {
         headers: { Cookie: cookie },
         withCredentials: true,
       });
@@ -200,17 +201,17 @@ const Expense = () => {
 
     return {
       labels,
-     datasets: [
-  {
-    label: 'Total Expense per Driver',
-    data,
-    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-    borderColor: 'rgba(75, 192, 192, 1)',
-    borderWidth: 1,
-    barThickness: 20, // Adjust this value (10–40 range)
-    maxBarThickness: 30, // Optional: limit the thickest it can get
-  },
-],
+      datasets: [
+        {
+          label: 'Total Expense per Driver',
+          data,
+          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1,
+          barThickness: 20, // Adjust this value (10–40 range)
+          maxBarThickness: 30, // Optional: limit the thickest it can get
+        },
+      ],
 
     };
   };
@@ -322,11 +323,11 @@ const Expense = () => {
               onChange={(e) => setFormData({ ...formData, any_image: e.target.value })}
               className="form-control"
             /> */}
-             <input
-                type="file"
-                className="form-control"
-                onChange={(e) => setFormData({ ...formData, any_image: e.target.value })}
-              />
+            <input
+              type="file"
+              className="form-control"
+              onChange={(e) => setFormData({ ...formData, any_image: e.target.value })}
+            />
           </div>
           <div className="col">
             <select

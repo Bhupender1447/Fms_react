@@ -2,6 +2,8 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
+import { toast } from 'react-toastify';
+import { BASE_URL } from '../../config';
 
 const Orders = () => {
   const [list, setList] = useState([]);
@@ -13,7 +15,7 @@ const Orders = () => {
   const [deliveryDate, setDeliveryDate] = useState('');
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/orderlist')
+    axios.get(`${BASE_URL}api/orderlist`)
       .then(res => {
         setList(res.data);
         setFilteredOrders(res.data);
@@ -38,6 +40,30 @@ const Orders = () => {
 
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
+  };
+
+  const handleRemove = async (id) => {
+    if (window.confirm("Are you sure you want to remove this order?")) {
+      try {
+        await axios.post(
+          `${BASE_URL}api/remove`,
+          new URLSearchParams({
+            id: id,
+            type: 'fms_orders'
+          }).toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            }
+          }
+        );
+        setList(list.filter(item => item.id !== id));
+        toast.success("Order removed successfully");
+      } catch (error) {
+        console.error("Error removing item:", error);
+        toast.error("Error removing order");
+      }
+    }
   };
 
 
@@ -101,45 +127,43 @@ const Orders = () => {
                         <td>{item.delivery_address}</td>
                         <td>{item.currency}</td>
                         <td>
-                                <Link
-                                  target="_blank"
-                                  to={`https://isovia.ca/fms_api/pdf/invoice.php?id=${item.id}`}
-                                  className="btn btn-danger btn-sm"
-                                >
-                                  Confirmation
-                                </Link>
-                                {item.tmsTriptId&&<Link to={`/tripviewer/${item.tmsTriptId}`} className="btn btn-default btn-xs">
-                                  Map
-                                </Link>}
-                                <Link
-                                  target="_blank"
-                                  to={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
-                                  className="btn btn-warning btn-xs"
-                                >
-                                  Invoice
-                                </Link>
-                                <Link
-                                  to={"/update/"+item.id}
-                                  className="btn btn-default btn-sm"
-                                >
-                                  <i className="fa fa-pencil" />
-                                </Link>
-                                <Link
-                                  to={"/assign/"+item.id}
-                                  className="btn btn-success btn-sm"
-                                >
-                                  Assign
-                                </Link>
-                                <button
-                                  type="button"
-                                  className="btn btn-danger btn-sm"
-                                  onClick={() => console.log('removeFunc', item.id)}
-                                  data-toggle="modal"
-                                  data-target="#removeModal"
-                                >
-                                  <i className="fa fa-trash" />
-                                </button>
-                              </td>
+                          <Link
+                            target="_blank"
+                            to={`${BASE_URL}pdf/invoice.php?id=${item.id}`}
+                            className="btn btn-danger btn-sm"
+                          >
+                            Confirmation
+                          </Link>
+                          {item.tmsTriptId && <Link to={`/tripviewer/${item.tmsTriptId}`} className="btn btn-default btn-xs">
+                            Map
+                          </Link>}
+                          <Link
+                            target="_blank"
+                            to={`${BASE_URL}pdf/invoice_log.php?id=${item.id}`}
+                            className="btn btn-warning btn-xs"
+                          >
+                            Invoice
+                          </Link>
+                          <Link
+                            to={"/update/" + item.id}
+                            className="btn btn-default btn-sm"
+                          >
+                            <i className="fa fa-pencil" />
+                          </Link>
+                          <Link
+                            to={"/assign/" + item.id}
+                            className="btn btn-success btn-sm"
+                          >
+                            Assign
+                          </Link>
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleRemove(item.id)}
+                          >
+                            <i className="fa fa-trash" />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

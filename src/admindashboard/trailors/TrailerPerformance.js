@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { BASE_URL } from "../../config";
 
 import {
   Chart as ChartJS,
@@ -35,7 +36,7 @@ const TrailerPerformance = () => {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const baseURL = "https://isovia.ca/fms_api/api";
+  const baseURL = `${BASE_URL}api`;
   const cookie = "ci_session=cq79u31gmd21agdi2omau8es8oik794n";
 
   // Fetch Performance API
@@ -155,6 +156,55 @@ const TrailerPerformance = () => {
           </button>
         </div>
       </div>
+
+      {/* Predictive Maintenance Alerts */}
+      {summary && (
+        <div className="row mt-4">
+          <div className="col-md-12">
+            <div className="box box-warning shadow-sm" style={{ borderTop: '3px solid #f39c12' }}>
+              <div className="box-header with-border">
+                <h4 className="box-title"><i className="fa fa-warning text-warning"></i> Predictive Maintenance Alerts</h4>
+              </div>
+              <div className="box-body">
+                {parseInt(summary.total_mileage) > 0 ? (
+                  <ul className="list-group">
+                    {/* General Service Alert - Every 10,000 miles */}
+                    {parseInt(summary.total_mileage) % 10000 > 9000 && (
+                      <li className="list-group-item list-group-item-warning d-flex justify-content-between align-items-center">
+                        <span><strong>General Service Due:</strong> Trailer is approaching its 10,000 mile service interval.</span>
+                        <span className="badge bg-warning text-dark">Urgent</span>
+                      </li>
+                    )}
+                    {/* Tire Inspection - Every 5,000 miles */}
+                    {parseInt(summary.total_mileage) % 5000 > 4500 && (
+                      <li className="list-group-item list-group-item-info d-flex justify-content-between align-items-center">
+                        <span><strong>Tire & Brake Inspection:</strong> Periodic check recommended (every 5,000 miles).</span>
+                        <span className="badge bg-info">Moderate</span>
+                      </li>
+                    )}
+                    {/* HUB/Axle Greasing - Every 15,000 miles */}
+                    {parseInt(summary.total_mileage) % 15000 > 14000 && (
+                      <li className="list-group-item list-group-item-danger d-flex justify-content-between align-items-center">
+                        <span><strong>Axle/Hub Greasing:</strong> Major service interval approaching (every 15,000 miles).</span>
+                        <span className="badge bg-danger">Critical</span>
+                      </li>
+                    )}
+                    {!(parseInt(summary.total_mileage) % 10000 > 9000) &&
+                      !(parseInt(summary.total_mileage) % 5000 > 4500) &&
+                      !(parseInt(summary.total_mileage) % 15000 > 14000) && (
+                        <li className="list-group-item list-group-item-success">
+                          <i className="fa fa-check-circle text-success"></i> All predictive systems normal. No immediate service required based on mileage.
+                        </li>
+                      )}
+                  </ul>
+                ) : (
+                  <p className="text-muted">No maintenance alerts available. Odometer data required.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Summary Section */}
       {summary && (

@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/no-redundant-roles */
 
-import{ useEffect, useRef, useState } from 'react';
-import { useNavigate,Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 const Createlocation = () => {
@@ -23,7 +23,7 @@ const Createlocation = () => {
 
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
-console.log(place)
+        console.log(place)
         place.address_components.forEach(component => {
           const types = component.types;
           types.forEach(type => {
@@ -55,7 +55,7 @@ console.log(place)
       initialize();
     } else {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBM3VgKsX8mEGsVYpSic7VLNKwEmZ7IABc&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
       script.async = true;
       script.onload = () => initialize();
       document.body.appendChild(script);
@@ -85,9 +85,9 @@ console.log(place)
         progress: undefined,
         theme: "colored",
       });
-     
+
       navigate(-1)
-     
+
     } catch (error) {
       console.error('Error creating location', error);
       toast.error('error', {

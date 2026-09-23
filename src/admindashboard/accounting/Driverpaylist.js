@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import jsPDF from 'jspdf';
@@ -13,35 +14,38 @@ const Driverpaylist = () => {
   const [searchDate, setSearchDate] = useState('');
   const [sortField, setSortField] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc');
-  
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('https://isovia.ca/fms_api/api/getdriverpay');
+        const response = await axios.get(`${BASE_URL}api/getdriverpay`);
         console.log(response.data);
-        setPayrollData(response.data);
-        setFilteredData(response.data);
+        const data = Array.isArray(response.data) ? response.data : [];
+        setPayrollData(data);
+        setFilteredData(data);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setPayrollData([]);
+        setFilteredData([]);
       }
     };
     fetchData();
   }, []);
 
   const handleFilter = () => {
-    let filtered = payrollData;
+    let filtered = Array.isArray(payrollData) ? payrollData : [];
     if (searchName) {
-      filtered = filtered.filter(entry => 
-        (`${entry.fname} ${entry.lname}`).toLowerCase().includes(searchName.toLowerCase())
+      filtered = filtered.filter(entry =>
+        (`${entry.driver_fname} ${entry.driver_lname}`).toLowerCase().includes(searchName.toLowerCase())
       );
     }
     if (searchRate) {
-      filtered = filtered.filter(entry => 
+      filtered = filtered.filter(entry =>
         entry.rate && entry.rate.toString().includes(searchRate)
       );
     }
     if (searchDate) {
-      filtered = filtered.filter(entry => 
+      filtered = filtered.filter(entry =>
         entry.deliver_date && entry.deliver_date.includes(searchDate)
       );
     }
@@ -50,7 +54,8 @@ const Driverpaylist = () => {
 
   const handleSort = (field) => {
     const order = sortField === field && sortOrder === 'asc' ? 'desc' : 'asc';
-    const sortedData = [...filteredData].sort((a, b) => {
+    const dataToSort = Array.isArray(filteredData) ? filteredData : [];
+    const sortedData = [...dataToSort].sort((a, b) => {
       if (a[field] < b[field]) return order === 'asc' ? -1 : 1;
       if (a[field] > b[field]) return order === 'asc' ? 1 : -1;
       return 0;
@@ -66,69 +71,69 @@ const Driverpaylist = () => {
     doc.text("Driver Payroll Report", 14, 15);
 
     const tableColumn = [
-        "Driver Name", "Account No", "Payment Method", "Company", 
-        "Pickup Address", "Delivery Address", "Delivery Date", 
-        "Delivery Time", "Rate", "Trailer Type"
+      "Driver Name", "Account No", "Payment Method", "Company",
+      "Pickup Address", "Delivery Address", "Delivery Date",
+      "Delivery Time", "Rate", "Trailer Type"
     ];
     const tableRows = [];
 
     filteredData.forEach(entry => {
-        const rowData = [
-            `${entry.driver_fname} ${entry.driver_lname}`,
-            entry.accountno || 'N/A',
-            entry.payment_method || 'N/A',
-            entry.company || 'N/A',
-            entry.pickup_address || 'N/A',
-            entry.delivery_address || 'N/A',
-            entry.deliver_date || 'N/A',
-            entry.deliverytime || 'N/A',
-            entry.rate || 'N/A',
-            entry.trailortype || 'N/A',
-        ];
-        tableRows.push(rowData);
+      const rowData = [
+        `${entry.driver_fname} ${entry.driver_lname}`,
+        entry.accountno || 'N/A',
+        entry.payment_method || 'N/A',
+        entry.company || 'N/A',
+        entry.pickup_address || 'N/A',
+        entry.delivery_address || 'N/A',
+        entry.deliver_date || 'N/A',
+        entry.deliverytime || 'N/A',
+        entry.rate || 'N/A',
+        entry.trailortype || 'N/A',
+      ];
+      tableRows.push(rowData);
     });
 
     autoTable(doc, {
-        head: [tableColumn],
-        body: tableRows,
-        startY: 20,
-        theme: 'grid',
-        styles: { fontSize: 8 }, 
-        headStyles: { fontSize: 8 }, 
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20,
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fontSize: 8 },
     });
 
     doc.save("Driver_Payroll_Report.pdf");
-};
+  };
 
-  
+
 
   return (
     <div className="content-wrapper p-4" style={{ minHeight: 440 }}>
       <h2 className="mb-4">Driver Payroll Management</h2>
       <div className="row g-3 mb-3">
         <div className="col-md-4">
-          <input 
-            type="text" 
-            className="form-control" 
-            placeholder="Search by Name" 
-            value={searchName} 
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search by Name"
+            value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
           />
         </div>
         <div className="col-md-4">
-          <input 
-            type="text" 
-            className="form-control" 
-            placeholder="Search by Rate" 
-            value={searchRate} 
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search by Rate"
+            value={searchRate}
             onChange={(e) => setSearchRate(e.target.value)}
           />
         </div>
         <div className="col-md-4">
-          <input 
-            type="date" 
-            className="form-control" 
-            value={searchDate} 
+          <input
+            type="date"
+            className="form-control"
+            value={searchDate}
             onChange={(e) => setSearchDate(e.target.value)}
           />
         </div>
@@ -166,9 +171,9 @@ const Driverpaylist = () => {
                 <td>{entry.deliverytime || 'N/A'}</td>
                 <td>{entry.rate || 'N/A'}</td>
                 <td>{entry.trailortype || 'N/A'}</td>
-                <td> {entry.tmsTriptId&&<Link to={`/tripviewer/${entry.tmsTriptId}`} className="btn btn-primary  btn-xs">
-                                                  Map
-                                                </Link>}</td>
+                <td> {entry.tmsTriptId && <Link to={`/tripviewer/${entry.tmsTriptId}`} className="btn btn-primary  btn-xs">
+                  Map
+                </Link>}</td>
               </tr>
             ))
           ) : (

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { BASE_URL } from '../../config'
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -8,7 +9,7 @@ const Eqptypes = () => {
   const [itemsPerPage] = useState(10);
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/fetcheqptypesProductData')
+    axios.get(`${BASE_URL}api/fetcheqptypesProductData`)
       .then(res => setData(res.data))
       .catch(error => console.log(error));
   }, []);
@@ -25,7 +26,7 @@ const Eqptypes = () => {
   const handleRemove = async (id) => {
     try {
       const response = await axios.post(
-        'https://isovia.ca/fms_api/api/remove',
+        `${BASE_URL}api/remove`,
         new URLSearchParams({
           id: id,
           type: 'fms_eqptypes'  // Adjust the type if necessary

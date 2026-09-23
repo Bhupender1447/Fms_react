@@ -1,6 +1,7 @@
 import axios from 'axios';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BASE_URL } from '../config';
 
 const DriverLogin = () => {
   const [Email, setEmail] = useState('');
@@ -14,7 +15,7 @@ const DriverLogin = () => {
     formData.append("email", Email);
     formData.append("password", Password);
 
-    axios.post('https://isovia.ca/fms_api/api/driver_login', formData)
+    axios.post(`${BASE_URL}api/driver_login`, formData)
       .then(res => {
         let loginRes = res.data;
         console.log(loginRes);
@@ -23,11 +24,11 @@ const DriverLogin = () => {
             name: loginRes.username,
             id: loginRes.user_id,
             email: loginRes.email,
-            gomotive_id:loginRes.gomotive_id,
+            gomotive_id: loginRes.gomotive_id,
             role: loginRes.role // Assuming the response contains a 'role' field
           };
           localStorage.setItem("logindetail", JSON.stringify(data));
-          
+
           // Navigate based on user role
           if (loginRes.role === "driver") {
             navigate('/logs');
@@ -41,75 +42,75 @@ const DriverLogin = () => {
 
   return (
     <>
-    <section className="login_form">
-  <div className="container">
-    <div className="row">
-      <div className="col-md-6 col-xs-12 login-box">
-        <div className="login-logo">
-          <Link to="">
-            <b>Login Drivers</b>
-          </Link>
-        </div>
-        <div className="login-box-body">
-          <p className="login-box-msg">Sign in to start your session</p>
-          {error && <div className="alert alert-danger" role="alert">
-          {error}
-        </div>}
-          <form onSubmit={handleOnSubmit}>
-            <div className="form-group has-feedback">
-              <input
-                type="email"
-                className="form-control"
-                name="email"
-                id="email"
-                placeholder="Email"
-                autoComplete="off"
-                defaultValue="admin@admin.com"
-                value={Email}
-              onChange={(e) => setEmail(e.target.value)}
-              />
-              <span className="glyphicon glyphicon-envelope form-control-feedback" />
-            </div>
-            <div className="form-group has-feedback">
-              <input
-                type="password"
-                className="form-control"
-                name="password"
-                id="password"
-                placeholder="Password"
-                autoComplete="off"
-                defaultValue="admin"
-                value={Password}
-              onChange={(e) => setPassword(e.target.value)}
-              />
-              <span className="glyphicon glyphicon-lock form-control-feedback" />
-            </div>
-            <div className="row">
-              <div className="col-xs-8">
-                <div className="checkbox icheck">
-                  <label>
-                    <input type="checkbox" /> Remember Me
-                  </label>
-                </div>
+      <section className="login_form">
+        <div className="container">
+          <div className="row">
+            <div className="col-md-6 col-xs-12 login-box">
+              <div className="login-logo">
+                <Link to="">
+                  <b>Login Drivers</b>
+                </Link>
               </div>
-              <div className="col-xs-4">
-                <button
-                  type="submit"
-                  className="btn btn-primary btn-block btn-flat"
-                >
-                  Sign In
-                </button>
-                <Link to="">Forgot Password</Link>
+              <div className="login-box-body">
+                <p className="login-box-msg">Sign in to start your session</p>
+                {error && <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>}
+                <form onSubmit={handleOnSubmit}>
+                  <div className="form-group has-feedback">
+                    <input
+                      type="email"
+                      className="form-control"
+                      name="email"
+                      id="email"
+                      placeholder="Email"
+                      autoComplete="off"
+                      defaultValue="admin@admin.com"
+                      value={Email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <span className="glyphicon glyphicon-envelope form-control-feedback" />
+                  </div>
+                  <div className="form-group has-feedback">
+                    <input
+                      type="password"
+                      className="form-control"
+                      name="password"
+                      id="password"
+                      placeholder="Password"
+                      autoComplete="off"
+                      defaultValue="admin"
+                      value={Password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <span className="glyphicon glyphicon-lock form-control-feedback" />
+                  </div>
+                  <div className="row">
+                    <div className="col-xs-8">
+                      <div className="checkbox icheck">
+                        <label>
+                          <input type="checkbox" /> Remember Me
+                        </label>
+                      </div>
+                    </div>
+                    <div className="col-xs-4">
+                      <button
+                        type="submit"
+                        className="btn btn-primary btn-block btn-flat"
+                      >
+                        Sign In
+                      </button>
+                      <Link to="">Forgot Password</Link>
+                    </div>
+                  </div>
+                </form>
               </div>
             </div>
-          </form>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
+      </section>
 
-   {/* <div className="login-box">
+      {/* <div className="login-box">
       <div className="login-logo">
         <Link to="">
           <b>Driver Login</b>

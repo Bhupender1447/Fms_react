@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import axios from "axios";
-import {Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { BASE_URL } from '../../config';
 
 
 const Bulkuploaddriver = () => {
@@ -31,7 +32,7 @@ const Bulkuploaddriver = () => {
 
     try {
       const response = await axios.post(
-        "https://isovia.ca/fms_api/drivers/import",
+        `${BASE_URL}drivers/import`,
         formData,
         {
           headers: {
@@ -161,13 +162,12 @@ const Bulkuploaddriver = () => {
 
         {message && (
           <div
-            className={`mt-3 alert ${
-              message.includes("✅")
-                ? "alert-success"
-                : message.includes("❌")
+            className={`mt-3 alert ${message.includes("✅")
+              ? "alert-success"
+              : message.includes("❌")
                 ? "alert-danger"
                 : "alert-warning"
-            } py-2`}
+              } py-2`}
             style={{ borderRadius: "10px" }}
           >
             {message}

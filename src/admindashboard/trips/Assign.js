@@ -1,7 +1,7 @@
-/* eslint-disable jsx-a11y/no-redundant-roles */
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams ,Link} from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
+import { BASE_URL } from "../../config";
 
 const Assigntrip = () => {
   const [data, setData] = useState({});
@@ -29,7 +29,7 @@ const Assigntrip = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost/fms_api/api/tripassign/${id}/1`,
+        `${BASE_URL}api/tripassign/${id}/1`,
         data
       );
 
@@ -48,7 +48,7 @@ const Assigntrip = () => {
   };
   useEffect(() => {
     axios
-      .get(`https://isovia.ca/fms_api/api/tripassign/${id}/1`)
+      .get(`${BASE_URL}api/tripassign/${id}/1`)
       .then((response) => {
         setData(response.data);
         setLoading(false);
@@ -121,7 +121,31 @@ const Assigntrip = () => {
                           className="form-control"
                           id="trailors"
                           name="trailors"
-                          onChange={handleChange}
+                          onChange={async (e) => {
+                            const trailerId = e.target.value;
+                            handleChange(e);
+                            if (trailerId) {
+                              try {
+                                // Checking compliance for trailer
+                                const res = await axios.get(`${BASE_URL}api/truckComplianceList?id=${trailerId}`);
+                                if (res.data.status === 'success' && res.data.data[0]) {
+                                  const expiredDocs = res.data.data[0].documents.filter(doc => doc.status === 'expired');
+                                  if (expiredDocs.length > 0) {
+                                    import('react-toastify').then(({ toast }) => {
+                                      toast.error(`⚠️ CANNOT ASSIGN: Trailer has ${expiredDocs.length} expired documents!`, {
+                                        position: "top-center",
+                                        autoClose: 5000,
+                                      });
+                                    });
+                                    // Clear selection to block
+                                    setFormData(prev => ({ ...prev, trailors: "" }));
+                                  }
+                                }
+                              } catch (err) {
+                                console.error("Error checking trailer documents:", err);
+                              }
+                            }
+                          }}
                           value={formData.trailors}
                         >
                           <option value="" disabled selected>
@@ -144,7 +168,30 @@ const Assigntrip = () => {
                           className="form-control"
                           id="trucks"
                           name="trucks"
-                          onChange={handleChange}
+                          onChange={async (e) => {
+                            const truckId = e.target.value;
+                            handleChange(e);
+                            if (truckId) {
+                              try {
+                                const res = await axios.get(`${BASE_URL}api/truckComplianceList?id=${truckId}`);
+                                if (res.data.status === 'success' && res.data.data[0]) {
+                                  const expiredDocs = res.data.data[0].documents.filter(doc => doc.status === 'expired');
+                                  if (expiredDocs.length > 0) {
+                                    import('react-toastify').then(({ toast }) => {
+                                      toast.error(`⚠️ CANNOT ASSIGN: Truck has ${expiredDocs.length} expired documents!`, {
+                                        position: "top-center",
+                                        autoClose: 5000,
+                                      });
+                                    });
+                                    // Clear selection to block
+                                    setFormData(prev => ({ ...prev, trucks: "" }));
+                                  }
+                                }
+                              } catch (err) {
+                                console.error("Error checking truck documents:", err);
+                              }
+                            }
+                          }}
                           value={formData.trucks}
                         >
                           <option value="" disabled selected>
@@ -167,7 +214,30 @@ const Assigntrip = () => {
                           className="form-control"
                           id="drivers"
                           name="drivers"
-                          onChange={handleChange}
+                          onChange={async (e) => {
+                            const driverId = e.target.value;
+                            handleChange(e);
+                            if (driverId) {
+                              try {
+                                const res = await axios.get(`${BASE_URL}api/checkDocumentList?id=${driverId}`);
+                                if (res.data.status === 'success' && res.data.data[0]) {
+                                  const expiredDocs = res.data.data[0].documents.filter(doc => doc.status === 'expired');
+                                  if (expiredDocs.length > 0) {
+                                    import('react-toastify').then(({ toast }) => {
+                                      toast.error(`⚠️ CANNOT ASSIGN: Driver has ${expiredDocs.length} expired documents!`, {
+                                        position: "top-center",
+                                        autoClose: 5000,
+                                      });
+                                    });
+                                    // Optionally clear selection to block
+                                    setFormData(prev => ({ ...prev, drivers: "" }));
+                                  }
+                                }
+                              } catch (err) {
+                                console.error("Error checking documents:", err);
+                              }
+                            }
+                          }}
                           value={formData.drivers}
                         >
                           <option value="" disabled selected>
@@ -489,7 +559,7 @@ const Assigntrip = () => {
                     Confirm Order
                   </button>
                   <Link
-                    to="http://localhost/fms/trips/"
+                    to="/trips"
                     className="btn btn-warning"
                   >
                     Cancel Order

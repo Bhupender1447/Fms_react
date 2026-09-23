@@ -1,69 +1,70 @@
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom';
-import {Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 
 const Updatedoctypes = () => {
-    const {id} = useParams();
+    const { id } = useParams();
     const [formData, setFormData] = useState({
         module: 'Carrier',
         name: '',
         remarks: '',
         _wysihtml5_mode: '1',
-      });
-    
-        
-  const [file, setFile] = useState(null);
+    });
 
-  useEffect(() => {
-    const fetchTrailerData = async () => {
-      try {
-        const response = await axios.get(`https://isovia.ca/fms_api/api/updatedoctypes/${id}`);
-        setFormData(response.data.product_data);
-      } catch (error) {
-        console.error('Error fetching doctypes data:', error);
-      }
+
+    const [file, setFile] = useState(null);
+
+    useEffect(() => {
+        const fetchTrailerData = async () => {
+            try {
+                const response = await axios.get(`${BASE_URL}api/updatedoctypes/${id}`);
+                setFormData(response.data.product_data);
+            } catch (error) {
+                console.error('Error fetching doctypes data:', error);
+            }
+        };
+
+        fetchTrailerData();
+    }, [id]);
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    fetchTrailerData();
-  }, [id]);
+    const handleFileChange = (e) => {
+        setFile(e.target.files[0]);
+    };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
+        const formDataToSend = new FormData();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+        for (const key in formData) {
+            formDataToSend.append(key, formData[key]);
+        }
 
-    const formDataToSend = new FormData();
+        if (file) {
+            formDataToSend.append('product_image', file);
+        }
 
-    for (const key in formData) {
-      formDataToSend.append(key, formData[key]);
-    }
+        try {
+            const response = await axios.post(`${BASE_URL}api/updatedoctypes/${id}`, formDataToSend, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
 
-    if (file) {
-      formDataToSend.append('product_image', file);
-    }
-
-    try {
-      const response = await axios.post(`https://isovia.ca/fms_api/api/updatedoctypes/${id}`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      console.log(response.data);
-      alert('doctypes updated successfully!');
-    } catch (error) {
-      console.error('Error updating doctypes data:', error);
-      alert('Error updating doctypes data.');
-    }
-  };
+            console.log(response.data);
+            alert('doctypes updated successfully!');
+        } catch (error) {
+            console.error('Error updating doctypes data:', error);
+            alert('Error updating doctypes data.');
+        }
+    };
     return (
         <div className="content-wrapper" style={{ minHeight: 440 }}>
             {/* Content Header (Page header) */}
@@ -137,7 +138,7 @@ const Updatedoctypes = () => {
                                                     name="name"
                                                     placeholder="Enter Name"
                                                     autoComplete="off"
-                                                    value={formData.name} onChange={handleChange} 
+                                                    value={formData.name} onChange={handleChange}
                                                 />
                                             </div>
                                         </div>

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { BASE_URL } from "../../config";
 
 const AutoLiveLocationSender = () => {
   const sendLocation = (lat, lng) => {
@@ -7,7 +8,7 @@ const AutoLiveLocationSender = () => {
 
     if (!driverId) return;
 
-    fetch("https://isovia.ca/fms_api/api/getliveLocation", {
+    fetch(`${BASE_URL}api/getliveLocation`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -35,7 +36,7 @@ const AutoLiveLocationSender = () => {
         },
         {
           enableHighAccuracy: true,
-           timeout: 60000,  
+          timeout: 60000,
           maximumAge: 0,
         }
       );

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
 
 const DocumentChecklist = ({ driverId }) => {
@@ -11,9 +12,9 @@ const DocumentChecklist = ({ driverId }) => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `https://isovia.ca/fms_api/api/checkDocumentList?id=${driverId}`
+          `${BASE_URL}api/checkDocumentList?id=${driverId}`
         );
-        
+
         if (response.data.status === 'success') {
           setDocumentData(response.data.data[0]);
         } else {

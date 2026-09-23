@@ -1,17 +1,18 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { BASE_URL } from "../../config";
 
 const OffDutyButton = () => {
   const [message, setMessage] = useState("");
 
   const handleOffDuty = async () => {
-     let { id } = JSON.parse(localStorage.getItem("logindetail"));
+    let { id } = JSON.parse(localStorage.getItem("logindetail"));
     const formData = new FormData();
     formData.append("driver_id", id); // Replace with dynamic ID if needed
 
     try {
       const response = await axios.post(
-        "https://isovia.ca/fms_api/api/off",
+        `${BASE_URL}api/off`,
         formData
       );
       setMessage("Success: " + JSON.stringify(response.data));
@@ -23,7 +24,7 @@ const OffDutyButton = () => {
   };
 
   return (
-  <div className='content-wrapper'>
+    <div className='content-wrapper'>
       <button className="btn btn-warning" onClick={handleOffDuty}>
         Set Off Duty
       </button>

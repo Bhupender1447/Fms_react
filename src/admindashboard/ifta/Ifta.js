@@ -1,5 +1,7 @@
 import { useState } from "react";
-import axios from "axios";
+import axios from 'axios';
+import { BASE_URL } from '../../config';
+import Adminheader from '../Adminheader';
 import "./IftaTable.css";
 
 const Ifta = () => {
@@ -19,9 +21,7 @@ const Ifta = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.get(
-        `https://isovia.ca/fms_api/distanceapi/getDistances?from_date=${fromDate}&to_date=${toDate}`
-      );
+      const response = await axios.get(`${BASE_URL}distanceapi/getDistances?from_date=${fromDate}&to_date=${toDate}`);
 
       if (response.data.status) {
         const data = response.data.data;

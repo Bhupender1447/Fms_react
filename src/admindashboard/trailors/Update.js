@@ -1,11 +1,12 @@
 /* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useState, useEffect } from 'react';
-import { useParams ,Link} from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 
 const Updatetrailors = () => {
     const { id } = useParams();
-  
+
     const [formData, setFormData] = useState({
         // Direct mapped fields
         plate_number: '',
@@ -30,7 +31,7 @@ const Updatetrailors = () => {
         insurance_expiry: '',
         assigned_truck_id: '',
         seal_number: '',
-        
+
         // Additional fields
         length: '',
         lengthunits: 'Feet',
@@ -60,8 +61,8 @@ const Updatetrailors = () => {
     useEffect(() => {
         const fetchTrailerData = async () => {
             try {
-                const response = await axios.get(`https://isovia.ca/fms_api/api/updatetrailors/${id}`);
-                
+                const response = await axios.get(`${BASE_URL}api/updatetrailors/${id}`);
+
                 // Map the API response to our formData structure
                 const apiData = response.data;
                 const mappedData = {
@@ -88,7 +89,7 @@ const Updatetrailors = () => {
                     insurance_expiry: apiData.insurance_expiry || '',
                     assigned_truck_id: apiData.assigned_truck_id || '',
                     seal_number: apiData.seal_number || '',
-                    
+
                     // Additional fields
                     length: apiData.length || '',
                     lengthunits: apiData.lengthunits || 'Feet',
@@ -101,9 +102,9 @@ const Updatetrailors = () => {
                     fleet: apiData.fleet || '',
                     third: apiData.third || 'NO',
                 };
-                
+
                 setFormData(mappedData);
-                
+
                 // Store existing file URLs if any
                 if (apiData.product_image) {
                     setExistingImages(prev => ({
@@ -111,7 +112,7 @@ const Updatetrailors = () => {
                         product_image: apiData.product_image
                     }));
                 }
-                
+
             } catch (error) {
                 console.error('Error fetching trailer data:', error);
                 setErrorMessage('Failed to load trailer data');
@@ -123,9 +124,9 @@ const Updatetrailors = () => {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData({ 
-            ...formData, 
-            [name]: type === 'checkbox' ? (checked ? 'YES' : 'NO') : value 
+        setFormData({
+            ...formData,
+            [name]: type === 'checkbox' ? (checked ? 'YES' : 'NO') : value
         });
     };
 
@@ -163,7 +164,7 @@ const Updatetrailors = () => {
         formDataToSend.append('id', id);
 
         try {
-            const response = await axios.post(`https://isovia.ca/fms_api/api/updatetrailors/${id}`, formDataToSend, {
+            const response = await axios.post(`${BASE_URL}api/updatetrailors/${id}`, formDataToSend, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -171,7 +172,7 @@ const Updatetrailors = () => {
 
             console.log('Update Success:', response.data);
             setSuccessMessage('Trailer updated successfully!');
-            
+
         } catch (error) {
             console.error('Error updating trailer:', error.response?.data || error.message);
             setErrorMessage('Error updating trailer. Please try again.');
@@ -187,7 +188,7 @@ const Updatetrailors = () => {
                     <small>Trailers</small>
                 </h1>
             </section>
-            
+
             {/* Main content */}
             <section className="content">
                 {/* Messages */}
@@ -223,7 +224,7 @@ const Updatetrailors = () => {
                                 </div>
                             )}
                         </div>
-                        
+
                         <div className="box">
                             <form role="form" onSubmit={handleSubmit}>
                                 <div className="box-body">
@@ -398,9 +399,9 @@ const Updatetrailors = () => {
                                     <div className="col-md-6 col-xs-12 pull pull-left">
                                         <div className="form-group">
                                             <label htmlFor="fleet">Fleet</label>
-                                            <select 
-                                                className="form-control" 
-                                                id="fleet" 
+                                            <select
+                                                className="form-control"
+                                                id="fleet"
                                                 name="fleet"
                                                 value={formData.fleet}
                                                 onChange={handleChange}
@@ -528,9 +529,9 @@ const Updatetrailors = () => {
                                     <div className="col-md-6 col-xs-12 pull pull-left">
                                         <div className="form-group">
                                             <label htmlFor="country">Registration Country</label>
-                                            <select 
-                                                className="form-control" 
-                                                id="country" 
+                                            <select
+                                                className="form-control"
+                                                id="country"
                                                 name="country"
                                                 value={formData.country}
                                                 onChange={handleChange}
@@ -546,9 +547,9 @@ const Updatetrailors = () => {
                                     <div className="col-md-6 col-xs-12 pull pull-left">
                                         <div className="form-group">
                                             <label htmlFor="province">Registration Province/State</label>
-                                            <select 
-                                                className="form-control" 
-                                                id="province" 
+                                            <select
+                                                className="form-control"
+                                                id="province"
                                                 name="province"
                                                 value={formData.province}
                                                 onChange={handleChange}
@@ -871,9 +872,9 @@ const Updatetrailors = () => {
                                             {existingImages.product_image && (
                                                 <div className="mb-2">
                                                     <p>Current Image:</p>
-                                                    <img 
-                                                        src={existingImages.product_image} 
-                                                        alt="Current Trailer" 
+                                                    <img
+                                                        src={existingImages.product_image}
+                                                        alt="Current Trailer"
                                                         style={{ maxWidth: '200px', maxHeight: '200px' }}
                                                     />
                                                 </div>
@@ -901,7 +902,7 @@ const Updatetrailors = () => {
                                                         title="Clear file"
                                                         className="btn btn-default btn-secondary fileinput-remove fileinput-remove-button"
                                                         onClick={() => {
-                                                            setFiles({...files, product_image: null});
+                                                            setFiles({ ...files, product_image: null });
                                                             setExistingImages(prev => ({ ...prev, product_image: null }));
                                                         }}
                                                     >
@@ -948,7 +949,7 @@ const Updatetrailors = () => {
                                         </div>
                                     ))}
                                 </div>
-                                
+
                                 {/* Box Footer */}
                                 <div className="box-footer">
                                     <button type="submit" className="btn btn-primary">

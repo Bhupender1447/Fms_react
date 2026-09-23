@@ -49,7 +49,7 @@ const Addstop = ({ setpopup1, popup1 }) => {
       initializeAutocomplete();
     } else {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBM3VgKsX8mEGsVYpSic7VLNKwEmZ7IABc&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
       script.async = true;
       script.onload = initializeAutocomplete;
       document.body.appendChild(script);
@@ -122,11 +122,11 @@ const Addstop = ({ setpopup1, popup1 }) => {
 
             <div className="modal-footer">
               <button type="button" data-dismiss="modal"
-          aria-label="Close" className="btn btn-primary" onClick={() => setpopup1(false)}>
+                aria-label="Close" className="btn btn-primary" onClick={() => setpopup1(false)}>
                 Close
               </button>
               <button type="button" data-dismiss="modal"
-          aria-label="Close" onClick={() => setpopup1(false)} className="btn btn-primary">
+                aria-label="Close" onClick={() => setpopup1(false)} className="btn btn-primary">
                 Submit
               </button>
             </div>

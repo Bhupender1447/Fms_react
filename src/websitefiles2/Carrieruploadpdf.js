@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
+import { BASE_URL } from '../config';
 
 const Carrieruploadpdf = () => {
   // Get formId from URL params (path)
   const { formId } = useParams();
-  
+
   // Get pdfUrl from the query string
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const pdfUrl = queryParams.get('pdfUrl');  // Extract the pdfUrl from the query string
-  
+
   const [formData, setFormData] = useState({
     formId: formId || '',  // Set formId to the URL parameter
     pdfFile: null,
@@ -47,7 +48,7 @@ const Carrieruploadpdf = () => {
     data.append('pdf_file', formData.pdfFile);
 
     // Send the form data to your backend API (POST request to upload PDF)
-    fetch('https://isovia.ca/fms_api/api/carrieruploadPdf', {
+    fetch(`${BASE_URL}api/carrieruploadPdf`, {
       method: 'POST',
       body: data,
     })

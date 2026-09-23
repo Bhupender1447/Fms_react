@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { useState } from 'react'
 import { Link } from 'react-router-dom';
+import { BASE_URL } from '../../config';
 
 const Createterms = () => {
   const [formData, setFormData] = useState({
@@ -24,10 +25,10 @@ const Createterms = () => {
     }
 
     try {
-      const response = await axios.post('https://isovia.ca/fms_api/api/createterms', data);
+      const response = await axios.post(`${BASE_URL}api/createterms`, data);
 
       if (response.status === 200) {
-      alert('Form submitted successfully');
+        alert('Form submitted successfully');
       } else {
         console.error('Form submission failed');
       }
@@ -38,71 +39,71 @@ const Createterms = () => {
 
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
-  {/* Content Header (Page header) */}
-  <section className="content-header">
-    <h1>
-      Manage
-      <small>Terms</small>
-    </h1>
-    <ol className="breadcrumb">
-      <li>
-        <Link to="#">
-          <i className="fa fa-dashboard" /> Home
-        </Link>
-      </li>
-      <li className="active">Terms</li>
-    </ol>
-  </section>
-  {/* Main content */}
-  <section className="content">
-    {/* Small boxes (Stat box) */}
-    <div className="row">
-      <div className="col-md-12 col-xs-12">
-        <div id="messages" />
-        <div className="box">
-          <div className="box-header">
-            <h3 className="box-title">Add Charges</h3>
-          </div>
-          {/* /.box-header */}
-          <form
-            role="form"
-            action=""
-            method="post"
-            encType="multipart/form-data"
-            onSubmit={handleSubmit}>
-            <div className="box-body">
-              <div className="col-md-6 col-xs-12 pull pull-left">
-                <br />
-                <br />
-                <br />
-                <div className="col-md-12 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="name"
-                      name="name"
-                      placeholder="Enter Name"
-                      autoComplete="off"
-                      value={formData.name} onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="store">Company</label>
-                    <select
-                      className="form-control"
-                      id="company"
-                      name="company"
-                      value={formData.company} onChange={handleChange}
-                    >
-                      <option value="Canada">Canada</option>
-                    </select>
-                  </div>
-                </div>
-                {/*
+      {/* Content Header (Page header) */}
+      <section className="content-header">
+        <h1>
+          Manage
+          <small>Terms</small>
+        </h1>
+        <ol className="breadcrumb">
+          <li>
+            <Link to="#">
+              <i className="fa fa-dashboard" /> Home
+            </Link>
+          </li>
+          <li className="active">Terms</li>
+        </ol>
+      </section>
+      {/* Main content */}
+      <section className="content">
+        {/* Small boxes (Stat box) */}
+        <div className="row">
+          <div className="col-md-12 col-xs-12">
+            <div id="messages" />
+            <div className="box">
+              <div className="box-header">
+                <h3 className="box-title">Add Charges</h3>
+              </div>
+              {/* /.box-header */}
+              <form
+                role="form"
+                action=""
+                method="post"
+                encType="multipart/form-data"
+                onSubmit={handleSubmit}>
+                <div className="box-body">
+                  <div className="col-md-6 col-xs-12 pull pull-left">
+                    <br />
+                    <br />
+                    <br />
+                    <div className="col-md-12 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Name</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="name"
+                          name="name"
+                          placeholder="Enter Name"
+                          autoComplete="off"
+                          value={formData.name} onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="store">Company</label>
+                        <select
+                          className="form-control"
+                          id="company"
+                          name="company"
+                          value={formData.company} onChange={handleChange}
+                        >
+                          <option value="Canada">Canada</option>
+                        </select>
+                      </div>
+                    </div>
+                    {/*
                <div class="col-md-3 col-xs-12 pull pull-left">
               <div class="form-group">
               <label for="store">Charge Type</label>
@@ -113,21 +114,21 @@ const Createterms = () => {
               </select>
               </div>
           </div> */}
-                <div className="col-md-12 col-xs-12 pull pull-left">
-                  <div className="form-group">
-                    <label htmlFor="username">No. of Days</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="value"
-                      name="value"
-                      placeholder="Enter Values"
-                      autoComplete="off"
-                      value={formData.value} onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                {/*
+                    <div className="col-md-12 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">No. of Days</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="value"
+                          name="value"
+                          placeholder="Enter Values"
+                          autoComplete="off"
+                          value={formData.value} onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    {/*
               <div class="col-md-4 col-xs-12 pull pull-left">
               <label for="store">Pickup Date</label>   
                   <div class="input-group date" data-provide="datepicker">
@@ -139,7 +140,7 @@ const Createterms = () => {
                   </div>
               </div>
         */}
-                {/*
+                    {/*
            <div class="col-md-12 col-xs-12 pull pull-left">
           
           <div class="form-group">
@@ -149,8 +150,8 @@ const Createterms = () => {
           </div> 
           </div>
           */}
-              </div>
-              {/*
+                  </div>
+                  {/*
               <div class="col-md-4 col-xs-12 pull pull-left">
               <label for="store">Pickup Date</label>   
                   <div class="input-group date" data-provide="datepicker">
@@ -162,30 +163,30 @@ const Createterms = () => {
                   </div>
               </div>
         */}
+                </div>
+                {/* /.box-body */}
+                <div className="box-footer">
+                  <button type="submit" className="btn btn-primary">
+                    Save Changes
+                  </button>
+                  <Link
+                    to="/customers/"
+                    className="btn btn-warning"
+                  >
+                    Back
+                  </Link>
+                </div>
+              </form>
+              {/* /.box-body */}
             </div>
-            {/* /.box-body */}
-            <div className="box-footer">
-              <button type="submit" className="btn btn-primary">
-                Save Changes
-              </button>
-              <Link
-                to="/customers/"
-                className="btn btn-warning"
-              >
-                Back
-              </Link>
-            </div>
-          </form>
-          {/* /.box-body */}
+            {/* /.box */}
+          </div>
+          {/* col-md-12 */}
         </div>
-        {/* /.box */}
-      </div>
-      {/* col-md-12 */}
+        {/* /.row */}
+      </section>
+      {/* /.content */}
     </div>
-    {/* /.row */}
-  </section>
-  {/* /.content */}
-</div>
 
   )
 }

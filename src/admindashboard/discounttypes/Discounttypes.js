@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -8,7 +9,7 @@ const Discounttypes = () => {
   const [itemsPerPage] = useState(10); // You can adjust the number of items per page
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/fetchdiscounttypesProductData')
+    axios.get(`${BASE_URL}api/fetchdiscounttypesProductData`)
       .then(res => setData(res.data))
       .catch(error => console.log(error))
   }, []);
@@ -16,7 +17,7 @@ const Discounttypes = () => {
   const handleRemove = async (id) => {
     try {
       const response = await axios.post(
-        'https://isovia.ca/fms_api/api/remove',
+        `${BASE_URL}api/remove`,
         new URLSearchParams({
           id: id,
           type: 'fms_discounttypes'  // Adjust the type if necessary
@@ -114,7 +115,7 @@ const Discounttypes = () => {
                           className="form-control input-sm"
                           placeholder=""
                           aria-controls="manageTable"
-                          // Add search functionality here if needed
+                        // Add search functionality here if needed
                         />
                       </label>
                     </div>

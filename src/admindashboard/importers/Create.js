@@ -2,7 +2,9 @@
 /* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
 import { useState } from 'react'
-import {Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { BASE_URL } from '../../config';
+import Adminheader from '../Adminheader';
 
 const Createimporters = () => {
   const [formData, setFormData] = useState({
@@ -32,7 +34,7 @@ const Createimporters = () => {
     }
 
     try {
-      const response = await axios.post('https://isovia.ca/fms_api/api/createimporters', data);
+      const response = await axios.post(`${BASE_URL}api/createimporters`, data);
 
       if (response.status === 200) {
         console.log('Form submitted successfully');
@@ -46,33 +48,33 @@ const Createimporters = () => {
 
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
-    {/* Content Header (Page header) */}
-    <section className="content-header">
-      <h1>
-        Manage
-        <small>Custom Borkers</small>
-      </h1>
-    </section>
-    {/* Main content */}
-    <section className="content">
-      {/* Small boxes (Stat box) */}
-      <div className="row">
-        <div className="col-md-12 col-xs-12">
-          <div id="messages" />
-          <div className="box">
-            <div className="box-header">
-              <h3 className="box-title">Add Carriers</h3>
-            </div>
-            {/* /.box-header */}
-            <form
-              role="form"
-              onSubmit={handleSubmit}
-              method="post"
-              encType="multipart/form-data"
-            >
-              <div className="box-body">
-                <div className="col-md-6 col-xs-12 pull pull-left">
-                  {/*
+      {/* Content Header (Page header) */}
+      <section className="content-header">
+        <h1>
+          Manage
+          <small>Custom Borkers</small>
+        </h1>
+      </section>
+      {/* Main content */}
+      <section className="content">
+        {/* Small boxes (Stat box) */}
+        <div className="row">
+          <div className="col-md-12 col-xs-12">
+            <div id="messages" />
+            <div className="box">
+              <div className="box-header">
+                <h3 className="box-title">Add Carriers</h3>
+              </div>
+              {/* /.box-header */}
+              <form
+                role="form"
+                onSubmit={handleSubmit}
+                method="post"
+                encType="multipart/form-data"
+              >
+                <div className="box-body">
+                  <div className="col-md-6 col-xs-12 pull pull-left">
+                    {/*
            <div class="col-md-06 col-xs-12 pull pull-left">
                     
         <label for="formFileSm" class="form-label">Upload Image</label>
@@ -80,476 +82,476 @@ const Createimporters = () => {
   
                     
                     </div> */}
-                  <div className="col-md-12 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Name</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="name"
-                        name="name"
-                        placeholder="Enter Name"
-                        autoComplete="off"
-                        value={formData.name} onChange={handleChange}
-                      />
+                    <div className="col-md-12 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Name</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="name"
+                          name="name"
+                          placeholder="Enter Name"
+                          autoComplete="off"
+                          value={formData.name} onChange={handleChange}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-md-4 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Phone #</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="phone"
-                        name="phone"
-                        placeholder="Enter Phone"
-                        autoComplete="off"
-                        value={formData.phone} onChange={handleChange}
-                      />
+                    <div className="col-md-4 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Phone #</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="phone"
+                          name="phone"
+                          placeholder="Enter Phone"
+                          autoComplete="off"
+                          value={formData.phone} onChange={handleChange}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-md-4 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Ext #</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="ext"
-                        name="ext"
-                        placeholder="Enter Ext."
-                        autoComplete="off"
-                        value={formData.ext} onChange={handleChange} 
-                      />
+                    <div className="col-md-4 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Ext #</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="ext"
+                          name="ext"
+                          placeholder="Enter Ext."
+                          autoComplete="off"
+                          value={formData.ext} onChange={handleChange}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-md-4 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Email</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="email"
-                        name="email"
-                        placeholder="Email"
-                        autoComplete="off"
-                        value={formData.email} onChange={handleChange}
-                      />
+                    <div className="col-md-4 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Email</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="email"
+                          name="email"
+                          placeholder="Email"
+                          autoComplete="off"
+                          value={formData.email} onChange={handleChange}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-md-12 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="description">Remarks</label>
-                      <ul className="wysihtml5-toolbar" style={{}}>
-                        <li className="dropdown">
-                          <Link
-                            className="btn btn-default dropdown-toggle "
-                            data-toggle="dropdown"
-                          >
-                            <span className="glyphicon glyphicon-font" />
-                            <span className="current-font">Normal text</span>
-                            <b className="caret" />
-                          </Link>
-                          <ul className="dropdown-menu">
-                            <li>
+                    <div className="col-md-12 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="description">Remarks</label>
+                        <ul className="wysihtml5-toolbar" style={{}}>
+                          <li className="dropdown">
+                            <Link
+                              className="btn btn-default dropdown-toggle "
+                              data-toggle="dropdown"
+                            >
+                              <span className="glyphicon glyphicon-font" />
+                              <span className="current-font">Normal text</span>
+                              <b className="caret" />
+                            </Link>
+                            <ul className="dropdown-menu">
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="p"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Normal text
+                                </Link>
+                              </li>
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="h1"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Heading 1
+                                </Link>
+                              </li>
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="h2"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Heading 2
+                                </Link>
+                              </li>
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="h3"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Heading 3
+                                </Link>
+                              </li>
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="h4"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Heading 4
+                                </Link>
+                              </li>
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="h5"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Heading 5
+                                </Link>
+                              </li>
+                              <li>
+                                <Link
+                                  data-wysihtml5-command="formatBlock"
+                                  data-wysihtml5-command-value="h6"
+                                  tabIndex={-1}
+                                  to="#"
+                                  unselectable="on"
+                                >
+                                  Heading 6
+                                </Link>
+                              </li>
+                            </ul>
+                          </li>
+                          <li>
+                            <div className="btn-group">
                               <Link
-                                data-wysihtml5-command="formatBlock"
-                                data-wysihtml5-command-value="p"
+                                className="btn  btn-default"
+                                data-wysihtml5-command="bold"
+                                title="CTRL+B"
                                 tabIndex={-1}
                                 to="#"
                                 unselectable="on"
                               >
-                                Normal text
+                                Bold
                               </Link>
-                            </li>
-                            <li>
                               <Link
-                                data-wysihtml5-command="formatBlock"
-                                data-wysihtml5-command-value="h1"
+                                className="btn  btn-default"
+                                data-wysihtml5-command="italic"
+                                title="CTRL+I"
                                 tabIndex={-1}
                                 to="#"
                                 unselectable="on"
                               >
-                                Heading 1
+                                Italic
                               </Link>
-                            </li>
-                            <li>
                               <Link
-                                data-wysihtml5-command="formatBlock"
-                                data-wysihtml5-command-value="h2"
+                                className="btn  btn-default"
+                                data-wysihtml5-command="underline"
+                                title="CTRL+U"
                                 tabIndex={-1}
                                 to="#"
                                 unselectable="on"
                               >
-                                Heading 2
+                                Underline
                               </Link>
-                            </li>
-                            <li>
                               <Link
-                                data-wysihtml5-command="formatBlock"
-                                data-wysihtml5-command-value="h3"
+                                className="btn  btn-default"
+                                data-wysihtml5-command="small"
+                                title="CTRL+S"
                                 tabIndex={-1}
                                 to="#"
                                 unselectable="on"
                               >
-                                Heading 3
+                                Small
                               </Link>
-                            </li>
-                            <li>
+                            </div>
+                          </li>
+                          <li>
+                            <Link
+                              className="btn  btn-default"
+                              data-wysihtml5-command="formatBlock"
+                              data-wysihtml5-command-value="blockquote"
+                              data-wysihtml5-display-format-name="false"
+                              tabIndex={-1}
+                              to="#"
+                              unselectable="on"
+                            >
+                              <span className="glyphicon glyphicon-quote" />
+                            </Link>
+                          </li>
+                          <li>
+                            <div className="btn-group">
                               <Link
-                                data-wysihtml5-command="formatBlock"
-                                data-wysihtml5-command-value="h4"
+                                className="btn  btn-default"
+                                data-wysihtml5-command="insertUnorderedList"
+                                title="Unordered list"
                                 tabIndex={-1}
                                 to="#"
                                 unselectable="on"
                               >
-                                Heading 4
+                                <span className="glyphicon glyphicon-list" />
                               </Link>
-                            </li>
-                            <li>
                               <Link
-                                data-wysihtml5-command="formatBlock"
-                                data-wysihtml5-command-value="h5"
+                                className="btn  btn-default"
+                                data-wysihtml5-command="insertOrderedList"
+                                title="Ordered list"
                                 tabIndex={-1}
                                 to="#"
                                 unselectable="on"
                               >
-                                Heading 5
+                                <span className="glyphicon glyphicon-th-list" />
                               </Link>
-                            </li>
-                            <li>
                               <Link
-                                data-wysihtml5-command="formatBlock"
-                                data-wysihtml5-command-value="h6"
+                                className="btn  btn-default"
+                                data-wysihtml5-command="Outdent"
+                                title="Outdent"
                                 tabIndex={-1}
                                 to="#"
                                 unselectable="on"
                               >
-                                Heading 6
+                                <span className="glyphicon glyphicon-indent-right" />
                               </Link>
-                            </li>
-                          </ul>
-                        </li>
-                        <li>
-                          <div className="btn-group">
-                            <Link
-                              className="btn  btn-default"
-                              data-wysihtml5-command="bold"
-                              title="CTRL+B"
-                              tabIndex={-1}
-                              to="#"
-                              unselectable="on"
+                              <Link
+                                className="btn  btn-default"
+                                data-wysihtml5-command="Indent"
+                                title="Indent"
+                                tabIndex={-1}
+                                to="#"
+                                unselectable="on"
+                              >
+                                <span className="glyphicon glyphicon-indent-left" />
+                              </Link>
+                            </div>
+                          </li>
+                          <li>
+                            <div
+                              className="bootstrap-wysihtml5-insert-link-modal modal fade"
+                              data-wysihtml5-dialog="createLink"
                             >
-                              Bold
-                            </Link>
-                            <Link
-                              className="btn  btn-default"
-                              data-wysihtml5-command="italic"
-                              title="CTRL+I"
-                              tabIndex={-1}
-                              to="#"
-                              unselectable="on"
-                            >
-                              Italic
-                            </Link>
-                            <Link
-                              className="btn  btn-default"
-                              data-wysihtml5-command="underline"
-                              title="CTRL+U"
-                              tabIndex={-1}
-                              to="#"
-                              unselectable="on"
-                            >
-                              Underline
-                            </Link>
-                            <Link
-                              className="btn  btn-default"
-                              data-wysihtml5-command="small"
-                              title="CTRL+S"
-                              tabIndex={-1}
-                              to="#"
-                              unselectable="on"
-                            >
-                              Small
-                            </Link>
-                          </div>
-                        </li>
-                        <li>
-                          <Link
-                            className="btn  btn-default"
-                            data-wysihtml5-command="formatBlock"
-                            data-wysihtml5-command-value="blockquote"
-                            data-wysihtml5-display-format-name="false"
-                            tabIndex={-1}
-                            to="#"
-                            unselectable="on"
-                          >
-                            <span className="glyphicon glyphicon-quote" />
-                          </Link>
-                        </li>
-                        <li>
-                          <div className="btn-group">
-                            <Link
-                              className="btn  btn-default"
-                              data-wysihtml5-command="insertUnorderedList"
-                              title="Unordered list"
-                              tabIndex={-1}
-                              to="#"
-                              unselectable="on"
-                            >
-                              <span className="glyphicon glyphicon-list" />
-                            </Link>
-                            <Link
-                              className="btn  btn-default"
-                              data-wysihtml5-command="insertOrderedList"
-                              title="Ordered list"
-                              tabIndex={-1}
-                              to="#"
-                              unselectable="on"
-                            >
-                              <span className="glyphicon glyphicon-th-list" />
-                            </Link>
-                            <Link
-                              className="btn  btn-default"
-                              data-wysihtml5-command="Outdent"
-                              title="Outdent"
-                              tabIndex={-1}
-                              to="#"
-                              unselectable="on"
-                            >
-                              <span className="glyphicon glyphicon-indent-right" />
-                            </Link>
-                            <Link
-                              className="btn  btn-default"
-                              data-wysihtml5-command="Indent"
-                              title="Indent"
-                              tabIndex={-1}
-                              to="#"
-                              unselectable="on"
-                            >
-                              <span className="glyphicon glyphicon-indent-left" />
-                            </Link>
-                          </div>
-                        </li>
-                        <li>
-                          <div
-                            className="bootstrap-wysihtml5-insert-link-modal modal fade"
-                            data-wysihtml5-dialog="createLink"
-                          >
-                            <div className="modal-dialog ">
-                              <div className="modal-content">
-                                <div className="modal-header">
-                                  <Link className="close" data-dismiss="modal">
-                                    ×
-                                  </Link>
-                                  <h3>Insert link</h3>
-                                </div>
-                                <div className="modal-body">
-                                  <div className="form-group">
-                                    <input
-                                      defaultValue="http://"
-                                      className="bootstrap-wysihtml5-insert-link-url form-control"
-                                      data-wysihtml5-dialog-field="href"
-                                    />
+                              <div className="modal-dialog ">
+                                <div className="modal-content">
+                                  <div className="modal-header">
+                                    <Link className="close" data-dismiss="modal">
+                                      ×
+                                    </Link>
+                                    <h3>Insert link</h3>
                                   </div>
-                                  <div className="checkbox">
-                                    <label>
+                                  <div className="modal-body">
+                                    <div className="form-group">
                                       <input
-                                        type="checkbox"
-                                        className="bootstrap-wysihtml5-insert-link-target"
-                                        defaultChecked=""
+                                        defaultValue="http://"
+                                        className="bootstrap-wysihtml5-insert-link-url form-control"
+                                        data-wysihtml5-dialog-field="href"
                                       />
-                                      Open link in new window
-                                    </label>
+                                    </div>
+                                    <div className="checkbox">
+                                      <label>
+                                        <input
+                                          type="checkbox"
+                                          className="bootstrap-wysihtml5-insert-link-target"
+                                          defaultChecked=""
+                                        />
+                                        Open link in new window
+                                      </label>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="modal-footer">
-                                  <Link
-                                    className="btn btn-default"
-                                    data-dismiss="modal"
-                                    data-wysihtml5-dialog-action="cancel"
-                                    to="#"
-                                  >
-                                    Cancel
-                                  </Link>
-                                  <Link
-                                    to="#"
-                                    className="btn btn-primary"
-                                    data-dismiss="modal"
-                                    data-wysihtml5-dialog-action="save"
-                                  >
-                                    Insert link
-                                  </Link>
+                                  <div className="modal-footer">
+                                    <Link
+                                      className="btn btn-default"
+                                      data-dismiss="modal"
+                                      data-wysihtml5-dialog-action="cancel"
+                                      to="#"
+                                    >
+                                      Cancel
+                                    </Link>
+                                    <Link
+                                      to="#"
+                                      className="btn btn-primary"
+                                      data-dismiss="modal"
+                                      data-wysihtml5-dialog-action="save"
+                                    >
+                                      Insert link
+                                    </Link>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                          <Link
-                            className="btn  btn-default"
-                            data-wysihtml5-command="createLink"
-                            title="Insert link"
-                            tabIndex={-1}
-                            to="#"
-                            unselectable="on"
-                          >
-                            <span className="glyphicon glyphicon-share" />
-                          </Link>
-                        </li>
-                        <li>
-                          <div
-                            className="bootstrap-wysihtml5-insert-image-modal modal fade"
-                            data-wysihtml5-dialog="insertImage"
-                          >
-                            <div className="modal-dialog ">
-                              <div className="modal-content">
-                                <div className="modal-header">
-                                  <Link className="close" data-dismiss="modal">
-                                    ×
-                                  </Link>
-                                  <h3>Insert image</h3>
-                                </div>
-                                <div className="modal-body">
-                                  <div className="form-group">
-                                    <input
-                                      defaultValue="http://"
-                                      className="bootstrap-wysihtml5-insert-image-url form-control"
-                                      data-wysihtml5-dialog-field="src"
-                                    />
+                            <Link
+                              className="btn  btn-default"
+                              data-wysihtml5-command="createLink"
+                              title="Insert link"
+                              tabIndex={-1}
+                              to="#"
+                              unselectable="on"
+                            >
+                              <span className="glyphicon glyphicon-share" />
+                            </Link>
+                          </li>
+                          <li>
+                            <div
+                              className="bootstrap-wysihtml5-insert-image-modal modal fade"
+                              data-wysihtml5-dialog="insertImage"
+                            >
+                              <div className="modal-dialog ">
+                                <div className="modal-content">
+                                  <div className="modal-header">
+                                    <Link className="close" data-dismiss="modal">
+                                      ×
+                                    </Link>
+                                    <h3>Insert image</h3>
                                   </div>
-                                </div>
-                                <div className="modal-footer">
-                                  <Link
-                                    className="btn btn-default"
-                                    data-dismiss="modal"
-                                    data-wysihtml5-dialog-action="cancel"
-                                    to="#"
-                                  >
-                                    Cancel
-                                  </Link>
-                                  <Link
-                                    className="btn btn-primary"
-                                    data-dismiss="modal"
-                                    data-wysihtml5-dialog-action="save"
-                                    to="#"
-                                  >
-                                    Insert image
-                                  </Link>
+                                  <div className="modal-body">
+                                    <div className="form-group">
+                                      <input
+                                        defaultValue="http://"
+                                        className="bootstrap-wysihtml5-insert-image-url form-control"
+                                        data-wysihtml5-dialog-field="src"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="modal-footer">
+                                    <Link
+                                      className="btn btn-default"
+                                      data-dismiss="modal"
+                                      data-wysihtml5-dialog-action="cancel"
+                                      to="#"
+                                    >
+                                      Cancel
+                                    </Link>
+                                    <Link
+                                      className="btn btn-primary"
+                                      data-dismiss="modal"
+                                      data-wysihtml5-dialog-action="save"
+                                      to="#"
+                                    >
+                                      Insert image
+                                    </Link>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                          <Link
-                            className="btn  btn-default"
-                            data-wysihtml5-command="insertImage"
-                            title="Insert image"
-                            tabIndex={-1}
-                            to="#"
-                            unselectable="on"
-                          >
-                            <span className="glyphicon glyphicon-picture" />
-                          </Link>
-                        </li>
-                      </ul>
-                      <textarea
-                        type="text"
-                        className="form-control"
-                        id="remarks"
-                        name="remarks"
-                        autoComplete="off"
-                        placeholder="Enter 
+                            <Link
+                              className="btn  btn-default"
+                              data-wysihtml5-command="insertImage"
+                              title="Insert image"
+                              tabIndex={-1}
+                              to="#"
+                              unselectable="on"
+                            >
+                              <span className="glyphicon glyphicon-picture" />
+                            </Link>
+                          </li>
+                        </ul>
+                        <textarea
+                          type="text"
+                          className="form-control"
+                          id="remarks"
+                          name="remarks"
+                          autoComplete="off"
+                          placeholder="Enter 
               Remarks"
-                        style={{ display: "none" }}
-                        value={formData.remarks} onChange={handleChange} 
-                      />
-                      <input
-                        type="hidden"
-                        name="_wysihtml5_mode"
-                        defaultValue={1}
-                      />
-                      <iframe
-                        className="wysihtml5-sandbox"
-                        security="restricted"
-                        allowTransparency="true"
-                        frameBorder={0}
-                        width={0}
-                        height={0}
-                        marginWidth={0}
-                        marginHeight={0}
-                        style={{
-                          display: "block",
-                          backgroundColor: "rgb(255, 255, 255)",
-                          borderCollapse: "separate",
-                          borderColor: "rgb(204, 204, 204)",
-                          borderStyle: "solid",
-                          borderWidth: "0.8px",
-                          clear: "none",
-                          float: "none",
-                          margin: 0,
-                          outline: "rgb(85, 85, 85) none 0px",
-                          outlineOffset: 0,
-                          padding: "6px 12px",
-                          position: "static",
-                          inset: "auto",
-                          zIndex: "auto",
-                          verticalAlign: "baseline",
-                          textAlign: "start",
-                          boxSizing: "border-box",
-                          boxShadow: "rgba(0, 0, 0, 0.075) 0px 1px 1px 0px inset",
-                          borderRadius: 4,
-                          width: "100%",
-                          height: "auto"
-                        }}
-                      />
+                          style={{ display: "none" }}
+                          value={formData.remarks} onChange={handleChange}
+                        />
+                        <input
+                          type="hidden"
+                          name="_wysihtml5_mode"
+                          defaultValue={1}
+                        />
+                        <iframe
+                          className="wysihtml5-sandbox"
+                          security="restricted"
+                          allowTransparency="true"
+                          frameBorder={0}
+                          width={0}
+                          height={0}
+                          marginWidth={0}
+                          marginHeight={0}
+                          style={{
+                            display: "block",
+                            backgroundColor: "rgb(255, 255, 255)",
+                            borderCollapse: "separate",
+                            borderColor: "rgb(204, 204, 204)",
+                            borderStyle: "solid",
+                            borderWidth: "0.8px",
+                            clear: "none",
+                            float: "none",
+                            margin: 0,
+                            outline: "rgb(85, 85, 85) none 0px",
+                            outlineOffset: 0,
+                            padding: "6px 12px",
+                            position: "static",
+                            inset: "auto",
+                            zIndex: "auto",
+                            verticalAlign: "baseline",
+                            textAlign: "start",
+                            boxSizing: "border-box",
+                            boxShadow: "rgba(0, 0, 0, 0.075) 0px 1px 1px 0px inset",
+                            borderRadius: 4,
+                            width: "100%",
+                            height: "auto"
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="col-md-6 col-xs-12 pull pull-right">
-                  <div className="col-md-12 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Company</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="company"
-                        name="company"
-                        placeholder="Enter  Company Name"
-                        autoComplete="off"
-                        value={formData.company} onChange={handleChange} 
-                      />
+                  <div className="col-md-6 col-xs-12 pull pull-right">
+                    <div className="col-md-12 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Company</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="company"
+                          name="company"
+                          placeholder="Enter  Company Name"
+                          autoComplete="off"
+                          value={formData.company} onChange={handleChange}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-md-6 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="username">Fax</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="fax"
-                        name="fax"
-                        placeholder="Fax"
-                        autoComplete="off"
-                        value={formData.fax} onChange={handleChange}
-                      />
+                    <div className="col-md-6 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="username">Fax</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="fax"
+                          name="fax"
+                          placeholder="Fax"
+                          autoComplete="off"
+                          value={formData.fax} onChange={handleChange}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-md-3 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="store">CSA</label>
-                      <select className="form-control" id="csa" name="csa" value={formData.csa} onChange={handleChange}>
-                        <option value="YES">YES</option>
-                        <option value="NO">NO</option>
-                      </select>
+                    <div className="col-md-3 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="store">CSA</label>
+                        <select className="form-control" id="csa" name="csa" value={formData.csa} onChange={handleChange}>
+                          <option value="YES">YES</option>
+                          <option value="NO">NO</option>
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-md-3 col-xs-12 pull pull-left">
-                    <div className="form-group">
-                      <label htmlFor="store">FAST</label>
-                      <select className="form-control" id="fast" name="fast"  value={formData.fast} onChange={handleChange}>
-                        <option value="YES">YES</option>
-                        <option value="NO">NO</option>
-                      </select>
+                    <div className="col-md-3 col-xs-12 pull pull-left">
+                      <div className="form-group">
+                        <label htmlFor="store">FAST</label>
+                        <select className="form-control" id="fast" name="fast" value={formData.fast} onChange={handleChange}>
+                          <option value="YES">YES</option>
+                          <option value="NO">NO</option>
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                  {/*
+                    {/*
                 <div class="col-md-4 col-xs-12 pull pull-left">
                 <label for="store">Pickup Date</label>   
                     <div class="input-group date" data-provide="datepicker">
@@ -561,32 +563,32 @@ const Createimporters = () => {
                     </div>
                 </div>
           */}
+                  </div>
                 </div>
-              </div>
+                {/* /.box-body */}
+                <div className="box-footer">
+                  <button type="submit" className="btn btn-primary">
+                    Save Changes
+                  </button>
+                  <Link
+                    to="/customers/"
+                    className="btn btn-warning"
+                  >
+                    Back
+                  </Link>
+                </div>
+              </form>
               {/* /.box-body */}
-              <div className="box-footer">
-                <button type="submit" className="btn btn-primary">
-                  Save Changes
-                </button>
-                <Link
-                  to="/customers/"
-                  className="btn btn-warning"
-                >
-                  Back
-                </Link>
-              </div>
-            </form>
-            {/* /.box-body */}
+            </div>
+            {/* /.box */}
           </div>
-          {/* /.box */}
+          {/* col-md-12 */}
         </div>
-        {/* col-md-12 */}
-      </div>
-      {/* /.row */}
-    </section>
-    {/* /.content */}
-  </div>
-  
+        {/* /.row */}
+      </section>
+      {/* /.content */}
+    </div>
+
   )
 }
 

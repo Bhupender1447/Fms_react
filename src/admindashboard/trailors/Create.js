@@ -1,7 +1,9 @@
 /* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useState } from 'react'
-import {Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 
 const Create = () => {
@@ -29,7 +31,7 @@ const Create = () => {
     insurance_expiry: '',
     assigned_truck_id: '',
     seal_number: '',
-    
+
     // Additional fields from original form
     length: '',
     lengthunits: 'Feet',
@@ -52,14 +54,88 @@ const Create = () => {
     permit_document: null
   });
 
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  // OCR Logic
+  const flattenObject = (obj, prefix = "", res = {}) => {
+    for (let key in obj) {
+      const value = obj[key];
+      const newKey = prefix ? `${prefix}_${key}` : key;
+
+      if (typeof value === "object" && value !== null) {
+        flattenObject(value, newKey, res);
+      } else {
+        res[newKey.toLowerCase()] = String(value);
+      }
+    }
+    return res;
+  };
+
+  const handleFileChange2 = async () => {
+    if (!selectedFile) {
+      toast.warning("Please select a file first");
+      return;
+    }
+
+    const ocrData = new FormData();
+    ocrData.append("file", selectedFile);
+    ocrData.append("module_type", "trailer");
+    ocrData.append("prompt", "Extract VIN, Plate Number, Make, Model, Year, and Owner Name from this trailer document.");
+
+    const loadToast = toast.loading("Scanning document...");
+
+    try {
+      const response = await axios.post(
+        `${BASE_URL}OCRController/simple_openai_process`,
+        ocrData,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        const gptData = response.data.gpt_response?.structured_json || {};
+        const ocrDataRaw = response.data.data || {};
+        const flatOCR = flattenObject(ocrDataRaw);
+        const flatGPT = flattenObject(gptData);
+
+        const combinedSource = { ...flatOCR, ...flatGPT };
+
+        setFormData(prev => {
+          const updated = { ...prev };
+
+          // Helper to find value by looking at common keys
+          const findVal = (keys) => {
+            for (const k of keys) {
+              if (combinedSource[k.toLowerCase()]) return combinedSource[k.toLowerCase()];
+            }
+            return "";
+          };
+
+          updated.vin_number = findVal(["vin", "vin_number", "serial_number", "serial"]) || updated.vin_number;
+          updated.plate_number = findVal(["plate", "plate_number", "license_plate"]) || updated.plate_number;
+          updated.make = findVal(["make", "manufacturer"]) || updated.make;
+          updated.model = findVal(["model"]) || updated.model;
+          updated.year = findVal(["year", "model_year"]) || updated.year;
+          updated.owner_name = findVal(["owner", "owner_name", "company_name"]) || updated.owner_name;
+
+          return updated;
+        });
+
+        toast.update(loadToast, { render: "Scan complete! Fields auto-filled.", type: "success", isLoading: false, autoClose: 3000 });
+      } else {
+        toast.update(loadToast, { render: "Scan failed. Please fill manually.", type: "error", isLoading: false, autoClose: 3000 });
+      }
+    } catch (err) {
+      console.error("OCR Error:", err);
+      toast.update(loadToast, { render: "Error processing document.", type: "error", isLoading: false, autoClose: 3000 });
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({ 
-      ...formData, 
-      [name]: type === 'checkbox' ? (checked ? 'YES' : 'NO') : value 
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? (checked ? 'YES' : 'NO') : value
     });
   };
 
@@ -70,8 +146,7 @@ const Create = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage('');
-    setErrorMessage('');
+    e.preventDefault();
 
     const formDataToSend = new FormData();
 
@@ -90,14 +165,14 @@ const Create = () => {
     }
 
     try {
-      const response = await axios.post('https://isovia.ca/fms_api/api/createtrailer', formDataToSend, {
+      const response = await axios.post(`${BASE_URL}api/createtrailer`, formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
       console.log('Success:', response.data);
-      setSuccessMessage('Trailer created successfully!');
+      toast.success('Trailer created successfully!');
       // Reset form after success
       setFormData({
         plate_number: '',
@@ -141,9 +216,10 @@ const Create = () => {
         insurance_document: null,
         permit_document: null
       });
+      setSelectedFile(null);
     } catch (error) {
       console.error('Error occurred:', error.response?.data || error.message);
-      setErrorMessage('Error creating trailer. Please try again.');
+      toast.error('Error creating trailer. Please try again.');
     }
   };
 
@@ -156,46 +232,43 @@ const Create = () => {
           <small>Trailers</small>
         </h1>
       </section>
-      
+
       {/* Main content */}
       <section className="content">
         {/* Messages */}
         <div className="row">
           <div className="col-md-12 col-xs-12">
             <div id="messages">
-              {successMessage && (
-                <div className="alert alert-success alert-dismissible" role="alert">
-                  <button
-                    type="button"
-                    className="close"
-                    data-dismiss="alert"
-                    aria-label="Close"
-                    onClick={() => setSuccessMessage('')}
-                  >
-                    <span aria-hidden="true">×</span>
-                  </button>
-                  {successMessage}
-                </div>
-              )}
-              {errorMessage && (
-                <div className="alert alert-danger alert-dismissible" role="alert">
-                  <button
-                    type="button"
-                    className="close"
-                    data-dismiss="alert"
-                    aria-label="Close"
-                    onClick={() => setErrorMessage('')}
-                  >
-                    <span aria-hidden="true">×</span>
-                  </button>
-                  {errorMessage}
-                </div>
-              )}
             </div>
-            
+
             <div className="box">
               <form role="form" onSubmit={handleSubmit}>
                 <div className="box-body">
+                  <div className="row" style={{ padding: '10px', marginBottom: '20px', backgroundColor: '#f9f9f9', borderBottom: '1px solid #eee' }}>
+                    <div className="col-md-6 col-xs-12">
+                      <label style={{ color: '#3c8dbc', fontWeight: 'bold' }}><i className="fa fa-magic"></i> AI Smart Scan</label>
+                      <div className="input-group">
+                        <input
+                          type="file"
+                          className="form-control"
+                          onChange={(e) => setSelectedFile(e.target.files[0])}
+                          accept="image/*,.pdf"
+                        />
+                        <span className="input-group-btn">
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={handleFileChange2}
+                            style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                          >
+                            <i className="fa fa-search"></i> Scan & Fill
+                          </button>
+                        </span>
+                      </div>
+                      <small className="text-muted">Upload Trailer Registration or Insurance to auto-fill details.</small>
+                    </div>
+                  </div>
+
                   {/* Trailer Details Section */}
                   <div className="col-md-12 col-xs-12 pull pull-left">
                     <div className="form-group">
@@ -367,9 +440,9 @@ const Create = () => {
                   <div className="col-md-6 col-xs-12 pull pull-left">
                     <div className="form-group">
                       <label htmlFor="fleet">Fleet</label>
-                      <select 
-                        className="form-control" 
-                        id="fleet" 
+                      <select
+                        className="form-control"
+                        id="fleet"
                         name="fleet"
                         value={formData.fleet}
                         onChange={handleChange}
@@ -497,9 +570,9 @@ const Create = () => {
                   <div className="col-md-6 col-xs-12 pull pull-left">
                     <div className="form-group">
                       <label htmlFor="country">Registration Country</label>
-                      <select 
-                        className="form-control" 
-                        id="country" 
+                      <select
+                        className="form-control"
+                        id="country"
                         name="country"
                         value={formData.country}
                         onChange={handleChange}
@@ -515,9 +588,9 @@ const Create = () => {
                   <div className="col-md-6 col-xs-12 pull pull-left">
                     <div className="form-group">
                       <label htmlFor="province">Registration Province/State</label>
-                      <select 
-                        className="form-control" 
-                        id="province" 
+                      <select
+                        className="form-control"
+                        id="province"
                         name="province"
                         value={formData.province}
                         onChange={handleChange}
@@ -859,7 +932,7 @@ const Create = () => {
                             tabIndex={500}
                             title="Clear file"
                             className="btn btn-default btn-secondary fileinput-remove fileinput-remove-button"
-                            onClick={() => setFiles({...files, product_image: null})}
+                            onClick={() => setFiles({ ...files, product_image: null })}
                           >
                             <i className="glyphicon glyphicon-remove" />{" "}
                           </button>{" "}
@@ -901,7 +974,7 @@ const Create = () => {
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Box Footer */}
                 <div className="box-footer">
                   <button type="submit" className="btn btn-primary">

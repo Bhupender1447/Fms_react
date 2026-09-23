@@ -1,4 +1,5 @@
 import axios from "axios";
+import { BASE_URL } from "../../config";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
@@ -29,7 +30,7 @@ const Updatecarriersupload = () => {
   const fetchCarrier = async () => {
     try {
       const res = await axios.get(
-        `https://isovia.ca/fms_api/api/updatecarriers/${id}`,
+        `${BASE_URL}api/updatecarriers/${id}`,
         { withCredentials: true }
       );
       setFormData(res.data.product_data || {});
@@ -41,7 +42,7 @@ const Updatecarriersupload = () => {
   const fetchCarriersDropdown = async () => {
     try {
       const res = await axios.get(
-        "https://isovia.ca/fms_api/api/fetchcarriersProductData",
+        `${BASE_URL}api/fetchcarriersProductData`,
         { withCredentials: true }
       );
       setCarriers(res.data.data || []);
@@ -73,7 +74,7 @@ const Updatecarriersupload = () => {
       setLoading(true);
 
       await axios.post(
-        "https://isovia.ca/fms_api/api/uploadCarrierDocument",
+        `${BASE_URL}api/uploadCarrierDocument`,
         fd,
         { withCredentials: true }
       );

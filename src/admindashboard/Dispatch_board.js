@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BASE_URL } from '../config';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
@@ -13,7 +14,7 @@ const DispatchBoard = () => {
   const [deliveryDate, setDeliveryDate] = useState('');
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/getDispatchOrders')
+    axios.get(`${BASE_URL}api/getDispatchOrders`)
       .then(res => {
         setDispatchList(res.data.data);
         setFilteredDispatches(res.data.data);
@@ -81,6 +82,7 @@ const DispatchBoard = () => {
                   <th>Shipment Type</th>
                   <th>Pickup</th>
                   <th>Delivery</th>
+                  <th>Custom Paper</th>
                   <th>Currency</th>
                   <th>Action</th>
                 </tr>
@@ -93,10 +95,11 @@ const DispatchBoard = () => {
                     <td>{item.shipment_type}</td>
                     <td>{item.pickup_address}</td>
                     <td>{item.delivery_address}</td>
+                    <td>{item.custom_paper_name || item.custom_paper || "N/A"}</td>
                     <td>{item.currency}</td>
                     <td>
-                      <Link target="_blank" to={`https://isovia.ca/fms_api/pdf/invoice.php?id=${item.id}`} className="btn btn-danger btn-sm">Confirmation</Link>
-                      <Link target="_blank" to={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`} className="btn btn-warning btn-xs">Invoice</Link>
+                      <Link target="_blank" to={`${BASE_URL}pdf/invoice.php?id=${item.id}`} className="btn btn-danger btn-sm">Confirmation</Link>
+                      <Link target="_blank" to={`${BASE_URL}pdf/invoice_log.php?id=${item.id}`} className="btn btn-warning btn-xs">Invoice</Link>
                       <Link to={`/update/${item.id}`} className="btn btn-default btn-sm"><i className="fa fa-pencil" /></Link>
                       <Link to={`/assign/${item.id}`} className="btn btn-success btn-sm">Assign</Link>
                       <button type="button" className="btn btn-danger btn-sm" onClick={() => console.log('removeFunc', item.id)}>

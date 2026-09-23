@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
@@ -9,7 +10,7 @@ const Owners = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/fetchownersProductData')
+    axios.get(`${BASE_URL}api/fetchownersProductData`)
       .then(res => setData(res.data.data))
       .catch(err => console.log(err));
   }, []);
@@ -17,14 +18,14 @@ const Owners = () => {
   const handlePageClick = (event) => {
     setCurrentPage(event.selected);
   };
-console.log(data)
+  console.log(data)
   const offset = currentPage * itemsPerPage;
   const currentData = data?.slice(offset, offset + itemsPerPage);
 
   const handleRemove = async (id) => {
     try {
       const response = await axios.post(
-        'https://isovia.ca/fms_api/api/remove',
+        `${BASE_URL}api/remove`,
         new URLSearchParams({
           id: id,
           type: 'fms_truck_owners'  // Adjust the type if necessary
@@ -242,7 +243,7 @@ console.log(data)
                           </tr>
                         </thead>
                         <tbody>
-                          {currentData&&currentData?.map(item => (
+                          {currentData && currentData?.map(item => (
                             <tr role="row" className="odd" key={item.id}>
                               <td>{item.id}</td>
                               <td>{item.name}</td>
@@ -256,7 +257,7 @@ console.log(data)
                                 <button
                                   type="button"
                                   className="btn btn-success btn-xs"
-                               
+
                                   data-toggle="modal"
                                   data-target="#defaultModal"
                                 >
@@ -265,7 +266,7 @@ console.log(data)
                                 <button
                                   type="button"
                                   className="btn btn-info btn-xs"
-                               
+
                                   data-toggle="modal"
                                   data-target="#paymentModal"
                                 >

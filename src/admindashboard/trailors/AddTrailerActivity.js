@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import axios from "axios";
+import { BASE_URL } from "../../config";
 
 const AddTrailerActivity = () => {
   const [drivers, setDrivers] = useState([]);
@@ -11,7 +12,7 @@ const AddTrailerActivity = () => {
     status: "active",
   });
 
-  const baseURL = "https://isovia.ca/fms_api/api";
+  const baseURL = `${BASE_URL}api`;
   const cookie = "ci_session=cq79u31gmd21agdi2omau8es8oik794n"; // replace if needed
 
   // ---------------------------

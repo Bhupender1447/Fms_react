@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
 import ReactPaginate from 'react-paginate';
 
@@ -23,7 +24,7 @@ const RevenueExpensesList = () => {
   const fetchSummary = async () => {
     setLoading(true);
     try {
-      let url = `https://isovia.ca/fms_api/api/revenue_report?type=${filterType}`;
+      let url = `${BASE_URL}api/getRevenueExpenseslist?type=${filterType}`;
       if (fromDate && toDate) url += `&from=${fromDate}&to=${toDate}`;
 
       const res = await axios.get(url);
@@ -48,7 +49,7 @@ const RevenueExpensesList = () => {
   // Fetch transactions for a specific period
   const fetchTransactions = async (period) => {
     try {
-      let url = `https://isovia.ca/fms_api/api/transactions_by_period?period=${period}`;
+      let url = `${BASE_URL}api/getRevenueExpenseslist?type=details&period=${period}`;
       if (fromDate && toDate) url += `&from=${fromDate}&to=${toDate}`;
 
       const res = await axios.get(url);

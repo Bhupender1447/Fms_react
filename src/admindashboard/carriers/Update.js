@@ -1,8 +1,9 @@
 import axios from "axios";
+import { BASE_URL } from "../../config";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Distance from "../Distance";
-import {Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 
 const Updatecarriers = () => {
@@ -52,7 +53,7 @@ const Updatecarriers = () => {
   /* 🔹 Fetch existing carrier */
   useEffect(() => {
     axios
-      .get(`https://isovia.ca/fms_api/api/fetchcarriersProductData/${id}`, {
+      .get(`${BASE_URL}api/fetchcarriersProductData/${id}`, {
         withCredentials: true,
       })
       .then((res) => {
@@ -82,7 +83,7 @@ const Updatecarriers = () => {
 
     try {
       const res = await axios.post(
-        `https://isovia.ca/fms_api/api/updatecarriers/${id}`,
+        `${BASE_URL}api/updatecarriers/${id}`,
         fd,
         { withCredentials: true }
       );
@@ -159,7 +160,7 @@ const Updatecarriers = () => {
                     <h4><span className="label label-info">Address</span></h4>
                   </div>
 
-                  {["address1","address2","city","state","zip","country"].map(f => (
+                  {["address1", "address2", "city", "state", "zip", "country"].map(f => (
                     <div className="col-md-4" key={f}>
                       <div className="form-group">
                         <label>{f.toUpperCase()}</label>
@@ -173,7 +174,7 @@ const Updatecarriers = () => {
                     <h4><span className="label label-success">Compliance</span></h4>
                   </div>
 
-                  {["csa","pip","ctpat","qb","bolcarrier","bolconsignee","pickupmail","deliverymail","isbounded"].map(flag => (
+                  {["csa", "pip", "ctpat", "qb", "bolcarrier", "bolconsignee", "pickupmail", "deliverymail", "isbounded"].map(flag => (
                     <div className="col-md-3" key={flag}>
                       <div className="checkbox">
                         <label>

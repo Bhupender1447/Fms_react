@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import {Link } from 'react-router-dom';
+import { Helmet } from "react-helmet-async";
 
 
 const About = () => {
@@ -48,6 +49,10 @@ const About = () => {
 
   return (
     <>
+      <Helmet>
+        <title>About Isovia | Transportation Software Company</title>
+        <meta name="description" content="Know more about Isovia, a transportation software company helping freight, logistics, and fleet operations with advanced software solutions." />
+      </Helmet>
       <section className="about-banner">
         <div className="bubbles">
           {/* Create multiple bubble elements */}

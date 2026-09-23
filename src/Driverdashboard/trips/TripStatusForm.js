@@ -57,7 +57,7 @@ function TripStatusForm() {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: 'D487078091664D428AA781953AE84DF1',
+            Authorization: process.env.REACT_APP_TRIMBLE_API_KEY,
           },
         }
       );
@@ -71,81 +71,81 @@ function TripStatusForm() {
 
   return (
     <div className="content-wrapper">
-    <div className="container mt-5">
-      <h3 className="mb-4">Update Trip Status</h3>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label className="form-label">Trip ID</label>
-          <input
-            type="text"
-            name="tmsTripId"
-            className="form-control"
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Status</label>
-          <select
-            name="status"
-            className="form-select"
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select Status</option>
-            <option value="1">Start</option>
-            <option value="2">Paused</option>
-            <option value="3">Completed</option>
-            {/* Add more status codes as needed */}
-          </select>
-        </div>
-        <div className="mb-3">
-          <label className="form-label">TimeStamp</label>
-          <input
-            type="datetime-local"
-            name="timeStamp"
-            className="form-control"
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Location Label</label>
-          <input
-            type="text"
-            name="label"
-            className="form-control"
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="row">
-          <div className="col-md-6 mb-3">
-            <label className="form-label">Latitude</label>
+      <div className="container mt-5">
+        <h3 className="mb-4">Update Trip Status</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label">Trip ID</label>
             <input
               type="text"
-              name="lat"
+              name="tmsTripId"
               className="form-control"
-              value={formData.lat}
-              readOnly
+              onChange={handleChange}
+              required
             />
           </div>
-          <div className="col-md-6 mb-3">
-            <label className="form-label">Longitude</label>
+          <div className="mb-3">
+            <label className="form-label">Status</label>
+            <select
+              name="status"
+              className="form-select"
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select Status</option>
+              <option value="1">Start</option>
+              <option value="2">Paused</option>
+              <option value="3">Completed</option>
+              {/* Add more status codes as needed */}
+            </select>
+          </div>
+          <div className="mb-3">
+            <label className="form-label">TimeStamp</label>
+            <input
+              type="datetime-local"
+              name="timeStamp"
+              className="form-control"
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Location Label</label>
             <input
               type="text"
-              name="lon"
+              name="label"
               className="form-control"
-              value={formData.lon}
-              readOnly
+              onChange={handleChange}
+              required
             />
           </div>
-        </div>
-        <button type="submit" className="btn btn-primary">
-          Update Status
-        </button>
-      </form>
-    </div>
+          <div className="row">
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Latitude</label>
+              <input
+                type="text"
+                name="lat"
+                className="form-control"
+                value={formData.lat}
+                readOnly
+              />
+            </div>
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Longitude</label>
+              <input
+                type="text"
+                name="lon"
+                className="form-control"
+                value={formData.lon}
+                readOnly
+              />
+            </div>
+          </div>
+          <button type="submit" className="btn btn-primary">
+            Update Status
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

@@ -1,10 +1,11 @@
 /* eslint-disable jsx-a11y/no-redundant-roles */
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useParams,Link } from 'react-router-dom';
+import { BASE_URL } from '../../config';
+import { useParams, Link } from 'react-router-dom';
 
 const Updateads = () => {
-    const {id} = useParams();
+  const { id } = useParams();
   // State management for form fields
   const [formData, setFormData] = useState({
     name: '',
@@ -24,7 +25,7 @@ const Updateads = () => {
   useEffect(() => {
     const fetchTrailerData = async () => {
       try {
-        const response = await axios.get(`https://isovia.ca/fms_api/api/updateads/${id}`);
+        const response = await axios.get(`${BASE_URL}api/updateads/${id}`);
         setFormData(response.data.product_data);
       } catch (error) {
         console.error('Error fetching ads data:', error);
@@ -53,7 +54,7 @@ const Updateads = () => {
     }
 
     try {
-      const response = await axios.post(`https://isovia.ca/fms_api/api/updateads/${id}`, formDataToSend, {
+      const response = await axios.post(`${BASE_URL}api/updateads/${id}`, formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

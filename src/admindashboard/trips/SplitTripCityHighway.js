@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
+import { BASE_URL } from "../../config";
 
 const SplitTripCityHighway = () => {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ const SplitTripCityHighway = () => {
   const fetchDrivers = async () => {
     try {
       const res = await axios.get(
-        "https://isovia.ca/fms_api/api/getDrivers",
+        `${BASE_URL}api/getDrivers`,
         { withCredentials: true }
       );
       setDrivers(res.data?.data || []);
@@ -81,7 +82,7 @@ const SplitTripCityHighway = () => {
 
     try {
       await axios.post(
-        "https://isovia.ca/fms_api/index.php/api/splitTripCityHighway",
+        `${BASE_URL}api/splitTripCityHighway`,
         payload,
         {
           headers: { "Content-Type": "application/json" },

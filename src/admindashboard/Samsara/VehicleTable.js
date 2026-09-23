@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 
 const VehicleTable = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -14,7 +14,7 @@ const VehicleTable = () => {
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        const response = await axios.get('https://isovia.ca/fms_api/api/get_vehicles');
+        const response = await axios.get(`${BASE_URL}api/get_vehicles`);
         console.log(response.data);
 
         // Extract vehicles and pagination data from the response

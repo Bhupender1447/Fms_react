@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 
 const FinanceManager = () => {
   const [entries, setEntries] = useState([]);
@@ -10,7 +11,7 @@ const FinanceManager = () => {
     date: ''
   });
 
-  const baseURL = 'https://isovia.ca/fms_api/finance';
+  const baseURL = `${BASE_URL}finance`;
 
   const fetchEntries = async () => {
     try {
@@ -23,34 +24,34 @@ const FinanceManager = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const data = new FormData();
-  data.append('amount', formData.amount);
-  data.append('type', formData.type);
-  data.append('description', formData.description);
-  data.append('date', formData.date);
+    const data = new FormData();
+    data.append('amount', formData.amount);
+    data.append('type', formData.type);
+    data.append('description', formData.description);
+    data.append('date', formData.date);
 
-  try {
-    const res = await axios.post(`${baseURL}/add`, data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        // Optional cookie header (if needed):
-        // 'Cookie': 'ci_session=your_session_id'
-      },
-      withCredentials: true, // if using CI session-based login
-    });
+    try {
+      const res = await axios.post(`${baseURL}/add`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          // Optional cookie header (if needed):
+          // 'Cookie': 'ci_session=your_session_id'
+        },
+        withCredentials: true, // if using CI session-based login
+      });
 
-    if (res.data.status) {
-      fetchEntries(); // refresh list
-      setFormData({ amount: '', type: 'income', description: '', date: '' });
-    } else {
-      alert('Failed to add entry');
+      if (res.data.status) {
+        fetchEntries(); // refresh list
+        setFormData({ amount: '', type: 'income', description: '', date: '' });
+      } else {
+        alert('Failed to add entry');
+      }
+    } catch (err) {
+      console.error(err);
     }
-  } catch (err) {
-    console.error(err);
-  }
-};
+  };
 
 
   const handleDelete = async (id) => {
@@ -67,7 +68,7 @@ const FinanceManager = () => {
   }, []);
 
   return (
-    <div  className="content-wrapper" style={{ minHeight: 440 }}>
+    <div className="content-wrapper" style={{ minHeight: 440 }}>
       <h2 className="mb-4">Finance Manager</h2>
 
       <form className="row g-3 mb-4" onSubmit={handleSubmit}>

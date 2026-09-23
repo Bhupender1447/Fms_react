@@ -158,6 +158,21 @@ const Header = () => {
                           Article 3
                         </NavLink>
                       </li>
+                      <li>
+                        <NavLink className="dropdown-item" to="/Article4">
+                          Article 4
+                        </NavLink>
+                      </li>
+                      <li>
+                        <NavLink className="dropdown-item" to="/Article5">
+                          Article 5
+                        </NavLink>
+                      </li>
+                      <li>
+                        <NavLink className="dropdown-item" to="/Article6">
+                          Article 6
+                        </NavLink>
+                      </li>
                     </ul>
                   </li>
 

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
 import ReactPaginate from 'react-paginate';
 
@@ -23,7 +24,7 @@ const AccountsPayableReceivableList = () => {
   const fetchSummary = async () => {
     setLoading(true);
     try {
-      let url = `https://isovia.ca/fms_api/api/payable_receivable?type=${filterType}`;
+      let url = `${BASE_URL}api/getpayableReceivablelist?type=${filterType}`;
       if (fromDate && toDate) url += `&from=${fromDate}&to=${toDate}`;
 
       const res = await axios.get(url);
@@ -48,8 +49,7 @@ const AccountsPayableReceivableList = () => {
   // Fetch detailed transactions for a specific period
   const fetchPeriodDetails = async (period) => {
     try {
-      const url = `https://isovia.ca/fms_api/api/payable_receivable_details?period=${period}`;
-      const res = await axios.get(url);
+      const res = await axios.get(`${BASE_URL}api/getpayableReceivablelist?type=details&period=${period}`);
       if (res.data) {
         setSelectedPeriod(period);
         setDetails(res.data);

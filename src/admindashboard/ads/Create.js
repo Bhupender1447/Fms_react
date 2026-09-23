@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import {Link } from 'react-router-dom';
+import { BASE_URL } from '../../config';
+import { Link } from 'react-router-dom';
 
 const Createads = () => {
   // State management for form fields
@@ -27,14 +28,14 @@ const Createads = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const data = new FormData();
     for (const key in formData) {
       data.append(key, formData[key]);
     }
-    
+
     try {
-      const response = await axios.post('https://isovia.ca/fms_api/api/createads', data );
+      const response = await axios.post(`${BASE_URL}api/createads`, data);
       alert(response.data.message);
     } catch (error) {
       console.error(error);

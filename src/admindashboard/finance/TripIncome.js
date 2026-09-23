@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -22,7 +23,7 @@ const TripIncome = () => {
   const [drivers, setDrivers] = useState([]);
   const [selectedDriver, setSelectedDriver] = useState('');
 
-  const baseURL = 'https://isovia.ca/fms_api/api';
+  const baseURL = `${BASE_URL}api`;
   const cookie = 'ci_session=8ecio0n0r8ive2d86cgrn5cvf93rtj1o'; // replace if needed
 
   const fetchDrivers = async () => {
@@ -47,8 +48,8 @@ const TripIncome = () => {
       });
 
       if (res.data.status) {
-          const trips = res.data.message;
-      setIncomes(Array.isArray(trips) ? trips : []);
+        const trips = res.data.message;
+        setIncomes(Array.isArray(trips) ? trips : []);
       } else {
         setIncomes([]);
       }
@@ -128,7 +129,7 @@ const TripIncome = () => {
   }, []);
 
   return (
-    <div  className="content-wrapper" style={{ minHeight: 440 }}>
+    <div className="content-wrapper" style={{ minHeight: 440 }}>
       <h2 className="mb-4">Trip Income</h2>
 
       <div className="row g-3 mb-4">

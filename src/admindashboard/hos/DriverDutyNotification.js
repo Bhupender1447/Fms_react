@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { BASE_URL } from '../../config';
 
 const DriverDutyStatus = () => {
   // State management
@@ -25,7 +26,7 @@ const DriverDutyStatus = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchDrivers = async () => {
     try {
-      const response = await fetch('https://isovia.ca/fms_api/api/getDriversDutyStatus');
+      const response = await fetch(`${BASE_URL}api/getDriversDutyStatus`);
       const data = await response.json();
 
       if (data.status === 'success') {
@@ -35,7 +36,7 @@ const DriverDutyStatus = () => {
             const current = acc[driver.driver_id];
             const currentTime = current ? new Date(`${current.date} ${current.time}`) : null;
             const newTime = new Date(`${driver.date} ${driver.time}`);
-            
+
             if (!current || newTime > currentTime) {
               acc[driver.driver_id] = {
                 ...driver,
@@ -77,10 +78,10 @@ const DriverDutyStatus = () => {
   const getAddressFromCoordinates = async (lat, lng, driverId) => {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyBM3VgKsX8mEGsVYpSic7VLNKwEmZ7IABc`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
       );
       const data = await response.json();
-      
+
       if (data.status === 'OK' && data.results?.length > 0) {
         setDriverLocations(prev => ({
           ...prev,
@@ -104,7 +105,7 @@ const DriverDutyStatus = () => {
   // Fetch driver's specific location
   const fetchDriverLocation = async (driverId) => {
     try {
-      const response = await fetch('https://isovia.ca/fms_api/api/locationbyDriver', {
+      const response = await fetch(`${BASE_URL}api/locationbyDriver`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -113,7 +114,7 @@ const DriverDutyStatus = () => {
         body: `driver_id=${driverId}`,
       });
       const data = await response.json();
-      
+
       // Return the latest record
       if (Array.isArray(data) && data.length > 0) {
         const latest = data.reduce((latest, current) => {
@@ -150,7 +151,7 @@ const DriverDutyStatus = () => {
 
       googleScriptRef.current = true;
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBM3VgKsX8mEGsVYpSic7VLNKwEmZ7IABc&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
       script.async = true;
       script.defer = true;
       script.onload = () => {
@@ -282,7 +283,7 @@ const DriverDutyStatus = () => {
   const toggleMapType = () => {
     const newType = mapStatus.mapType === 'roadmap' ? 'satellite' : 'roadmap';
     setMapStatus(prev => ({ ...prev, mapType: newType }));
-    
+
     if (mapInstance.current) {
       mapInstance.current.setMapTypeId(newType);
     }
@@ -292,7 +293,7 @@ const DriverDutyStatus = () => {
   useEffect(() => {
     fetchDrivers();
     const interval = setInterval(fetchDrivers, 1800000); // 30 mins
-    
+
     return () => {
       clearInterval(interval);
       if (markerInstance.current) markerInstance.current.setMap(null);
@@ -359,8 +360,8 @@ const DriverDutyStatus = () => {
                     </span>
                   </td>
                   <td>
-                    {driverLocations[driver.driver_id] || 
-                    (driver.latitude && driver.longitude ? 'Loading address...' : 'No location')}
+                    {driverLocations[driver.driver_id] ||
+                      (driver.latitude && driver.longitude ? 'Loading address...' : 'No location')}
                   </td>
                   <td>
                     <button
@@ -381,10 +382,10 @@ const DriverDutyStatus = () => {
                       {driver.image_urls.map((img, i) => (
                         <img
                           key={i}
-                          src={`https://isovia.ca/fms_api/${img}`}
+                          src={`${BASE_URL.replace('fms_api/', '')}${img}`}
                           alt="Trip"
                           onClick={() => {
-                            setZoomImage(`https://isovia.ca/fms_api/${img}`);
+                            setZoomImage(`${BASE_URL.replace('fms_api/', '')}${img}`);
                             setShowZoomModal(true);
                           }}
                           className="img-thumbnail cursor-pointer"
@@ -396,10 +397,10 @@ const DriverDutyStatus = () => {
                   <td>
                     {driver.signature_url && (
                       <img
-                        src={`https://isovia.ca/fms_api/${driver.signature_url}`}
+                        src={`${BASE_URL.replace('fms_api/', '')}${driver.signature_url}`}
                         alt="Signature"
                         onClick={() => {
-                          setZoomImage(`https://isovia.ca/fms_api/${driver.signature_url}`);
+                          setZoomImage(`${BASE_URL.replace('fms_api/', '')}${driver.signature_url}`);
                           setShowZoomModal(true);
                         }}
                         className="img-thumbnail cursor-pointer bg-white"
@@ -453,9 +454,9 @@ const DriverDutyStatus = () => {
           <div className="modal-dialog modal-dialog-centered modal-lg">
             <div className="modal-content border-0 bg-transparent">
               <div className="modal-header border-0">
-                <button 
-                  type="button" 
-                  className="btn-close btn-close-white" 
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
                   onClick={() => setShowZoomModal(false)}
                 />
               </div>
@@ -481,9 +482,9 @@ const DriverDutyStatus = () => {
                 <h5 className="modal-title">
                   {selectedDriver?.fname || 'Driver'} {selectedDriver?.lname || ''}'s Location
                 </h5>
-                <button 
-                  type="button" 
-                  className="btn-close btn-close-white" 
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
                   onClick={() => setShowMapModal(false)}
                 />
               </div>
@@ -497,7 +498,7 @@ const DriverDutyStatus = () => {
                 {mapStatus.error && (
                   <div className="alert alert-danger m-3">
                     {mapStatus.error}
-                    <button 
+                    <button
                       className="btn btn-sm btn-danger ms-2"
                       onClick={() => handleViewLocation(selectedDriver)}
                     >
@@ -505,10 +506,10 @@ const DriverDutyStatus = () => {
                     </button>
                   </div>
                 )}
-                <div 
+                <div
                   ref={mapRef}
-                  style={{ 
-                    height: '500px', 
+                  style={{
+                    height: '500px',
                     width: '100%',
                     filter: mapStatus.loading ? 'blur(2px)' : 'none',
                     opacity: mapStatus.loading ? 0.7 : 1,
@@ -525,13 +526,13 @@ const DriverDutyStatus = () => {
                       </p>
                     </div>
                     <div className="col-md-6 text-end">
-                      <button 
+                      <button
                         className="btn btn-sm btn-outline-primary me-2"
                         onClick={toggleMapType}
                       >
                         {mapStatus.mapType === 'roadmap' ? 'Satellite View' : 'Map View'}
                       </button>
-                      <button 
+                      <button
                         className="btn btn-sm btn-primary"
                         onClick={() => handleViewLocation(selectedDriver)}
                         disabled={mapStatus.loading}
@@ -543,9 +544,9 @@ const DriverDutyStatus = () => {
                 </div>
               </div>
               <div className="modal-footer">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
+                <button
+                  type="button"
+                  className="btn btn-secondary"
                   onClick={() => setShowMapModal(false)}
                 >
                   Close

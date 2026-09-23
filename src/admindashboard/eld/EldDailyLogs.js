@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { BASE_URL } from "../../config";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -39,7 +40,7 @@ const EldDashboard = () => {
   const fetchDrivers = async () => {
     try {
       const res = await axios.get(
-        "https://isovia.ca/fms_api/api/fetchdriversProductData",
+        `${BASE_URL}api/fetchdriversProductData`,
         {
           headers: { Cookie: cookie },
           withCredentials: true,
@@ -55,7 +56,7 @@ const EldDashboard = () => {
   const fetchLogs = async () => {
 
 
-    const url = `https://isovia.ca/fms_api/api/hos_daily_logs?startDate=${filter.startDate}&endDate=${filter.endDate}&driverIds=${driverId}`;
+    const url = `${BASE_URL}api/hos_daily_logs?startDate=${filter.startDate}&endDate=${filter.endDate}&driverIds=${driverId}`;
 
     try {
       const res = await axios.get(url, {

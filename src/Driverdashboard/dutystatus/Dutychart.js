@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Chart } from 'chart.js/auto';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import { BASE_URL } from '../../config';
 import TripLogChart from './Logs';
 
 const Dutychart = () => {
-  const {tid}=useParams()
+  const { tid } = useParams()
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
   const [logData, setLogData] = useState([]);
@@ -13,10 +14,10 @@ const Dutychart = () => {
   useEffect(() => {
     const fetchChartData = async () => {
       try {
-        const response = await axios.get('https://isovia.ca/fms_api/api/get_duty_chart_data', {
+        const response = await axios.get(`${BASE_URL}api/get_duty_chart_data`, {
           params: {
             trip_id: tid,
-        
+
           }
         });
 
@@ -100,7 +101,7 @@ const Dutychart = () => {
   return (
     <div className='content-wrapper p-4'>
       <canvas ref={chartRef} />
-   
+
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
+import { BASE_URL } from "../../config";
 
 const TruckExpiryAlerts = () => {
   const [truckList, setTruckList] = useState([]);
@@ -12,7 +13,7 @@ const TruckExpiryAlerts = () => {
   /* ✅ Fetch truck list */
   useEffect(() => {
     axios
-      .get("https://isovia.ca/fms_api/api/getTrucks")
+      .get(`${BASE_URL}api/getTrucks`)
       .then(res => {
         if (res.data.status === "success") {
           setTruckList(res.data.data);
@@ -31,7 +32,7 @@ const TruckExpiryAlerts = () => {
         setError(null);
 
         const res = await axios.get(
-          `https://isovia.ca/fms_api/api/check_expiry/${selectedTruck}`
+          `${BASE_URL}api/check_expiry/${selectedTruck}`
         );
 
         if (res.data.success) {

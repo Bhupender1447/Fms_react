@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import SignatureCanvas from "react-signature-canvas";
+import { BASE_URL } from "../../config";
 
 const TripForm = () => {
   const datavalue = JSON.parse(localStorage.getItem("logindetail"));
@@ -16,7 +17,7 @@ const TripForm = () => {
     note: "",
     images: [],
     preTripInspection: "",
-      documentType: "", // ✅ New
+    documentType: "", // ✅ New
   });
 
   const [signatureData, setSignatureData] = useState("");
@@ -31,7 +32,7 @@ const TripForm = () => {
   useEffect(() => {
     if (datavalue?.id) {
       axios
-        .get(`https://isovia.ca/fms_api/api/tipsdriverfetchProductData/${datavalue.id}`)
+        .get(`${BASE_URL}api/tipsdriverfetchProductData/${datavalue.id}`)
         .then((res) => setTripList(res.data))
         .catch((err) => console.log(err));
     }
@@ -114,7 +115,7 @@ const TripForm = () => {
     }
 
     try {
-      await axios.post("https://isovia.ca/fms_api/api/on", formDataToSend, {
+      await axios.post(`${BASE_URL}api/on`, formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
@@ -232,70 +233,70 @@ const TripForm = () => {
                     handleChange={handleChange}
                     placeholder="Enter Odo Truck "
                     value={
-                      formData.odotrucks  ? formData.odotrucks : ""
+                      formData.odotrucks ? formData.odotrucks : ""
                     }
-                    
+
                   />
                 </div>
                 {/* Image Upload with Document Type */}
-<div className="col-12">
-  <label className="form-label fw-bold">Upload Images (Optional)</label>
-  <div className="d-flex gap-3 align-items-center">
-    <input
-      type="file"
-      className="form-control"
-      accept="image/*"
-      multiple
-      onChange={handleImageChange}
-    />
+                <div className="col-12">
+                  <label className="form-label fw-bold">Upload Images (Optional)</label>
+                  <div className="d-flex gap-3 align-items-center">
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageChange}
+                    />
 
-    {/* Document Type Dropdown */}
-    <select
-      className="form-select"
-      style={{ maxWidth: "250px" }}
-      name="documentType"
-      value={formData.documentType || ""}
-      onChange={handleChange}
-      required
-    >
-      <option value="">-- Select Document Type --</option>
-      <option value="BOL">BOL (Bill of Lading)</option>
-      <option value="custom_with_decals">Custom Paperwork with DECALS</option>
-      <option value="custom_without_decals">Custom Paperwork without DECALS</option>
-      <option value="POD">POD (Proof of Delivery)</option>
-      <option value="receipt">Receipt</option>
-      <option value="scale_weight">Scale Weight</option>
-      <option value="other">Other</option>
-    </select>
-  </div>
-  <div className="form-text">You can upload multiple images (max 5)</div>
+                    {/* Document Type Dropdown */}
+                    <select
+                      className="form-select"
+                      style={{ maxWidth: "250px" }}
+                      name="documentType"
+                      value={formData.documentType || ""}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">-- Select Document Type --</option>
+                      <option value="BOL">BOL (Bill of Lading)</option>
+                      <option value="custom_with_decals">Custom Paperwork with DECALS</option>
+                      <option value="custom_without_decals">Custom Paperwork without DECALS</option>
+                      <option value="POD">POD (Proof of Delivery)</option>
+                      <option value="receipt">Receipt</option>
+                      <option value="scale_weight">Scale Weight</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div className="form-text">You can upload multiple images (max 5)</div>
 
-  {previewUrls.length > 0 && (
-    <div className="mt-3 d-flex flex-wrap gap-3">
-      {previewUrls.map((url, index) => (
-        <div
-          key={index}
-          className="position-relative border rounded p-1"
-          style={{ width: "120px" }}
-        >
-          <img
-            src={url}
-            alt={`Preview ${index + 1}`}
-            className="img-fluid rounded"
-          />
-          <button
-            type="button"
-            className="btn btn-sm btn-danger position-absolute top-0 end-0"
-            onClick={() => removeImage(index)}
-            style={{ transform: "translate(50%, -50%)" }}
-          >
-            &times;
-          </button>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
+                  {previewUrls.length > 0 && (
+                    <div className="mt-3 d-flex flex-wrap gap-3">
+                      {previewUrls.map((url, index) => (
+                        <div
+                          key={index}
+                          className="position-relative border rounded p-1"
+                          style={{ width: "120px" }}
+                        >
+                          <img
+                            src={url}
+                            alt={`Preview ${index + 1}`}
+                            className="img-fluid rounded"
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-danger position-absolute top-0 end-0"
+                            onClick={() => removeImage(index)}
+                            style={{ transform: "translate(50%, -50%)" }}
+                          >
+                            &times;
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
 
                 {/* Notes */}
@@ -419,9 +420,8 @@ const TripForm = () => {
                 {message.text && (
                   <div className="col-12">
                     <div
-                      className={`alert alert-${
-                        message.type === "success" ? "success" : "danger"
-                      } mt-3`}
+                      className={`alert alert-${message.type === "success" ? "success" : "danger"
+                        } mt-3`}
                     >
                       {message.text}
                     </div>

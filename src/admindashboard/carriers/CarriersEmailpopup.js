@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import React, { useState } from 'react';
 
 const CarriersEmailpopup = ({ pdfLink, carrierId, onClose }) => {
@@ -10,19 +11,19 @@ const CarriersEmailpopup = ({ pdfLink, carrierId, onClose }) => {
     onClose();
   };
 
-  const handleSubmit = async(e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
- 
+
     const formData = new FormData();
     formData.append('email', email);
     formData.append('carrierid', carrierId);
     formData.append('carrierpdf', pdfLink);
 
     try {
-        
-      const response = await axios.post('https://isovia.ca/fms_api/api/sendcarriermail', formData);
 
-    //   navigate('/carriers')
+      const response = await axios.post(`${BASE_URL}api/sendcarriermail`, formData);
+
+      //   navigate('/carriers')
     } catch (error) {
       console.error(error);
     }

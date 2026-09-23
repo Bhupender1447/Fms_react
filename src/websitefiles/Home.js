@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/iframe-has-title */
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 
 const Home = () => {
   const [activeService, setActiveService] = useState("list-1");
@@ -150,6 +151,10 @@ const Home = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Cloud-Based Transportation Management Software | isovia</title>
+        <meta name="description" content="Cloud based transportation management software for freight, logistics, and fleet operations." />
+      </Helmet>
       <section className="banner-section">
         <div
           id="carouselExampleFade"
@@ -468,11 +473,9 @@ const Home = () => {
                   <div className="blog-article">
                     <h4 className="blog-article-title">Real-time Monitoring</h4>
                     <p className="blog-article-excerpt">
-                      The current logistics scenario increasingly demands
-                      accurate and fast deliveries. With efficient
-                      transportation........
+                      The current logistics situation requires delivery services to provide both accuracy and speed. Effective transportation fleet management...
                     </p>
-                    <Link to="#" className="read-more">
+                    <Link to="/Article1" className="read-more">
                       Read More →
                     </Link>
                   </div>
@@ -484,11 +487,9 @@ const Home = () => {
                   <div className="blog-article">
                     <h4 className="blog-article-title">The Meaning of IFM</h4>
                     <p className="blog-article-excerpt">
-                      Logistics is a fundamental sector of the global economy,
-                      connecting companies, suppliers and consumers
-                      through........
+                      Logistics is a fundamental sector of the global economy, connecting companies, suppliers and consumers through efficient management...
                     </p>
-                    <Link to="#" className="read-more">
+                    <Link to="/Article2" className="read-more">
                       Read More →
                     </Link>
                   </div>
@@ -502,17 +503,16 @@ const Home = () => {
                       Sustainability in transportation
                     </h4>
                     <p className="blog-article-excerpt">
-                      Freight transportation is an essential part of the global
-                      economy, where various goods ........
+                      Freight transportation serves as a crucial component for the worldwide economy since it enables the movement of goods...
                     </p>
-                    <Link to="#" className="read-more">
+                    <Link to="/Article3" className="read-more">
                       Read More →
                     </Link>
                   </div>
                 </div>
               </div>
               <div className="view-all-btn flex justify-content-center mx-auto">
-                <Link to="#">View All Articles</Link>
+                <Link to="/news">View All Articles</Link>
               </div>
             </div>
           </div>

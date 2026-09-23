@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -23,7 +24,7 @@ const OrderTripIncomeList = () => {
   const fetchTripIncome = async () => {
     try {
       const res = await axios.post(
-        'https://isovia.ca/fms_api/api/ordertripIncome',
+        `${BASE_URL}api/ordertripIncome`,
         {},
         {
           headers: {
@@ -54,7 +55,7 @@ const OrderTripIncomeList = () => {
 
     try {
       const res = await axios.post(
-        'https://isovia.ca/fms_api/api/ordertripIncomebydate',
+        `${BASE_URL}api/ordertripIncomebydate`,
         formData,
         {
           headers: {
@@ -116,7 +117,7 @@ const OrderTripIncomeList = () => {
   };
 
   return (
-    <div  className="content-wrapper" style={{ minHeight: 440 }}>
+    <div className="content-wrapper" style={{ minHeight: 440 }}>
       <h3>Trip Income Records</h3>
 
       <div className="row my-3">

@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
+import { BASE_URL } from '../../config';
 
 const Terms = () => {
   const [data, setData] = useState([]);
@@ -9,7 +10,7 @@ const Terms = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/fetchtermsProductData')
+    axios.get(`${BASE_URL}api/fetchtermsProductData`)
       .then(res => setData(res.data))
       .catch(error => console.log(error));
   }, []);
@@ -21,7 +22,7 @@ const Terms = () => {
   const handleRemove = async (id) => {
     try {
       const response = await axios.post(
-        'https://isovia.ca/fms_api/api/remove',
+        `${BASE_URL}api/remove`,
         new URLSearchParams({
           id: id,
           type: 'fms_terms'  // Adjust the type if necessary

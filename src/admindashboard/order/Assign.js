@@ -1,7 +1,8 @@
 /* eslint-disable jsx-a11y/no-redundant-roles */
-import  { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
-import { useParams ,Link} from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import { BASE_URL } from '../../config';
 
 const Assignorder = () => {
   // Initial state for the form
@@ -43,9 +44,9 @@ const Assignorder = () => {
   // Function to fetch carriers from API
   const fetchCarriers = async () => {
     try {
-      const response = await axios.get('https://isovia.ca/fms_api/api/getOrderData');
+      const response = await axios.get(`${BASE_URL}api/getOrderData`);
       const carriersData = response.data; // Assuming the API returns the list of carriers
-     
+
       setCarriersList(carriersData.carriers);
     } catch (error) {
       console.error('Error fetching carriers:', error);
@@ -65,7 +66,7 @@ const Assignorder = () => {
     dataToSend.append('rate', formData.rate);
     dataToSend.append('cur', formData.cur);
 
-    axios.post(`https://isovia.ca/fms_api/api/assign/${id}`, dataToSend)
+    axios.post(`${BASE_URL}api/assign/${id}`, dataToSend)
       .then((response) => {
         console.log('Order successfully submitted:', response.data);
       })
@@ -122,7 +123,7 @@ const Assignorder = () => {
                           onChange={handleChange}
                         >
                           <option value="" disabled>--Select Carrier--</option>
-                          {carriersList&&carriersList.map((carrier) => (
+                          {carriersList && carriersList.map((carrier) => (
                             <option key={carrier.id} value={carrier.id}>
                               {carrier.name}
                             </option>

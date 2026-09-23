@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
+import { BASE_URL } from '../../config';
 import { Link } from 'react-router-dom'
 
 const Ads = () => {
@@ -8,7 +9,7 @@ const Ads = () => {
   const [itemsPerPage] = useState(10)
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/fetchadsProductData')
+    axios.get(`${BASE_URL}api/fetchadsProductData`)
       .then(res => setData(res.data))
       .catch(error => console.error(error))
   }, [])
@@ -16,7 +17,7 @@ const Ads = () => {
   const handleRemove = async (id) => {
     try {
       const response = await axios.post(
-        'https://isovia.ca/fms_api/api/remove',
+        `${BASE_URL}api/remove`,
         new URLSearchParams({
           id: id,
           type: 'fms_ads' // Adjust the type if necessary

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate,Link } from 'react-router-dom';
+import { BASE_URL } from '../../config';
+import { useNavigate, Link } from 'react-router-dom';
 import Distance from '../Distance';
 import CarrierDataPopup from './CarrierDataPopup';
 import { ToastContainer, toast } from 'react-toastify';
@@ -17,46 +18,46 @@ const Createcarriers = () => {
     setName(e.target.value);
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  const formData = new FormData();
-  formData.append('name', name);
+    const formData = new FormData();
+    formData.append('name', name);
 
-  try {
-    const response = await axios.post(
-      'https://isovia.ca/fms_api/api/getCarrierData',
-      formData
-    );
+    try {
+      const response = await axios.post(
+        `${BASE_URL}api/getCarrierData`,
+        formData
+      );
 
-    if (response.data.status === 'success') {
-      setdata(response.data.data);
-      setpopup(true);
-      toast.success('Carrier data fetched successfully!');
-    } else {
-      // If backend returned a nested JSON in `response`
-      let errorMessage = response.data.message;
+      if (response.data.status === 'success') {
+        setdata(response.data.data);
+        setpopup(true);
+        toast.success('Carrier data fetched successfully!');
+      } else {
+        // If backend returned a nested JSON in `response`
+        let errorMessage = response.data.message;
 
-      // Try to parse nested `response` string if it exists
-      if (response.data.response) {
-        try {
-          const nested = JSON.parse(response.data.response);
-          if (nested.message) {
-            errorMessage = nested.message;
+        // Try to parse nested `response` string if it exists
+        if (response.data.response) {
+          try {
+            const nested = JSON.parse(response.data.response);
+            if (nested.message) {
+              errorMessage = nested.message;
+            }
+
+          } catch (err) {
+            // ignore parse errors
           }
-          
-        } catch (err) {
-          // ignore parse errors
         }
-      }
 
-      toast.error(errorMessage || 'Failed to fetch carrier data.');
+        toast.error(errorMessage || 'Failed to fetch carrier data.');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Error fetching carrier data.');
     }
-  } catch (error) {
-    console.error(error);
-    toast.error('Error fetching carrier data.');
-  }
-};
+  };
 
 
   return (

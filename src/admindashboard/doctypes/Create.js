@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
-import {Link } from 'react-router-dom';
+import axios from 'axios';
+import { BASE_URL } from '../../config';
+import { Link } from 'react-router-dom';
 
 const Createdoctypes = () => {
     const [formData, setFormData] = useState({
@@ -7,40 +9,36 @@ const Createdoctypes = () => {
         name: '',
         remarks: '',
         _wysihtml5_mode: '1',
-      });
-    
-      const handleChange = (e) => {
+    });
+
+    const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
-      };
-    
-      const handleSubmit = async (e) => {
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-    
+
         const data = new FormData();
         for (const key in formData) {
-          if (key === 'module') {
-            data.append('module[]', formData[key]);
-          } else {
-            data.append(key, formData[key]);
-          }
+            if (key === 'module') {
+                data.append('module[]', formData[key]);
+            } else {
+                data.append(key, formData[key]);
+            }
         }
-    
+
         try {
-          const response = await fetch('https://isovia.ca/fms_api/api/createdoctypes', {
-            method: 'POST',
-            body: data,
-          });
-    
-          if (response.ok) {
-            console.log('Form submitted successfully');
-          } else {
-            console.error('Form submission failed');
-          }
+            const response = await axios.post(`${BASE_URL}api/createdoctypes`, data);
+            if (response.status === 200) {
+                alert(response.data.message || 'Form submitted successfully');
+            } else {
+                console.error('Form submission failed');
+            }
         } catch (error) {
-          console.error('Error submitting form', error);
+            console.error('Error submitting form', error);
         }
-      };
+    };
     return (
         <div className="content-wrapper" style={{ minHeight: 440 }}>
             {/* Content Header (Page header) */}
@@ -114,7 +112,7 @@ const Createdoctypes = () => {
                                                     name="name"
                                                     placeholder="Enter Name"
                                                     autoComplete="off"
-                                                    value={formData.name} onChange={handleChange} 
+                                                    value={formData.name} onChange={handleChange}
                                                 />
                                             </div>
                                         </div>
