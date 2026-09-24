@@ -46,6 +46,7 @@ const Createdrivers = () => {
     product_image: null,
   });
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isOcrLoading, setIsOcrLoading] = useState(false);
 
 
 
@@ -72,10 +73,15 @@ const Createdrivers = () => {
       return;
     }
 
+    setIsOcrLoading(true);
+
     const ocrData = new FormData();
     ocrData.append("file", file);
     ocrData.append("module_type", "driver");
-    ocrData.append("prompt", "Extract all information in JSON format");
+    ocrData.append(
+      "prompt",
+      `Extract driver details into strict JSON exactly matching these keys: {"fname":"First name","lname":"Last name","documentno":"Licence number","address1":"Address line 1","city":"City","state":"State/Province","zip":"Zip","country":"Country","dob":"DOB (YYYY-MM-DD)","expiarydate":"Expiry (YYYY-MM-DD)","issuedate":"Issue date (YYYY-MM-DD)","medical":"Medical due (YYYY-MM-DD)","sex":"Gender"}. Return ONLY JSON.`
+    );
 
     try {
       const response = await axios.post(
@@ -124,52 +130,23 @@ const Createdrivers = () => {
           };
 
           const getMatch = (synonyms) => {
-            const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
+            const key = sourceKeys.find(k => synonyms.some(s => {
+              const kLower = k.toLowerCase();
+              const sLower = s.toLowerCase();
+              return kLower === sLower || kLower === `gpt_${sLower}` || kLower.includes(sLower);
+            }));
             return key ? combinedSource[key] : null;
           };
 
-          // 1. Map Name
-          const fullName = getMatch(['rec_name', 'gpt_name_0', 'driver_name', 'names', 'nom']);
-          if (fullName && (isFieldEmpty(updated.fname) || isFieldEmpty(updated.lname))) {
-            const nameStr = String(fullName);
-            if (nameStr.includes(',')) {
-              const parts = nameStr.split(',').map(s => s.trim());
-              if (parts.length >= 2) {
-                updated.lname = parts[0];
-                updated.fname = parts.slice(1).join(" ");
-              } else {
-                updated.fname = nameStr;
-              }
-            } else {
-              const parts = nameStr.split(' ');
-              if (parts.length > 1) {
-                updated.fname = parts[0];
-                updated.lname = parts.slice(1).join(" ");
-              } else {
-                updated.fname = nameStr;
-              }
-            }
-            matchCount++;
-          }
-
-          // 2. Map Address
-          const fullAddress = getMatch(['rec_address', 'gpt_address_0', 'driver_address', 'location', 'address', 'address1']);
-          if (fullAddress && isFieldEmpty(updated.address1)) {
-            const parts = String(fullAddress).split(',').map(s => s.trim());
-            if (parts.length >= 1) updated.address1 = parts[0];
-            if (parts.length >= 2) updated.city = parts[1];
-            if (parts.length >= 3) updated.state = parts[2];
-            if (parts.length >= 4) updated.zip = parts[3];
-            if (parts.length >= 5) updated.country = parts[4];
-            matchCount++;
-          }
-
-          // 4. Final catch-all for any other empty fields
+          // Final catch-all for any other empty fields
           Object.keys(updated).forEach(field => {
-            if (field === 'fname' || field === 'lname' || field === 'address1') return;
             if (!isFieldEmpty(updated[field])) return;
 
-            const val = getMatch([field]);
+            let val = getMatch([field]);
+            
+            // Legacy fallbacks for backwards compatibility
+            if (!val && field === 'documentno') val = getMatch(['licence', 'license']);
+            
             if (val) {
               updated[field] = String(val);
               matchCount++;
@@ -192,6 +169,8 @@ const Createdrivers = () => {
     } catch (error) {
       console.error("OCR error:", error);
       toast.error("Error processing OCR");
+    } finally {
+      setIsOcrLoading(false);
     }
   };
 
@@ -245,8 +224,16 @@ const Createdrivers = () => {
               type="button"
               className="btn btn-success"
               onClick={handleFileChange2}
+              disabled={isOcrLoading}
             >
-              Scan OCR
+              {isOcrLoading ? (
+                <>
+                  <i className="fa fa-spinner fa-spin" style={{ marginRight: "5px" }}></i>
+                  Processing...
+                </>
+              ) : (
+                "Scan OCR"
+              )}
             </button>
           </span>
         </div>

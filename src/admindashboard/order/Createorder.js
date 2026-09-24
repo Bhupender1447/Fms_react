@@ -60,6 +60,7 @@ const Createorder = () => {
   const [formData, setFormData] = useState(initialState);
   // OCR Logic
   const [ocrFile, setOcrFile] = useState(null);
+  const [isOcrLoading, setIsOcrLoading] = useState(false);
 
   const flattenObject = (obj, prefix = "", res = {}) => {
     for (let key in obj) {
@@ -84,10 +85,13 @@ const Createorder = () => {
       toast.error("Please select a file to upload");
       return;
     }
+    
+    setIsOcrLoading(true);
+    
     const ocrData = new FormData();
     ocrData.append("file", ocrFile);
     ocrData.append("module_type", "order");
-    ocrData.append("prompt", "Extract all information in JSON format");
+    ocrData.append("prompt", `Extract the order information into a strict JSON format exactly matching these keys: {"loadno":"Load number","salesman":"Salesman/driver name","customer_id":"Customer name","pickup_from":"Pickup company","pickup_address":"Pickup address","delivery":"Delivery company","delivery_address":"Delivery address","pickupdate":"Pickup date (YYYY-MM-DD)","deliverydate":"Delivery date (YYYY-MM-DD)","rate":"Rate (number only)","gross_amount":"Gross amount (number only)","trailortype":"Trailer type","commodity":"Commodity","weight":"Weight (number only)","unit":"Weight unit (LBS/KGS)"}. Return ONLY JSON.`);
 
     try {
       const response = await axios.post(
@@ -105,7 +109,6 @@ const Createorder = () => {
         // --- UNIVERSAL MAPPING SOURCE GENERATION ---
         const combinedSource = { ...flatOCR };
 
-        // 1. Support legacy synonym paths (gpt_name_0, rec_field, etc.)
         if (gptData.names) gptData.names.forEach((n, i) => combinedSource[`gpt_name_${i}`] = n);
         if (gptData.addresses) gptData.addresses.forEach((a, i) => combinedSource[`gpt_address_${i}`] = a);
         if (gptData.dates) Object.entries(gptData.dates).forEach(([k, v]) => combinedSource[`gpt_date_${k}`] = v);
@@ -116,7 +119,6 @@ const Createorder = () => {
           });
         }
 
-        // 2. Recursive flattening of everything in GPT response for maximum resilience
         const flatGPT = flattenObject(gptData);
         Object.entries(flatGPT).forEach(([k, v]) => {
           combinedSource[`gpt_${k}`] = String(v);
@@ -135,58 +137,41 @@ const Createorder = () => {
           };
 
           const getMatch = (synonyms) => {
-            const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
+            const key = sourceKeys.find(k => synonyms.some(s => {
+              const kLower = k.toLowerCase();
+              const sLower = s.toLowerCase();
+              return kLower === sLower || kLower === `gpt_${sLower}` || kLower.includes(sLower);
+            }));
             return key ? combinedSource[key] : null;
           };
 
-          // 1. Map Load Number & Salesman (Allow overwrite for loadno)
-          const loadVal = getMatch(['rec_load_number', 'gpt_number_load', 'loadno', 'load_number', 'load']);
-          if (loadVal) {
-            updated.loadno = String(loadVal);
-            matchCount++;
-          }
-
-          const customerVal = getMatch(['rec_name', 'gpt_name_0', 'customer', 'names', 'client', 'broker']);
+          // 1. Map Explicit IDs (Customer, Pickup/Delivery Locations)
+          const customerVal = getMatch(['customer_id', 'customer', 'client']);
           if (customerVal && isFieldEmpty(updated.customer_id)) {
             const cust = data.customers?.find(c => c.name?.toLowerCase().includes(String(customerVal).toLowerCase()));
             if (cust) { updated.customer_id = cust.id; matchCount++; }
           }
 
-          // 2. Map Addresses & Locations
-          const pickupAddr = getMatch(['rec_pickup_address', 'gpt_address_0', 'addresses', 'pickup_addr', 'shipper_address', 'origin_address', 'address']);
-          if (pickupAddr && isFieldEmpty(updated.pickup_address)) {
-            updated.pickup_address = String(pickupAddr);
-            matchCount++;
-          }
-
-          const pickupLoc = getMatch(['shipper', 'ship_from', 'pickup_loc', 'origin', 'pickup_from']);
+          const pickupLoc = getMatch(['pickup_from', 'shipper', 'origin']);
           if (pickupLoc && isFieldEmpty(updated.pickup_from)) {
             const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(pickupLoc).toLowerCase()));
             if (loc) { updated.pickup_from = loc.id; matchCount++; }
           }
 
-          const deliveryAddr = getMatch(['rec_delivery_address', 'gpt_address_1', 'addresses', 'delivery_addr', 'consignee_address', 'destination_address']);
-          if (deliveryAddr && isFieldEmpty(updated.delivery_address)) {
-            updated.delivery_address = String(deliveryAddr);
-            matchCount++;
-          }
-
-          const deliveryLoc = getMatch(['consignee', 'ship_to', 'delivery_loc', 'destination', 'delivery']);
+          const deliveryLoc = getMatch(['delivery', 'consignee', 'destination']);
           if (deliveryLoc && isFieldEmpty(updated.delivery)) {
             const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(deliveryLoc).toLowerCase()));
             if (loc) { updated.delivery = loc.id; matchCount++; }
           }
 
-          // 3. Map Dates
-          const pickupDate = getMatch(['rec_pickup_date', 'gpt_date_pickup', 'pickup_date', 'iss']);
-          if (pickupDate && isFieldEmpty(updated.pickupdate)) {
-            updated.pickupdate = String(pickupDate);
-            matchCount++;
-          }
-
-          const deliveryDate = getMatch(['rec_delivery_date', 'gpt_date_delivery', 'delivery_date', 'exp']);
-          if (deliveryDate && isFieldEmpty(updated.deliverydate)) {
-            updated.deliverydate = String(deliveryDate);
+          // Format specific units
+          const unitVal = getMatch(['unit']);
+          if (unitVal && isFieldEmpty(updated.unit)) {
+            let uStr = String(unitVal).toUpperCase();
+            if (uStr.includes("LBS") || uStr.includes("POUND")) uStr = "Pounds";
+            else if (uStr.includes("KGS") || uStr.includes("KILOS")) uStr = "KGs";
+            else if (uStr.includes("TON")) uStr = "Tons";
+            updated.unit = [uStr];
             matchCount++;
           }
 
@@ -223,6 +208,8 @@ const Createorder = () => {
     } catch (err) {
       console.error(err);
       toast.error("Error processing OCR");
+    } finally {
+      setIsOcrLoading(false);
     }
   };
 
@@ -488,8 +475,16 @@ const Createorder = () => {
                         type="button"
                         className="btn btn-success"
                         onClick={handleOcrUpload}
+                        disabled={isOcrLoading}
                       >
-                        Scan & Auto-fill
+                        {isOcrLoading ? (
+                          <>
+                            <i className="fa fa-spinner fa-spin" style={{ marginRight: "5px" }}></i>
+                            Processing...
+                          </>
+                        ) : (
+                          "Scan & Auto-fill"
+                        )}
                       </button>
                     </span>
                   </div>

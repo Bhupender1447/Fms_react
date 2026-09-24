@@ -196,33 +196,13 @@ const Update = () => {
   }, [id])
 
   const [ocrRaw, setOcrRaw] = useState(null);
-
-  const uploadOcrFile = async (file) => {
-    const form = new FormData();
-    form.append("file", file);
-    form.append("module_type", "order");
-    form.append("prompt", "Extract all information in JSON format");
-
-    try {
-      const res = await axios.post(
-        `${BASE_URL}OCRController/simple_openai_process`,
-        form
-      );
-
-      if (res.data?.success) {
-        setOcrRaw(res.data.data);
-        applyOCRToAllFields(res.data.data);
-      }
-    } catch (e) {
-      console.error("OCR failed", e);
-    }
-  };
+  const [ocrFile, setOcrFile] = useState(null);
+  const [isOcrLoading, setIsOcrLoading] = useState(false);
 
   const flattenObject = (obj, prefix = "", res = {}) => {
     for (let key in obj) {
       const value = obj[key];
       const newKey = prefix ? `${prefix}_${key}` : key;
-
       if (typeof value === "object" && value !== null) {
         flattenObject(value, newKey, res);
       } else {
@@ -232,117 +212,138 @@ const Update = () => {
     return res;
   };
 
-  const applyOCRToAllFields = (ocrResponse) => {
-    if (!ocrResponse) return;
-
-    const gptData = ocrResponse.gpt_response?.structured_json || {};
-    const ocrDataRaw = ocrResponse.data || {};
-    const flatOCR = ocrDataRaw ? flattenObject(ocrDataRaw) : {};
-    const combinedSource = { ...flatOCR };
-
-    if (gptData.names) gptData.names.forEach((n, i) => combinedSource[`gpt_name_${i}`] = n);
-    if (gptData.addresses) gptData.addresses.forEach((a, i) => combinedSource[`gpt_address_${i}`] = a);
-    if (gptData.dates) Object.entries(gptData.dates).forEach(([k, v]) => combinedSource[`gpt_date_${k}`] = v);
-    if (gptData.numbers) Object.entries(gptData.numbers).forEach(([k, v]) => combinedSource[`gpt_number_${k}`] = v);
-    if (gptData.records?.[0]) {
-      Object.entries(gptData.records[0]).forEach(([k, v]) => combinedSource[`rec_${k}`] = String(v));
+  const handleOcrUpload = async () => {
+    if (!ocrFile) {
+      toast.error("Please select a file to upload");
+      return;
     }
+    
+    setIsOcrLoading(true);
+    
+    const ocrData = new FormData();
+    ocrData.append("file", ocrFile);
+    ocrData.append("module_type", "order");
+    ocrData.append("prompt", `Extract the order information into a strict JSON format exactly matching these keys: {"loadno":"Load number","salesman":"Salesman/driver name","customer_id":"Customer name","pickup_from":"Pickup company","pickup_address":"Pickup address","delivery":"Delivery company","delivery_address":"Delivery address","pickupdate":"Pickup date (YYYY-MM-DD)","deliverydate":"Delivery date (YYYY-MM-DD)","rate":"Rate (number only)","gross_amount":"Gross amount (number only)","trailortype":"Trailer type","commodity":"Commodity","weight":"Weight (number only)","unit":"Weight unit (LBS/KGS)"}. Return ONLY JSON.`);
 
-    const flatGPT = flattenObject(gptData);
-    Object.entries(flatGPT).forEach(([k, v]) => {
-      combinedSource[`gpt_${k}`] = String(v);
-    });
+    try {
+      const response = await axios.post(
+        `${BASE_URL}OCRController/simple_openai_process`,
+        ocrData,
+        { withCredentials: true }
+      );
 
-    setFormData((prev) => {
-      const updated = { ...prev };
-      const sourceKeys = Object.keys(combinedSource);
-      let localMatchCount = 0;
+      if (response.data && response.data.success) {
+        let matchCount = 0;
+        const gptData = response.data.gpt_response?.structured_json || {};
+        const ocrDataRaw = response.data.data || {};
+        const flatOCR = flattenObject(ocrDataRaw);
+        setOcrRaw(ocrDataRaw);
 
-      const getMatch = (synonyms) => {
-        const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
-        return key ? combinedSource[key] : null;
-      };
+        // --- UNIVERSAL MAPPING SOURCE GENERATION ---
+        const combinedSource = { ...flatOCR };
 
-      const isFieldEmpty = (val) => {
-        if (val === null || val === undefined) return true;
-        const s = String(val).trim();
-        if (s === "") return true;
-        if (Array.isArray(val)) return val.length === 0 || (val.length === 1 && String(val[0]).trim() === "");
-        return false;
-      };
-
-      const loadVal = getMatch(['rec_load_number', 'gpt_number_load', 'loadno', 'load_number', 'load']);
-      if (loadVal) {
-        updated.loadno = String(loadVal);
-        localMatchCount++;
-      }
-
-      const customerVal = getMatch(['rec_name', 'gpt_name_0', 'customer', 'names', 'client', 'broker']);
-      if (customerVal && isFieldEmpty(updated.customer_id)) {
-        const cust = data.customers?.find(c => c.name?.toLowerCase().includes(String(customerVal).toLowerCase()));
-        if (cust) { updated.customer_id = cust.id; localMatchCount++; }
-      }
-
-      const pickupAddr = getMatch(['rec_pickup_address', 'gpt_address_0', 'addresses', 'pickup_addr', 'shipper_address', 'origin_address', 'address']);
-      if (pickupAddr && isFieldEmpty(updated.pickup_address)) {
-        updated.pickup_address = String(pickupAddr);
-        localMatchCount++;
-      }
-
-      const pickupLoc = getMatch(['shipper', 'ship_from', 'pickup_loc', 'origin', 'pickup_from']);
-      if (pickupLoc && isFieldEmpty(updated.pickup_from)) {
-        const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(pickupLoc).toLowerCase()));
-        if (loc) { updated.pickup_from = loc.id; localMatchCount++; }
-      }
-
-      const deliveryAddr = getMatch(['rec_delivery_address', 'gpt_address_1', 'addresses', 'delivery_addr', 'consignee_address', 'destination_address']);
-      if (deliveryAddr && isFieldEmpty(updated.delivery_address)) {
-        updated.delivery_address = String(deliveryAddr);
-        localMatchCount++;
-      }
-
-      const deliveryLoc = getMatch(['consignee', 'ship_to', 'delivery_loc', 'destination', 'delivery']);
-      if (deliveryLoc && isFieldEmpty(updated.delivery)) {
-        const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(deliveryLoc).toLowerCase()));
-        if (loc) { updated.delivery = loc.id; localMatchCount++; }
-      }
-
-      const pickupDate = getMatch(['rec_pickup_date', 'gpt_date_pickup', 'pickup_date', 'iss']);
-      if (pickupDate && isFieldEmpty(updated.pickupdate)) {
-        updated.pickupdate = String(pickupDate);
-        localMatchCount++;
-      }
-
-      const deliveryDate = getMatch(['rec_delivery_date', 'gpt_date_delivery', 'delivery_date', 'exp']);
-      if (deliveryDate && isFieldEmpty(updated.deliverydate)) {
-        updated.deliverydate = String(deliveryDate);
-        localMatchCount++;
-      }
-
-      Object.keys(updated).forEach(field => {
-        const isDefault = ["No", "Regular", "LTL", "Hazmat", "13", "0"].includes(String(updated[field]));
-        if (!isFieldEmpty(updated[field]) && !isDefault && field !== 'loadno') return;
-
-        const val = getMatch([field]);
-        if (val) {
-          if (Array.isArray(updated[field])) {
-            updated[field] = [String(val)];
-          } else if (!isNaN(prev[field]) && typeof prev[field] === 'number') {
-            updated[field] = String(val).replace(/[^\d.]/g, "");
-          } else {
-            updated[field] = String(val).substring(0, 300);
-          }
-          localMatchCount++;
+        if (gptData.names) gptData.names.forEach((n, i) => combinedSource[`gpt_name_${i}`] = n);
+        if (gptData.addresses) gptData.addresses.forEach((a, i) => combinedSource[`gpt_address_${i}`] = a);
+        if (gptData.dates) Object.entries(gptData.dates).forEach(([k, v]) => combinedSource[`gpt_date_${k}`] = v);
+        if (gptData.numbers) Object.entries(gptData.numbers).forEach(([k, v]) => combinedSource[`gpt_number_${k}`] = v);
+        if (gptData.records?.[0]) {
+          Object.entries(gptData.records[0]).forEach(([k, v]) => {
+            combinedSource[`rec_${k}`] = String(v);
+          });
         }
-      });
 
-      if (localMatchCount > 0) {
-        toast.success(`OCR processed successfully. Mapped ${localMatchCount} details.`);
+        const flatGPT = flattenObject(gptData);
+        Object.entries(flatGPT).forEach(([k, v]) => {
+          combinedSource[`gpt_${k}`] = String(v);
+        });
+
+        setFormData((prev) => {
+          const updated = { ...prev };
+          const sourceKeys = Object.keys(combinedSource);
+
+          const isFieldEmpty = (val) => {
+            if (val === null || val === undefined) return true;
+            const s = String(val).trim();
+            if (s === "") return true;
+            if (Array.isArray(val)) return val.length === 0 || (val.length === 1 && String(val[0]).trim() === "");
+            return false;
+          };
+
+          const getMatch = (synonyms) => {
+            const key = sourceKeys.find(k => synonyms.some(s => {
+              const kLower = k.toLowerCase();
+              const sLower = s.toLowerCase();
+              return kLower === sLower || kLower === `gpt_${sLower}` || kLower.includes(sLower);
+            }));
+            return key ? combinedSource[key] : null;
+          };
+
+          // 1. Map Explicit IDs (Customer, Pickup/Delivery Locations)
+          const customerVal = getMatch(['customer_id', 'customer', 'client']);
+          if (customerVal && isFieldEmpty(updated.customer_id)) {
+            const cust = data.customers?.find(c => c.name?.toLowerCase().includes(String(customerVal).toLowerCase()));
+            if (cust) { updated.customer_id = cust.id; matchCount++; }
+          }
+
+          const pickupLoc = getMatch(['pickup_from', 'shipper', 'origin']);
+          if (pickupLoc && isFieldEmpty(updated.pickup_from)) {
+            const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(pickupLoc).toLowerCase()));
+            if (loc) { updated.pickup_from = loc.id; matchCount++; }
+          }
+
+          const deliveryLoc = getMatch(['delivery', 'consignee', 'destination']);
+          if (deliveryLoc && isFieldEmpty(updated.delivery)) {
+            const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(deliveryLoc).toLowerCase()));
+            if (loc) { updated.delivery = loc.id; matchCount++; }
+          }
+
+          // Format specific units
+          const unitVal = getMatch(['unit']);
+          if (unitVal && isFieldEmpty(updated.unit)) {
+            let uStr = String(unitVal).toUpperCase();
+            if (uStr.includes("LBS") || uStr.includes("POUND")) uStr = "Pounds";
+            else if (uStr.includes("KGS") || uStr.includes("KILOS")) uStr = "KGs";
+            else if (uStr.includes("TON")) uStr = "Tons";
+            updated.unit = [uStr];
+            matchCount++;
+          }
+
+          // 4. Final catch-all & Logic for Arrays/Numbers
+          Object.keys(updated).forEach(field => {
+            const isDefault = ["No", "Regular", "LTL", "Hazmat", "13", "0"].includes(String(updated[field]));
+            if (!isFieldEmpty(updated[field]) && !isDefault && field !== 'loadno') return;
+
+            const val = getMatch([field]);
+            if (val) {
+              if (Array.isArray(updated[field])) {
+                updated[field] = [String(val)];
+              } else if (!isNaN(prev[field]) && typeof prev[field] === 'number') {
+                updated[field] = String(val).replace(/[^\d.]/g, "");
+              } else {
+                updated[field] = String(val).substring(0, 300);
+              }
+              matchCount++;
+            }
+          });
+
+          if (matchCount > 0) {
+            toast.success(`OCR processed successfully. Mapped ${matchCount} details.`);
+          } else {
+            toast.warning("OCR processed but no matching fields found.");
+          }
+
+          return updated;
+        });
+
       } else {
-        toast.warning("OCR processed but no matching fields found.");
+        toast.error("OCR failed or no data found");
       }
-      return updated;
-    });
+    } catch (err) {
+      console.error(err);
+      toast.error("Error processing OCR");
+    } finally {
+      setIsOcrLoading(false);
+    }
   };
 
   let handleonSubmit = async (e) => {
@@ -410,7 +411,7 @@ const Update = () => {
     <div className="content-wrapper">
       <section className="content-header">
         <div className="form-group">
-          <label htmlFor="product_image">Upload Licence / PDF</label>
+          <label htmlFor="product_image">Upload Document (OCR Auto-fill)</label>
           <div className="input-group">
             <input
               type="file"
@@ -418,9 +419,27 @@ const Update = () => {
               name="product_image"
               accept=".png,.jpg,.jpeg,.pdf"
               className="form-control"
-              onChange={(e) => uploadOcrFile(e.target.files[0])}
+              onChange={(e) => setOcrFile(e.target.files[0])}
             />
+            <span className="input-group-btn">
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={handleOcrUpload}
+                disabled={isOcrLoading}
+              >
+                {isOcrLoading ? (
+                  <>
+                    <i className="fa fa-spinner fa-spin" style={{ marginRight: "5px" }}></i>
+                    Processing...
+                  </>
+                ) : (
+                  "Scan & Auto-fill"
+                )}
+              </button>
+            </span>
           </div>
+          <p className="help-block">Select a PDF or Image to auto-populate form fields.</p>
         </div>
         <h1>
           Manage

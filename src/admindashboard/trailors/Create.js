@@ -72,18 +72,20 @@ const Create = () => {
     return res;
   };
 
+  const [isOcrLoading, setIsOcrLoading] = useState(false);
+
   const handleFileChange2 = async () => {
     if (!selectedFile) {
       toast.warning("Please select a file first");
       return;
     }
 
+    setIsOcrLoading(true);
+
     const ocrData = new FormData();
     ocrData.append("file", selectedFile);
     ocrData.append("module_type", "trailer");
-    ocrData.append("prompt", "Extract VIN, Plate Number, Make, Model, Year, and Owner Name from this trailer document.");
-
-    const loadToast = toast.loading("Scanning document...");
+    ocrData.append("prompt", `Extract trailer details into strict JSON exactly matching these keys: {"owner_name":"Company/Owner Name","plate_number":"Plate number","vin_number":"VIN","trailer_type":"Trailer type","make":"Make/Brand","model":"Model","year":"Year","country":"Country","province":"Province/State","color":"Color","registered_weight":"Weight","length":"Length"}. Return ONLY JSON.`);
 
     try {
       const response = await axios.post(
@@ -93,6 +95,7 @@ const Create = () => {
       );
 
       if (response.data.success) {
+        let matchCount = 0;
         const gptData = response.data.gpt_response?.structured_json || {};
         const ocrDataRaw = response.data.data || {};
         const flatOCR = flattenObject(ocrDataRaw);
@@ -102,32 +105,52 @@ const Create = () => {
 
         setFormData(prev => {
           const updated = { ...prev };
+          const sourceKeys = Object.keys(combinedSource);
 
-          // Helper to find value by looking at common keys
-          const findVal = (keys) => {
-            for (const k of keys) {
-              if (combinedSource[k.toLowerCase()]) return combinedSource[k.toLowerCase()];
-            }
-            return "";
+          const isFieldEmpty = (val) => {
+            if (val === null || val === undefined) return true;
+            const s = String(val).trim();
+            if (s === "") return true;
+            return false;
           };
 
-          updated.vin_number = findVal(["vin", "vin_number", "serial_number", "serial"]) || updated.vin_number;
-          updated.plate_number = findVal(["plate", "plate_number", "license_plate"]) || updated.plate_number;
-          updated.make = findVal(["make", "manufacturer"]) || updated.make;
-          updated.model = findVal(["model"]) || updated.model;
-          updated.year = findVal(["year", "model_year"]) || updated.year;
-          updated.owner_name = findVal(["owner", "owner_name", "company_name"]) || updated.owner_name;
+          const getMatch = (synonyms) => {
+            const key = sourceKeys.find(k => synonyms.some(s => {
+              const kLower = k.toLowerCase();
+              const sLower = s.toLowerCase();
+              return kLower === sLower || kLower === `gpt_${sLower}` || kLower.includes(sLower);
+            }));
+            return key ? combinedSource[key] : null;
+          };
+
+          // Final catch-all for mapping
+          Object.keys(updated).forEach(field => {
+            if (!isFieldEmpty(updated[field])) return;
+
+            const val = getMatch([field]);
+            if (val) {
+              updated[field] = String(val);
+              matchCount++;
+            }
+          });
+
+          if (matchCount > 0) {
+            toast.success(`OCR processed successfully. Mapped ${matchCount} details.`);
+          } else {
+            toast.warning("OCR processed but no matching fields found.");
+          }
 
           return updated;
         });
 
-        toast.update(loadToast, { render: "Scan complete! Fields auto-filled.", type: "success", isLoading: false, autoClose: 3000 });
       } else {
-        toast.update(loadToast, { render: "Scan failed. Please fill manually.", type: "error", isLoading: false, autoClose: 3000 });
+        toast.error("OCR failed or no data found");
       }
     } catch (err) {
       console.error("OCR Error:", err);
-      toast.update(loadToast, { render: "Error processing document.", type: "error", isLoading: false, autoClose: 3000 });
+      toast.error("Error processing OCR");
+    } finally {
+      setIsOcrLoading(false);
     }
   };
 
@@ -260,8 +283,17 @@ const Create = () => {
                             className="btn btn-primary"
                             onClick={handleFileChange2}
                             style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                            disabled={isOcrLoading}
                           >
-                            <i className="fa fa-search"></i> Scan & Fill
+                            {isOcrLoading ? (
+                              <>
+                                <i className="fa fa-spinner fa-spin"></i> Processing...
+                              </>
+                            ) : (
+                              <>
+                                <i className="fa fa-search"></i> Scan & Fill
+                              </>
+                            )}
                           </button>
                         </span>
                       </div>

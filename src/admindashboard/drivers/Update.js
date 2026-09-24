@@ -8,6 +8,7 @@ import { BASE_URL } from '../../config';
 const Updatedrivers = () => {
   const [message, setMessage] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isOcrLoading, setIsOcrLoading] = useState(false);
   const [ocrMessage, setOcrMessage] = useState(null);
 
   const flattenObject = (obj, prefix = "", res = {}) => {
@@ -33,7 +34,10 @@ const Updatedrivers = () => {
     const ocrData = new FormData();
     ocrData.append("file", selectedFile);
     ocrData.append("module_type", "driver");
-    ocrData.append("prompt", "Extract all information in JSON format");
+    ocrData.append(
+      "prompt",
+      `Extract driver details into strict JSON exactly matching these keys: {"fname":"First name","lname":"Last name","documentno":"Licence number","address1":"Address line 1","city":"City","state":"State/Province","zip":"Zip","country":"Country","dob":"DOB (YYYY-MM-DD)","expiarydate":"Expiry (YYYY-MM-DD)","issuedate":"Issue date (YYYY-MM-DD)","medical":"Medical due (YYYY-MM-DD)","sex":"Gender"}. Return ONLY JSON.`
+    );
 
     try {
       const response = await axios.post(
@@ -80,51 +84,22 @@ const Updatedrivers = () => {
           };
 
           const getMatch = (synonyms) => {
-            const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
+            const key = sourceKeys.find(k => synonyms.some(s => {
+              const kLower = k.toLowerCase();
+              const sLower = s.toLowerCase();
+              return kLower === sLower || kLower === `gpt_${sLower}` || kLower.includes(sLower);
+            }));
             return key ? combinedSource[key] : null;
           };
 
-          // 1. Map Name (fname, lname)
-          const fullName = getMatch(['rec_name', 'gpt_name_0', 'driver_name', 'names', 'nom']);
-          if (fullName && (isFieldEmpty(updated.fname) || isFieldEmpty(updated.lname))) {
-            const nameStr = String(fullName);
-            if (nameStr.includes(',')) {
-              const parts = nameStr.split(',').map(s => s.trim());
-              if (parts.length >= 2) {
-                updated.lname = parts[0];
-                updated.fname = parts.slice(1).join(" ");
-              }
-            } else {
-              const parts = nameStr.split(' ');
-              if (parts.length > 1) {
-                updated.fname = parts[0];
-                updated.lname = parts.slice(1).join(" ");
-              } else {
-                updated.fname = nameStr;
-              }
-            }
-            matchCount++;
-          }
-
-          // 2. Map Address (address1, city, state, zip, country)
-          const fullAddress = getMatch(['rec_address', 'gpt_address_0', 'driver_address', 'location', 'address', 'address1']);
-          if (fullAddress && isFieldEmpty(updated.address1)) {
-            const parts = String(fullAddress).split(',').map(s => s.trim());
-            if (parts.length >= 1) updated.address1 = parts[0];
-            if (parts.length >= 2) updated.city = parts[1];
-            if (parts.length >= 3) updated.state = parts[2];
-            if (parts.length >= 4) updated.zip = parts[3];
-            if (parts.length >= 5) updated.country = parts[4];
-            matchCount++;
-          }
-
-          // 4. Final catch-all for any other empty fields
+          // Final catch-all for any other empty fields
           Object.keys(updated).forEach(field => {
-            if (field === 'fname' || field === 'lname' || field === 'address1') return;
-            // For Update, we allow overwriting documentno
             if (!isFieldEmpty(updated[field]) && field !== 'documentno') return;
 
-            const val = getMatch([field]);
+            let val = getMatch([field]);
+            
+            if (!val && field === 'documentno') val = getMatch(['licence', 'license']);
+            
             if (val) {
               updated[field] = String(val);
               matchCount++;
@@ -367,8 +342,16 @@ const Updatedrivers = () => {
                         type="button"
                         className="btn btn-success"
                         onClick={handleOcrUpload}
+                        disabled={isOcrLoading}
                       >
-                        Scan & Auto-fill
+                        {isOcrLoading ? (
+                          <>
+                            <i className="fa fa-spinner fa-spin" style={{ marginRight: "5px" }}></i>
+                            Processing...
+                          </>
+                        ) : (
+                          "Scan & Auto-fill"
+                        )}
                       </button>
                     </span>
                   </div>

@@ -44,6 +44,7 @@ const Updateowners = () => {
 
   // OCR Logic
   const [ocrFile, setOcrFile] = useState(null);
+  const [isOcrLoading, setIsOcrLoading] = useState(false);
 
   const flattenObject = (obj, prefix = "", res = {}) => {
     for (let key in obj) {
@@ -64,10 +65,13 @@ const Updateowners = () => {
       alert("Please select a file to upload");
       return;
     }
+    
+    setIsOcrLoading(true);
+    
     const ocrData = new FormData();
     ocrData.append("file", ocrFile);
     ocrData.append("module_type", "owner");
-    ocrData.append("prompt", "Extract all information in JSON format");
+    ocrData.append("prompt", `Extract owner details into strict JSON exactly matching these keys: {"name":"Owner name","company":"Company Name","address1":"Address line 1","city":"City","state":"State/Province","zip":"Zip code","country":"Country","phone":"Phone","email":"Email"}. Return ONLY JSON.`);
 
     try {
       const response = await axios.post(
@@ -85,7 +89,6 @@ const Updateowners = () => {
         // --- UNIVERSAL MAPPING SOURCE GENERATION ---
         const combinedSource = { ...flatOCR };
 
-        // 1. Support legacy synonym paths (gpt_name_0, rec_field, etc.)
         if (gptData.names) gptData.names.forEach((n, i) => combinedSource[`gpt_name_${i}`] = n);
         if (gptData.companies) gptData.companies.forEach((c, i) => combinedSource[`gpt_company_${i}`] = c);
         if (gptData.addresses) gptData.addresses.forEach((a, i) => combinedSource[`gpt_address_${i}`] = a);
@@ -94,7 +97,6 @@ const Updateowners = () => {
           Object.entries(gptData.records[0]).forEach(([k, v]) => combinedSource[`rec_${k}`] = String(v));
         }
 
-        // 2. Recursive flattening of everything in GPT response for maximum resilience
         const flatGPT = flattenObject(gptData);
         Object.entries(flatGPT).forEach(([k, v]) => {
           combinedSource[`gpt_${k}`] = String(v);
@@ -113,7 +115,11 @@ const Updateowners = () => {
           };
 
           const getMatch = (synonyms) => {
-            const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
+            const key = sourceKeys.find(k => synonyms.some(s => {
+              const kLower = k.toLowerCase();
+              const sLower = s.toLowerCase();
+              return kLower === sLower || kLower === `gpt_${sLower}` || kLower.includes(sLower);
+            }));
             return key ? combinedSource[key] : null;
           };
 
@@ -134,31 +140,12 @@ const Updateowners = () => {
           const fullAddress = getMatch(['rec_address', 'gpt_address_0', 'addresses', 'location', 'address', 'address1']);
           if (fullAddress && isFieldEmpty(updated.address1)) {
             const parts = String(fullAddress).split(',').map(s => s.trim());
-            if (parts.length >= 1) updated.address1 = parts[0]; // Changed to address1
+            if (parts.length >= 1) updated.address1 = parts[0]; 
             if (parts.length >= 2) updated.city = parts[1];
-            if (parts.length >= 3) updated.state = parts[2]; // Changed to state
-            if (parts.length >= 4) updated.zip = parts[3]; // Changed to zip
+            if (parts.length >= 3) updated.state = parts[2]; 
+            if (parts.length >= 4) updated.zip = parts[3]; 
             matchCount++;
           }
-
-          // 3. Specific Field Mapping
-          const fieldMap = {
-            db: ['rec_date_of_birth', 'gpt_date_dob', 'birth', 'ddn'],
-            email: ['email', 'courriel'],
-            phone: ['phone', 'mobile'],
-            zip: ['postal', 'zip', 'pcode'] // Changed to zip
-          };
-
-          Object.entries(fieldMap).forEach(([field, synonyms]) => {
-            if (field === 'address1' || field === 'name' || field === 'company') return; // Changed to address1
-            if (updated[field] && updated[field] !== "") return;
-
-            const val = getMatch(synonyms);
-            if (val) {
-              updated[field] = val;
-              matchCount++;
-            }
-          });
 
           // 4. Final catch-all
           Object.keys(updated).forEach(field => {
@@ -172,20 +159,23 @@ const Updateowners = () => {
             }
           });
 
+          if (matchCount > 0) {
+            toast.success(`OCR processed successfully. Updated ${matchCount} fields.`);
+          } else {
+            toast.warning("OCR processed but no matching fields found.");
+          }
+
           return updated;
         });
 
-        if (matchCount > 0) {
-          toast.success(`OCR processed successfully. Updated ${matchCount} fields.`);
-        } else {
-          toast.warning("OCR processed but no matching fields found.");
-        }
       } else {
         toast.error("OCR failed or no data found");
       }
     } catch (err) {
       console.error(err);
       toast.error("Error processing OCR");
+    } finally {
+      setIsOcrLoading(false);
     }
   };
 
@@ -318,8 +308,16 @@ const Updateowners = () => {
                         type="button"
                         className="btn btn-success"
                         onClick={handleOcrUpload}
+                        disabled={isOcrLoading}
                       >
-                        Scan & Auto-fill
+                        {isOcrLoading ? (
+                          <>
+                            <i className="fa fa-spinner fa-spin" style={{ marginRight: "5px" }}></i>
+                            Processing...
+                          </>
+                        ) : (
+                          "Scan & Auto-fill"
+                        )}
                       </button>
                     </span>
                   </div>

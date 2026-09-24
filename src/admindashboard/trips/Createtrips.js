@@ -10,12 +10,16 @@ const Createtrips = () => {
   const navigate = useNavigate();
   const [, setOcrRaw] = useState(null);
   const [ocrFile, setOcrFile] = useState(null); // OCR State
+  const [isOcrLoading, setIsOcrLoading] = useState(false);
 
   const handleOcrUpload = async () => {
     if (!ocrFile) {
       toast.error("Please select a file to upload");
       return;
     }
+    
+    setIsOcrLoading(true);
+    
     const ocrData = new FormData();
     ocrData.append("file", ocrFile);
     ocrData.append("module_type", "trip");
@@ -27,13 +31,13 @@ const Createtrips = () => {
   "pickup_from": "Pickup company or location name",
   "delivery_address": "Full delivery or consignee address",
   "delivery": "Delivery company or location name",
-  "pickupdate": "Pickup date",
-  "deliverydate": "Delivery date",
-  "rate": "Rate or cost",
-  "gross_amount": "Total gross amount",
+  "pickupdate": "Pickup date in exactly YYYY-MM-DD format",
+  "deliverydate": "Delivery date in exactly YYYY-MM-DD format",
+  "rate": "Rate or cost as a pure number (no currency symbols)",
+  "gross_amount": "Total gross amount as a pure number",
   "trailortype": "Trailer type if mentioned",
   "commodity": "Commodity description",
-  "weight": "Weight",
+  "weight": "Weight as a pure number",
   "unit": "Weight unit (LBS/KGS)"
 }
 Return ONLY valid JSON and do not include markdown formatting or extra text.`;
@@ -55,6 +59,8 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
     } catch (err) {
       console.error(err);
       toast.error("Error processing OCR file");
+    } finally {
+      setIsOcrLoading(false);
     }
   };
 
@@ -336,7 +342,6 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
   const applyOCRToAllFields = (ocrResponse) => {
     if (!ocrResponse) return;
 
-    let matchCount = 0;
     const gptData = ocrResponse.gpt_response?.structured_json || {};
     const ocrDataRaw = ocrResponse.data || {};
     const flatOCR = flattenObject(ocrDataRaw);
@@ -344,7 +349,6 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
     // --- UNIVERSAL MAPPING SOURCE GENERATION ---
     const combinedSource = { ...flatOCR };
 
-    // 1. Support legacy synonym paths (gpt_name_0, rec_field, etc.)
     if (gptData.names) gptData.names.forEach((n, i) => combinedSource[`gpt_name_${i}`] = n);
     if (gptData.addresses) gptData.addresses.forEach((a, i) => combinedSource[`gpt_address_${i}`] = a);
     if (gptData.dates) Object.entries(gptData.dates).forEach(([k, v]) => combinedSource[`gpt_date_${k}`] = v);
@@ -353,21 +357,21 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       Object.entries(gptData.records[0]).forEach(([k, v]) => combinedSource[`rec_${k}`] = String(v));
     }
 
-    // 2. Recursive flattening of everything in GPT response for maximum resilience
     const flatGPT = flattenObject(gptData);
     Object.entries(flatGPT).forEach(([k, v]) => {
       combinedSource[`gpt_${k}`] = String(v);
     });
 
+    const sourceKeys = Object.keys(combinedSource);
+    const getMatch = (synonyms) => {
+      const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
+      return key ? combinedSource[key] : null;
+    };
+
+    let localMatchCount = 0;
+
     setFormData((prev) => {
       const updated = { ...prev };
-      const sourceKeys = Object.keys(combinedSource);
-      let localMatchCount = 0;
-
-      const getMatch = (synonyms) => {
-        const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
-        return key ? combinedSource[key] : null;
-      };
 
       const isFieldEmpty = (val) => {
         if (val === null || val === undefined) return true;
@@ -386,12 +390,29 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
       const salesmanVal = getMatch(['rec_name', 'gpt_name_0', 'salesman', 'names', 'driver_name']);
       if (salesmanVal && isFieldEmpty(updated.salesman)) {
-        updated.salesman = String(salesmanVal);
+        const sales = data.customers?.find(c => c.name?.toLowerCase().includes(String(salesmanVal).toLowerCase()));
+        if (sales) {
+          updated.salesman = sales.id;
+        } else {
+          updated.salesman = String(salesmanVal);
+        }
+        localMatchCount++;
+      }
+
+      // Explicitly map Trailer Type for the Dropdown (requires ID)
+      const trailerVal = getMatch(['trailortype', 'trailer']);
+      if (trailerVal && isFieldEmpty(updated.trailortype)) {
+        const trailer = data.trailors?.find(t => t.trailortype?.toLowerCase().includes(String(trailerVal).toLowerCase()));
+        if (trailer) {
+          updated.trailortype = trailer.id;
+        } else {
+          updated.trailortype = String(trailerVal);
+        }
         localMatchCount++;
       }
 
       // 2. Map Addresses & Locations
-      const pickupAddr = getMatch(['rec_pickup_address', 'gpt_address_0', 'addresses', 'pickup_addr', 'shipper_address', 'origin_address', 'address']);
+      const pickupAddr = getMatch(['rec_pickup_address', 'gpt_address_0', 'addresses', 'pickup_addr', 'shipper_address', 'origin_address', 'address', 'pickup_address']);
       if (pickupAddr && isFieldEmpty(updated.pickup_address)) {
         updated.pickup_address = String(pickupAddr);
         localMatchCount++;
@@ -399,12 +420,11 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
       const pickupLoc = getMatch(['shipper', 'ship_from', 'pickup_loc', 'origin', 'pickup_from']);
       if (pickupLoc && isFieldEmpty(updated.pickup_from)) {
-        // Find ID in data.locations
         const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(pickupLoc).toLowerCase()));
         if (loc) { updated.pickup_from = loc.id; localMatchCount++; }
       }
 
-      const deliveryAddr = getMatch(['rec_delivery_address', 'gpt_address_1', 'addresses', 'delivery_addr', 'consignee_address', 'destination_address']);
+      const deliveryAddr = getMatch(['rec_delivery_address', 'gpt_address_1', 'addresses', 'delivery_addr', 'consignee_address', 'destination_address', 'delivery_address']);
       if (deliveryAddr && isFieldEmpty(updated.delivery_address)) {
         updated.delivery_address = String(deliveryAddr);
         localMatchCount++;
@@ -417,15 +437,51 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       }
 
       // 3. Map Dates
-      const pickupDate = getMatch(['rec_pickup_date', 'gpt_date_pickup', 'pickup_date', 'iss']);
+      const pickupDate = getMatch(['rec_pickup_date', 'gpt_date_pickup', 'pickup_date', 'pickupdate']);
       if (pickupDate && isFieldEmpty(updated.pickupdate)) {
         updated.pickupdate = String(pickupDate);
         localMatchCount++;
       }
 
-      const deliveryDate = getMatch(['rec_delivery_date', 'gpt_date_delivery', 'delivery_date', 'exp']);
+      const deliveryDate = getMatch(['rec_delivery_date', 'gpt_date_delivery', 'delivery_date', 'deliverydate']);
       if (deliveryDate && isFieldEmpty(updated.deliverydate)) {
         updated.deliverydate = String(deliveryDate);
+        localMatchCount++;
+      }
+
+      // Explicitly map Rate and Gross Amount (since they are not in the default formData keys)
+      const rateVal = getMatch(['rate', 'cost']);
+      if (rateVal && isFieldEmpty(updated.rate)) {
+        updated.rate = String(rateVal).replace(/[^\d.]/g, "");
+        localMatchCount++;
+      }
+
+      const grossVal = getMatch(['gross_amount', 'total_amount', 'grossamount']);
+      if (grossVal && isFieldEmpty(updated.gross_amount)) {
+        updated.gross_amount = String(grossVal).replace(/[^\d.]/g, "");
+        localMatchCount++;
+      }
+
+      // Explicitly map Commodity, Weight, and Unit (Handle specific unit mappings like LBS -> Pounds)
+      const commodityVal = getMatch(['commodity', 'product', 'freight_specifics']);
+      if (commodityVal && isFieldEmpty(updated.commodity)) {
+        updated.commodity = [String(commodityVal)];
+        localMatchCount++;
+      }
+
+      const weightVal = getMatch(['weight']);
+      if (weightVal && isFieldEmpty(updated.weight)) {
+        updated.weight = [String(weightVal).replace(/[^\d.]/g, "")];
+        localMatchCount++;
+      }
+
+      const unitVal = getMatch(['unit', 'weight_unit']);
+      if (unitVal && isFieldEmpty(updated.unit)) {
+        let uStr = String(unitVal).toUpperCase();
+        if (uStr.includes("LBS") || uStr.includes("POUND")) uStr = "Pounds";
+        else if (uStr.includes("KGS") || uStr.includes("KILOS")) uStr = "KGs";
+        else if (uStr.includes("TON")) uStr = "Tons";
+        updated.unit = [uStr];
         localMatchCount++;
       }
 
@@ -447,14 +503,45 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
         }
       });
 
-      if (localMatchCount > 0) {
-        toast.success(`OCR processed successfully. Mapped ${localMatchCount} details.`);
-      } else {
-        toast.warning("OCR processed but no matching fields found.");
-      }
-
       return updated;
     });
+
+    // Update shipments state separately so the UI correctly reflects commodities
+    const commodityVal = getMatch(['commodity']);
+    const weightVal = getMatch(['weight']);
+    const unitVal = getMatch(['unit']);
+    const trailerVal = getMatch(['trailortype', 'trailer']);
+    
+    if (commodityVal || weightVal || unitVal || trailerVal) {
+      setShipments(prevShipments => {
+        const updatedShipments = [...prevShipments];
+        if (commodityVal) {
+            updatedShipments[0].commodity = [String(commodityVal)];
+            localMatchCount++;
+        }
+        if (weightVal) {
+            updatedShipments[0].weight = [String(weightVal)];
+            localMatchCount++;
+        }
+        if (unitVal) {
+            updatedShipments[0].unit = [String(unitVal)];
+            localMatchCount++;
+        }
+        if (trailerVal) {
+            updatedShipments[0].trailortype = String(trailerVal);
+            localMatchCount++;
+        }
+        return updatedShipments;
+      });
+    }
+
+    setTimeout(() => {
+        if (localMatchCount > 0) {
+          toast.success(`OCR processed successfully. Mapped ${localMatchCount} details.`);
+        } else {
+          toast.warning("OCR processed but no matching fields found.");
+        }
+    }, 500);
   };
 
 
@@ -672,8 +759,16 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                 type="button"
                 className="btn btn-success"
                 onClick={handleOcrUpload}
+                disabled={isOcrLoading}
               >
-                Scan & Auto-fill
+                {isOcrLoading ? (
+                  <>
+                    <i className="fa fa-spinner fa-spin" style={{ marginRight: "5px" }}></i>
+                    Processing...
+                  </>
+                ) : (
+                  "Scan & Auto-fill"
+                )}
               </button>
             </span>
           </div>

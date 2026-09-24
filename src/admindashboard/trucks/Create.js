@@ -82,18 +82,20 @@ const Createtrucks = () => {
     return res;
   };
 
+  const [isOcrLoading, setIsOcrLoading] = useState(false);
+
   const handleFileChange2 = async () => {
     if (!selectedFile) {
       toast.warning("Please select a file first");
       return;
     }
 
+    setIsOcrLoading(true);
+
     const ocrData = new FormData();
     ocrData.append("file", selectedFile);
     ocrData.append("module_type", "truck");
-    ocrData.append("prompt", "Extract VIN, Plate Number, Make, Model, Year, and Unit Number from this truck document.");
-
-    const loadToast = toast.loading("Scanning document...");
+    ocrData.append("prompt", `Extract truck details into strict JSON exactly matching these keys: {"name":"Company/Owner Name","plateno":"Plate number","unitno":"Unit number","vin":"VIN","make":"Make/Brand","model":"Model","year":"Year","country":"Country","state":"State","color":"Color","weight":"Weight","length":"Length"}. Return ONLY JSON.`);
 
     try {
       const response = await axios.post(
@@ -103,6 +105,7 @@ const Createtrucks = () => {
       );
 
       if (response.data.success) {
+        let matchCount = 0;
         const gptData = response.data.gpt_response?.structured_json || {};
         const ocrDataRaw = response.data.data || {};
         const flatOCR = flattenObject(ocrDataRaw);
@@ -114,30 +117,50 @@ const Createtrucks = () => {
           const updated = { ...prev };
           const sourceKeys = Object.keys(combinedSource);
 
+          const isFieldEmpty = (val) => {
+            if (val === null || val === undefined) return true;
+            const s = String(val).trim();
+            if (s === "") return true;
+            return false;
+          };
+
           const getMatch = (synonyms) => {
-            const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
+            const key = sourceKeys.find(k => synonyms.some(s => {
+              const kLower = k.toLowerCase();
+              const sLower = s.toLowerCase();
+              return kLower === sLower || kLower === `gpt_${sLower}` || kLower.includes(sLower);
+            }));
             return key ? combinedSource[key] : null;
           };
 
-          // Mapping
-          updated.vin = getMatch(['vin', 'vehicle_identification']) || updated.vin;
-          updated.plateno = getMatch(['plate', 'license_plate']) || updated.plateno;
-          updated.make = getMatch(['make', 'brand', 'constructor']) || updated.make;
-          updated.model = getMatch(['model', 'variant']) || updated.model;
-          updated.year = getMatch(['year', 'annee']) || updated.year;
-          updated.unitno = getMatch(['unit', 'truck_number']) || updated.unitno;
-          updated.name = getMatch(['owner', 'company']) || updated.name;
+          // Final catch-all for mapping
+          Object.keys(updated).forEach(field => {
+            if (!isFieldEmpty(updated[field])) return;
+
+            const val = getMatch([field]);
+            if (val) {
+              updated[field] = String(val);
+              matchCount++;
+            }
+          });
+
+          if (matchCount > 0) {
+            toast.success(`OCR processed successfully. Mapped ${matchCount} details.`);
+          } else {
+            toast.warning("OCR processed but no matching fields found.");
+          }
 
           return updated;
         });
 
-        toast.update(loadToast, { render: "Scan complete! Fields auto-filled.", type: "success", isLoading: false, autoClose: 3000 });
       } else {
-        toast.update(loadToast, { render: "Scan failed. Please fill manually.", type: "error", isLoading: false, autoClose: 3000 });
+        toast.error("OCR failed or no data found");
       }
     } catch (err) {
       console.error("OCR Error:", err);
-      toast.update(loadToast, { render: "Error processing document.", type: "error", isLoading: false, autoClose: 3000 });
+      toast.error("Error processing OCR");
+    } finally {
+      setIsOcrLoading(false);
     }
   };
 
@@ -243,8 +266,17 @@ const Createtrucks = () => {
                             className="btn btn-primary d-flex align-items-center"
                             onClick={handleFileChange2}
                             style={{ gap: '5px' }}
+                            disabled={isOcrLoading}
                           >
-                            <i className="fa fa-search"></i> Scan & Fill
+                            {isOcrLoading ? (
+                              <>
+                                <i className="fa fa-spinner fa-spin"></i> Processing...
+                              </>
+                            ) : (
+                              <>
+                                <i className="fa fa-search"></i> Scan & Fill
+                              </>
+                            )}
                           </button>
                         </span>
                       </div>

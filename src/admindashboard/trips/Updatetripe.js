@@ -207,12 +207,39 @@ const Updatetrip = () => {
   }, [id])
 
   const [ocrRaw, setOcrRaw] = useState(null);
+  const [ocrFile, setOcrFile] = useState(null);
+  const [isOcrLoading, setIsOcrLoading] = useState(false);
 
-  const uploadOcrFile = async (file) => {
+  const handleOcrUpload = async () => {
+    if (!ocrFile) {
+      toast.error("Please select a file to upload");
+      return;
+    }
+    
+    setIsOcrLoading(true);
+    
     const form = new FormData();
-    form.append("file", file);
+    form.append("file", ocrFile);
     form.append("module_type", "trip");
-    form.append("prompt", "Extract all information in JSON format");
+    const structuredPrompt = `Extract the trip information into a strict JSON format with the following keys exactly:
+{
+  "loadno": "Load or reference number",
+  "salesman": "Salesman or driver name",
+  "pickup_address": "Full pickup or shipper address",
+  "pickup_from": "Pickup company or location name",
+  "delivery_address": "Full delivery or consignee address",
+  "delivery": "Delivery company or location name",
+  "pickupdate": "Pickup date in exactly YYYY-MM-DD format",
+  "deliverydate": "Delivery date in exactly YYYY-MM-DD format",
+  "rate": "Rate or cost as a pure number (no currency symbols)",
+  "gross_amount": "Total gross amount as a pure number",
+  "trailortype": "Trailer type if mentioned",
+  "commodity": "Commodity description",
+  "weight": "Weight as a pure number",
+  "unit": "Weight unit (LBS/KGS)"
+}
+Return ONLY valid JSON and do not include markdown formatting or extra text.`;
+    form.append("prompt", structuredPrompt);
 
     try {
       const res = await axios.post(
@@ -224,9 +251,14 @@ const Updatetrip = () => {
       if (res.data?.success) {
         setOcrRaw(res.data.data);
         applyOCRToAllFields(res.data);
+      } else {
+        toast.error("OCR failed or no data found");
       }
     } catch (e) {
       console.error("OCR failed", e);
+      toast.error("Error processing OCR");
+    } finally {
+      setIsOcrLoading(false);
     }
   };
 
@@ -423,7 +455,7 @@ const Updatetrip = () => {
     <div className="content-wrapper">
       <section className="content-header">
         <div className="form-group">
-          <label htmlFor="product_image">Upload Licence / PDF</label>
+          <label htmlFor="product_image">Upload Licence / PDF (OCR Auto-fill)</label>
           <div className="input-group">
             <input
               type="file"
@@ -431,9 +463,27 @@ const Updatetrip = () => {
               name="product_image"
               accept=".png,.jpg,.jpeg,.pdf"
               className="form-control"
-              onChange={(e) => uploadOcrFile(e.target.files[0])}
+              onChange={(e) => setOcrFile(e.target.files[0])}
             />
+            <span className="input-group-btn">
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={handleOcrUpload}
+                disabled={isOcrLoading}
+              >
+                {isOcrLoading ? (
+                  <>
+                    <i className="fa fa-spinner fa-spin" style={{ marginRight: "5px" }}></i>
+                    Processing...
+                  </>
+                ) : (
+                  "Scan & Auto-fill"
+                )}
+              </button>
+            </span>
           </div>
+          <p className="help-block">Select a PDF or Image to auto-populate form fields.</p>
         </div>
         <h1>
           Manage
