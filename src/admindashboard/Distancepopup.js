@@ -1,57 +1,58 @@
-import axios from "axios";
 import React, { useState, useEffect, useRef } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-
-const api_key = process.env.REACT_APP_TRIMBLE_API_KEY;
+import { GoogleMap, useJsApiLoader, Polyline, Marker } from '@react-google-maps/api';
+import MapService from "../services/MapService";
+import { GOOGLE_MAPS_LIBRARIES } from "../mapConfig";
 
 const expenseOptions = [
-  "Layover",
-  "Detention",
-  "Driver Assist",
-  "Driver Load/Unload",
-  "Driver Count",
-  "TONU (Truck Ordered Not Used)",
-  "Redelivery",
-  "Reconsignment / Diversion",
-  "Stop-Off Charges (Multiple Stops)",
-  "Deadhead / Empty Miles",
-  "Tarping Fee (Flatbed)",
-  "Lumper Fee",
-  "Liftgate Service",
-  "Pallet Jack Service",
-  "Inside Delivery",
-  "Residential Delivery",
-  "Limited Access Delivery",
-  "Border Crossing Fee",
-  "Customs Clearance Fee",
-  "Hazardous Materials (HAZMAT) Handling",
-  "Refrigeration (Reefer Fuel Surcharge)",
-  "Clean Truck / Washout Fee",
-  "Storage / Warehouse Fee",
-  "Border Wait Time",
-  "Inbound Handling Fee",
-  "Appointment Scheduling Fee",
-  "Escort / Pilot Car Fee (Oversize Loads)",
-  "Permits (Oversize / Overweight)",
-  "Scale Ticket Fee",
-  "Toll Reimbursement",
-  "Ferry Fee",
-  "Fuel Surcharge",
-  "Excess Mileage Fee",
-  "Parking Fee",
-  "After-Hours / Weekend Delivery",
-  "Holiday Delivery Surcharge",
+  "Layover", "Detention", "Driver Assist", "Driver Load/Unload", "Driver Count",
+  "TONU (Truck Ordered Not Used)", "Redelivery", "Reconsignment / Diversion",
+  "Stop-Off Charges (Multiple Stops)", "Deadhead / Empty Miles", "Tarping Fee (Flatbed)",
+  "Lumper Fee", "Liftgate Service", "Pallet Jack Service", "Inside Delivery",
+  "Residential Delivery", "Limited Access Delivery", "Border Crossing Fee",
+  "Customs Clearance Fee", "Hazardous Materials (HAZMAT) Handling",
+  "Refrigeration (Reefer Fuel Surcharge)", "Clean Truck / Washout Fee",
+  "Storage / Warehouse Fee", "Border Wait Time", "Inbound Handling Fee",
+  "Appointment Scheduling Fee", "Escort / Pilot Car Fee (Oversize Loads)",
+  "Permits (Oversize / Overweight)", "Scale Ticket Fee", "Toll Reimbursement",
+  "Ferry Fee", "Fuel Surcharge", "Excess Mileage Fee", "Parking Fee",
+  "After-Hours / Weekend Delivery", "Holiday Delivery Surcharge",
 ];
 
+const containerStyle = {
+  width: '100%',
+  height: '100%',
+  minHeight: '600px',
+  borderRadius: '8px',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+};
+
+const center = {
+  lat: 43.710513,
+  lng: -79.828695
+};
+
 const Distancepopup = ({ places1, places2, places3 = [] }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  useEffect(() => {
+    const checkGoogle = setInterval(() => {
+      if (window.google && window.google.maps) {
+        setIsLoaded(true);
+        clearInterval(checkGoogle);
+      }
+    }, 100);
+    return () => clearInterval(checkGoogle);
+  }, []);
+
   const [place1, setPlace1] = useState(places1 || "");
   const [place2, setPlace2] = useState(places2 || "");
   const [place3, setPlace3] = useState(Array.isArray(places3) ? places3 : []);
-  const [distance, setDistance] = useState(null);
+  const [provider, setProvider] = useState('google');
+  const [routeInfo, setRouteInfo] = useState(null);
   const [error, setError] = useState(null);
-  const [map, setMap] = useState(null);
-  const [route, setRoute] = useState(null);
-  const mapContainerRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [routePath, setRoutePath] = useState([]);
+  const [markers, setMarkers] = useState([]);
 
   // Expenses state
   const [expenses, setExpenses] = useState([{ type: "", amount: "" }]);
@@ -71,190 +72,167 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
     setExpenses(newExpenses);
   };
 
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://maps-sdk.trimblemaps.com/v3/trimblemaps-3.17.0.js";
-    script.async = true;
-    document.body.appendChild(script);
-
-    script.onload = () => {
-      const TrimbleMaps = window.TrimbleMaps;
-      TrimbleMaps.APIKey = api_key;
-
-      const mapInstance = new TrimbleMaps.Map({
-        container: mapContainerRef.current,
-        style: TrimbleMaps.Common.Style.TRANSPORTATION,
-        center: new TrimbleMaps.LngLat(-79.828695, 43.710513),
-        zoom: 8,
-      });
-
-      setMap(mapInstance);
-    };
-
-    script.onerror = () => {
-      setError("Failed to load Trimble Maps SDK");
-    };
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
-  const searchPlace = async (query) => {
-    const searchEndpoint = `https://singlesearch.alk.com/NA/api/search?query=${encodeURIComponent(query)}`;
+  const calculateDistance = async () => {
+    if (!place1 || !place2) return;
+    setError(null);
+    setRouteInfo(null);
+    setIsLoading(true);
 
     try {
-      const response = await axios.get(searchEndpoint, {
-        headers: {
-          authorization: api_key,
-          accept: "application/json",
-        },
+      // 1. Geocode all locations using MapService
+      const coords1 = await MapService.geocode(place1);
+      const coords2 = await MapService.geocode(place2);
+      
+      const coords3 = [];
+      for (let stop of place3) {
+        if (stop.location) {
+           const c = await MapService.geocode(stop.location);
+           coords3.push(c);
+        }
+      }
+
+      // 2. Fetch Route Data
+      const waypoints = coords3.map(c => ({ lat: parseFloat(c.lat), lng: parseFloat(c.lng) }));
+      const origin = { lat: parseFloat(coords1.lat), lng: parseFloat(coords1.lng) };
+      const destination = { lat: parseFloat(coords2.lat), lng: parseFloat(coords2.lng) };
+
+      const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : null;
+      const routeResult = await MapService.getRoute(origin, destination, waypoints, vehicleProfile);
+      
+      let extractedToll = 0;
+      let hasTolls = false;
+      
+      // Attempt to extract toll from various common PTV / Trimble formats
+      if (routeResult.tolls?.amount !== undefined) { extractedToll = routeResult.tolls.amount; hasTolls = true; }
+      else if (routeResult.tolls?.costs?.prices) {
+        const usdPrice = routeResult.tolls.costs.prices.find(p => p.currency === 'USD');
+        extractedToll = usdPrice ? usdPrice.price : (routeResult.tolls.costs.prices[0]?.price || 0);
+        hasTolls = true;
+      }
+      else if (routeResult.toll?.amount !== undefined) { extractedToll = routeResult.toll.amount; hasTolls = true; }
+      else if (routeResult.tollPrice !== undefined) { extractedToll = routeResult.tollPrice; hasTolls = true; }
+      else if (routeResult.tolls?.cost !== undefined) { extractedToll = routeResult.tolls.cost; hasTolls = true; }
+      else if (typeof routeResult.tolls === 'number') { extractedToll = routeResult.tolls; hasTolls = true; }
+      else if (routeResult.toll?.costs?.length > 0) { extractedToll = routeResult.toll.costs[0].amount || 0; hasTolls = true; }
+
+      // Log routeResult to console so user can inspect if tolls are missing
+      console.log("Map Routing Response:", routeResult);
+
+      setRouteInfo({
+        distance: routeResult.distance,
+        distanceUnit: routeResult.distanceUnit,
+        durationText: routeResult.durationText,
+        durationHours: (routeResult.duration / 3600).toFixed(2),
+        cost: extractedToll,
+        tollAvailable: hasTolls || routeResult.tolls?.tollAvailable !== false
       });
 
-      if (response.status === 200 && response.data.Locations?.length > 0) {
-        const { Lat, Lon } = response.data.Locations[0].Coords;
-        return { lat: Lat, lon: Lon };
-      } else {
-        throw new Error(`No valid locations found for ${query}`);
-      }
-    } catch (error) {
-      setError(`Failed to fetch coordinates for ${query}`);
-      return null;
-    }
-  };
-
-  const calculateDistance = async () => {
-    setError(null);
-    setDistance(null);
-
-    const coords1 = await searchPlace(place1);
-    const coords2 = await searchPlace(place2);
-    const coords3 = await Promise.all(
-      place3.map(async (stop) => await searchPlace(stop.location))
-    );
-
-    if (coords1 && coords2) {
-      let stops = `${coords1.lon},${coords1.lat};`;
-
-      if (coords3.length > 0) {
-        stops += coords3.map((c) => `${c.lon},${c.lat}`).join(";") + ";";
-      }
-
-      stops += `${coords2.lon},${coords2.lat}`;
-
-      const url = `https://pcmiler.alk.com/apis/rest/v1.0/Service.svc/route/routeReports?stops=${stops}&reports=Mileage&openBorders=true`;
-
-      try {
-        const response = await axios.get(url, {
-          headers: {
-            authorization: api_key,
-            accept: "application/json",
-          },
-        });
-
-        if (response.status === 200) {
-          setDistance(response.data);
-
-          if (map) {
-            const TrimbleMaps = window.TrimbleMaps;
-            if (route) route.remove();
-
-            const newRoute = new TrimbleMaps.Route({
-              routeId: "myRoute",
-              stops: [
-                new TrimbleMaps.LngLat(coords1.lon, coords1.lat),
-                ...coords3.map((c) => new TrimbleMaps.LngLat(c.lon, c.lat)),
-                new TrimbleMaps.LngLat(coords2.lon, coords2.lat),
-              ],
-            });
-
-            newRoute.addTo(map);
-            setRoute(newRoute);
-          }
+      // 3. Render Route path
+      let parsedPath = [];
+      if (routeResult.path) {
+        if (typeof routeResult.path === 'string') {
+          try { parsedPath = JSON.parse(routeResult.path); } catch (e) {}
+        } else if (Array.isArray(routeResult.path)) {
+          parsedPath = routeResult.path;
         }
-      } catch (error) {
-        setError("Failed to fetch route distance");
       }
+      
+      if (parsedPath.length > 0) {
+        setRoutePath(parsedPath.map(p => ({ 
+          lat: parseFloat(p.lat !== undefined ? p.lat : (p[0] !== undefined ? p[0] : p.latitude)), 
+          lng: parseFloat(p.lng !== undefined ? p.lng : (p[1] !== undefined ? p[1] : p.longitude)) 
+        })));
+      } else {
+        // Fallback to straight lines if path geometry isn't provided
+        setRoutePath([origin, ...waypoints, destination]);
+      }
+
+      setMarkers([origin, ...waypoints, destination]);
+
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Failed to calculate route or fetch coordinates");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (places1 && places2 && map) {
+    if (places1 && places2 && isLoaded) {
       const timeoutId = setTimeout(() => {
         calculateDistance();
       }, 900);
       return () => clearTimeout(timeoutId);
     }
-  }, [places1, places2, map]);
+  }, [places1, places2, isLoaded]);
 
-  // Handle drag end
   const handleDragEnd = (result) => {
     if (!result.destination) return;
     const items = Array.from(place3);
     const [reordered] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reordered);
     setPlace3(items);
-    calculateDistance(); // re-calc after reorder
+    calculateDistance();
   };
 
   return (
-    <div>
-      <h1>Distance Calculator</h1>
-
-      <button onClick={calculateDistance} className="btn btn-primary">
-        Calculate Distance
-      </button>
+    <div className="container-fluid py-3">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>Distance & Expenses Calculator</h1>
+        <div className="d-flex align-items-center gap-2">
+          <label className="fw-bold m-0">Map Provider:</label>
+          <select className="form-select form-select-sm w-auto" value={provider} onChange={(e) => setProvider(e.target.value)}>
+            <option value="google">Google Maps (Car)</option>
+            <option value="ptv">PTV Maps (Truck)</option>
+          </select>
+        </div>
+      </div>
 
       <div className="row">
-        <div className="col-md-3">
-          {/* Input fields for places */}
+        <div className="col-md-4">
           <div>
-            <label>
-              To place:
+            <label className="w-100 fw-bold">
+              Origin:
               <input
                 type="text"
-                className="form-control"
+                className="form-control mt-1"
                 value={place1}
                 onChange={(e) => setPlace1(e.target.value)}
               />
             </label>
           </div>
-          <div>
-            <label>
-              From place:
+          <div className="mt-3">
+            <label className="w-100 fw-bold">
+              Destination:
               <input
                 type="text"
-                className="form-control"
+                className="form-control mt-1"
                 value={place2}
                 onChange={(e) => setPlace2(e.target.value)}
               />
             </label>
           </div>
 
-          {/* Drag-and-drop stops */}
-          <div>
-            <label>
+          <div className="mt-4">
+            <label className="w-100 fw-bold">
               Additional Stops (Drag to Reorder):
               <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="stops">
                   {(provided) => (
-                    <div {...provided.droppableProps} ref={provided.innerRef}>
+                    <div {...provided.droppableProps} ref={provided.innerRef} className="mt-2">
                       {place3.map((stop, index) => (
-                        <Draggable
-                          key={index}
-                          draggableId={`stop-${index}`}
-                          index={index}
-                        >
+                        <Draggable key={`stop-${index}`} draggableId={`stop-${index}`} index={index}>
                           {(provided) => (
                             <div
-                              className="mb-2 d-flex"
+                              className="mb-2 d-flex align-items-center bg-white border p-1 rounded"
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
+                              <span className="me-2 text-muted px-2">☰</span>
                               <input
                                 type="text"
-                                className="form-control"
+                                className="form-control form-control-sm"
                                 value={stop.location}
                                 onChange={(e) => {
                                   const newStops = [...place3];
@@ -262,6 +240,16 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
                                   setPlace3(newStops);
                                 }}
                               />
+                              <button 
+                                className="btn btn-danger btn-sm ms-2"
+                                onClick={() => {
+                                  const newStops = [...place3];
+                                  newStops.splice(index, 1);
+                                  setPlace3(newStops);
+                                }}
+                              >
+                                &times;
+                              </button>
                             </div>
                           )}
                         </Draggable>
@@ -272,95 +260,114 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
                 </Droppable>
               </DragDropContext>
               <button
-                className="btn btn-success btn-sm mt-2"
-                onClick={() =>
-                  setPlace3([
-                    ...place3,
-                    { stoptype: "Intermediate", location: "" },
-                  ])
-                }
+                className="btn btn-success btn-sm mt-2 w-100"
+                onClick={() => setPlace3([...place3, { stoptype: "Intermediate", location: "" }])}
               >
-                Add Stop
+                + Add Stop
               </button>
             </label>
           </div>
 
-          {/* Expenses Section */}
-          <h3 className="mt-4">Expenses</h3>
+          <button onClick={calculateDistance} className="btn btn-primary w-100 mt-4 py-2 fw-bold" disabled={isLoading}>
+            {isLoading ? "Calculating Route..." : "Calculate Route"}
+          </button>
+
+          {error && <div className="alert alert-danger mt-3">{error}</div>}
+
+          {routeInfo && (
+            <div className="mt-4 border p-3 rounded" style={{ background: '#f8f9fa' }}>
+              <h4 className="mb-3 border-bottom pb-2">Route Summary</h4>
+              <div className="d-flex justify-content-between mb-2">
+                <span className="fw-bold text-muted">Distance:</span> 
+                <span className="fw-bold">{routeInfo.distance} {routeInfo.distanceUnit}</span>
+              </div>
+              <div className="d-flex justify-content-between mb-2">
+                <span className="fw-bold text-muted">ETA:</span> 
+                <span className="fw-bold">{routeInfo.durationHours} Hrs ({routeInfo.durationText})</span>
+              </div>
+              <div className="d-flex justify-content-between mb-2">
+                <span className="fw-bold text-muted">Tolls:</span> 
+                <span className="fw-bold">{routeInfo.tollAvailable ? `$${routeInfo.cost}` : 'N/A'}</span>
+              </div>
+              {routeInfo.distance > 0 && routeInfo.tollAvailable && routeInfo.cost > 0 && (
+                <div className="d-flex justify-content-between">
+                  <span className="fw-bold text-muted">Cost/Mile:</span> 
+                  <span className="fw-bold">${(routeInfo.cost / routeInfo.distance).toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <h3 className="mt-5 border-bottom pb-2">Expenses</h3>
           {expenses.map((exp, index) => (
             <div key={index} className="d-flex mb-2 gap-2">
               <select
-                className="form-control"
+                className="form-select form-select-sm"
                 value={exp.type}
-                onChange={(e) =>
-                  handleExpenseChange(index, "type", e.target.value)
-                }
+                onChange={(e) => handleExpenseChange(index, "type", e.target.value)}
               >
                 <option value="">Select Expense</option>
                 {expenseOptions.map((opt, i) => (
-                  <option key={i} value={opt}>
-                    {opt}
-                  </option>
+                  <option key={i} value={opt}>{opt}</option>
                 ))}
               </select>
               <input
                 type="number"
-                className="form-control"
+                className="form-control form-control-sm"
                 placeholder="Amount"
                 value={exp.amount}
-                onChange={(e) =>
-                  handleExpenseChange(index, "amount", e.target.value)
-                }
+                onChange={(e) => handleExpenseChange(index, "amount", e.target.value)}
               />
-              <button
-                className="btn btn-danger btn-sm"
-                onClick={() => removeExpense(index)}
-              >
-                X
+              <button className="btn btn-outline-danger btn-sm" onClick={() => removeExpense(index)}>
+                &times;
               </button>
             </div>
           ))}
-          <button className="btn btn-secondary btn-sm" onClick={addExpense}>
+          <button className="btn btn-outline-secondary btn-sm mt-2" onClick={addExpense}>
             + Add Expense
           </button>
-
-          {/* Distance result */}
-          {distance ? (
-            (() => {
-              const lastReportLine =
-                distance[0]?.ReportLines?.[
-                distance[0].ReportLines.length - 1
-                ];
-
-              if (!lastReportLine) return <p>No valid distance data found.</p>;
-
-              const miles = parseFloat(lastReportLine.TMiles);
-              const cost = parseFloat(lastReportLine.TCostMile);
-              const perMileCost =
-                miles > 0 ? (cost / miles).toFixed(2) : "0.00";
-
-              return (
-                <div>
-                  <h2>Distance Results</h2>
-                  <pre>Total Distance: {miles} Miles</pre>
-                  <pre>Total Cost: ${cost}</pre>
-                  <pre>Total Hours: {lastReportLine.THours} Hrs</pre>
-                  <pre>Per Mile Cost: ${perMileCost}</pre>
-                </div>
-              );
-            })()
-          ) : (
-            "Progress..."
-          )}
-
-          {error && <p style={{ color: "red" }}>{error}</p>}
         </div>
 
-        <div className="col-md-9">
-          <div
-            ref={mapContainerRef}
-            style={{ width: "100%", height: "400px" }}
-          ></div>
+        <div className="col-md-8">
+          <div className="bg-white p-2 rounded border" style={{ height: '100%', minHeight: '600px' }}>
+            {isLoaded ? (
+              <GoogleMap
+                mapContainerStyle={containerStyle}
+                center={markers.length > 0 ? markers[0] : center}
+                zoom={markers.length > 0 ? 5 : 4}
+                options={{
+                  streetViewControl: false,
+                  mapTypeControl: false
+                }}
+              >
+                {routePath.length > 0 && (
+                  <Polyline 
+                    key={routePath.length + provider}
+                    path={routePath} 
+                    options={{ 
+                      strokeColor: provider === 'ptv' ? '#28a745' : '#0055ff', 
+                      strokeWeight: 5,
+                      strokeOpacity: 0.8
+                    }} 
+                  />
+                )}
+                {markers.map((mark, index) => (
+                  <Marker 
+                    key={index} 
+                    position={mark} 
+                    label={{
+                      text: index === 0 ? "A" : index === markers.length - 1 ? "B" : index.toString(),
+                      color: "white"
+                    }} 
+                  />
+                ))}
+              </GoogleMap>
+            ) : (
+              <div className="d-flex align-items-center justify-content-center h-100 bg-light rounded">
+                <span className="fs-5 text-muted">Loading Map...</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

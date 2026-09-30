@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 
 function TripStatusForm() {
   const [formData, setFormData] = useState({
@@ -42,23 +43,22 @@ function TripStatusForm() {
       status: parseInt(formData.status),
       timeStamp: formData.timeStamp,
       loc: {
-        coords: {
-          lat: formData.lat.toString(),
-          lon: formData.lon.toString(),
-        },
+        lat: formData.lat.toString(),
+        lon: formData.lon.toString(),
         label: formData.label,
       },
     };
 
     try {
+      // Changed to our custom backend endpoint to handle trip status updates
       const response = await axios.post(
-        'https://tripmanagement.trimblemaps.com/api/trip/tripStatus',
+        `${BASE_URL}api/maps/trip/status`,
         payload,
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: process.env.REACT_APP_TRIMBLE_API_KEY,
           },
+          withCredentials: true
         }
       );
       console.log('Status updated:', response.data);

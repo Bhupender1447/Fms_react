@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { BASE_URL } from '../../config';
 
 function TripRecalculateForm() {
   const [formData, setFormData] = useState({
@@ -45,57 +46,29 @@ function TripRecalculateForm() {
     const payload = {
       tmsTripId: formData.tmsTripId,
       currentLocation: {
-        coords: {
-          lat: parseFloat(formData.lat),
-          lon: parseFloat(formData.lon),
-        },
+        lat: parseFloat(formData.lat),
+        lon: parseFloat(formData.lon),
       },
       currentTime: formData.currentTime,
-      stops: [
-        {
-          Location: {
-            Address: {
-              StreetAddress: formData.stopAddress,
-              City: formData.stopCity,
-              State: formData.stopState,
-              Zip: formData.stopZip,
-            },
-            Label: formData.stopLabel,
-          },
-          earliestArrivalTime: formData.currentTime,
-          latestArrivalTime: formData.currentTime,
-          stopType: 'Work',
-          stopSequence: 1,
-          plannedDuration: 120,
-        },
-      ],
-      driverHoursOfService: {
-        enabled: true,
-        HoSRuleType: 4,
-        RemainingDriveTime: 18000,
-        RemainingOnDutyTime: 28800,
-        CurrentOffDutyTime: 18000,
-        POIStopsReturned: true,
-        CustomBreakDurations: {
-          ShortBreakDuration: 1800,
-          EndOfDutyBreakDuration: 36000,
-        },
-        teamDriving: true,
-        activeDriver: 2,
-        HOSWindowStart: 60,
-        HOSWindowEnd: 10,
-      },
+      stop: {
+        address: formData.stopAddress,
+        city: formData.stopCity,
+        state: formData.stopState,
+        zip: formData.stopZip,
+        label: formData.stopLabel
+      }
     };
 
     try {
-      const response = await axios.put(
-        'https://tripmanagement.trimblemaps.com/api/trip/recalculate',
+      // Changed to our custom backend endpoint that will handle PTV logistics recalculation
+      const response = await axios.post(
+        `${BASE_URL}api/maps/trip/recalculate`,
         payload,
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: process.env.REACT_APP_TRIMBLE_API_KEY,
           },
+          withCredentials: true
         }
       );
       console.log('Success:', response.data);

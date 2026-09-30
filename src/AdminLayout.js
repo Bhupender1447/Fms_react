@@ -22,7 +22,6 @@ const AdminLayout = ({ children }) => {
       `${process.env.PUBLIC_URL}/css/style.css`,
       `${process.env.PUBLIC_URL}/css/responsive.css`,
       "http://www.shieldui.com/shared/components/latest/css/light/all.min.css",
-      "https://maps-sdk.trimblemaps.com/v3/trimblemaps-3.17.0.css",
     ];
 
     cssLinks.forEach((href) => {
@@ -91,7 +90,6 @@ const AdminLayout = ({ children }) => {
           `${process.env.PUBLIC_URL}/dist/js/demo.js`,
           "http://www.shieldui.com/shared/components/latest/js/shieldui-all.min.js",
           "http://www.shieldui.com/shared/components/latest/js/jszip.min.js",
-          "https://maps-sdk.trimblemaps.com/v3/trimblemaps-3.17.0.js",
           "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js",
         ];
 
