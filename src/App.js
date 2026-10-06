@@ -1,4 +1,4 @@
-import Header from "./websitefiles/Header";
+﻿import Header from "./websitefiles/Header";
 import Home from "./websitefiles/Home";
 import Footer from "./websitefiles/Footer";
 import { Route, Routes, useLocation } from "react-router-dom";
@@ -435,7 +435,7 @@ function App() {
         <Route path="/dutylist" element={<div className="skin-blue sidebar-mini"><Driverheader /><Dutylist /></div>} />
         <Route path="/dutychart/:tid" element={<div className="skin-blue sidebar-mini"><Driverheader /><Dutychart /></div>} />
         <Route path="/triprecalculation" element={<div className="skin-blue sidebar-mini"><Driverheader /><TripRecalculateForm /></div>} />
-        <Route path="/tripstatusform" element={<div className="skin-blue sidebar-mini"><Driverheader /><TripStatusForm /></div>} />
+        <Route path="/tripstatus/:tripId" element={<div className="skin-blue sidebar-mini"><Driverheader /><TripStatusForm /></div>} />
         <Route path="/tripdetails" element={<div className="skin-blue sidebar-mini"><Driverheader /><TripDetails /></div>} />
         <Route path="/logs" element={<div className="skin-blue sidebar-mini"><Driverheader /><TripLogChart /></div>} />
         <Route path="/daily-log-detail" element={<div className="skin-blue sidebar-mini"><Driverheader /><DailyLogDetail /></div>} />
@@ -453,3 +453,4 @@ function App() {
 }
 
 export default App;
+

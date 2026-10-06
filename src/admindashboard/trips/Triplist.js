@@ -7,6 +7,7 @@ import { BASE_URL } from "../../config";
 
 const Triplist = () => {
   const [list, setList] = useState([]);
+  const [cancellingId, setCancellingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -21,29 +22,52 @@ const Triplist = () => {
     setCurrentPage(selected);
   };
 
-  const handleRemove = async (id) => {
-    if (window.confirm("Are you sure you want to remove this trip?")) {
-      try {
-        await axios.post(
-          `${BASE_URL}api/remove`,
-          new URLSearchParams({
-            id: id,
-            type: 'fms_trips'
-          }).toString(),
-          {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            }
-          }
-        );
-        setList(list.filter(item => item.id !== id));
-        toast.success("Trip removed successfully");
-      } catch (error) {
-        console.error("Error removing item:", error);
-        toast.error("Error removing trip");
+  const handleCancel = async (item) => {
+    const currentStatus = (item.status || '').toUpperCase();
+
+    // Prevent cancelling completed trips
+    if (currentStatus === 'COMPLETED') {
+      toast.error('Cannot cancel a COMPLETED trip. Contact admin for adjustments.');
+      return;
+    }
+    if (currentStatus === 'CANCELLED') {
+      toast.info('This trip is already cancelled.');
+      return;
+    }
+    if (currentStatus === 'IN_PROGRESS') {
+      toast.warning('Trip is currently IN PROGRESS. Ask the driver to pause it first before cancelling.');
+      return;
+    }
+
+    const reason = window.prompt(
+      `Cancel trip "${item.customer_orderno || item.id}"?\n\nEnter a reason (optional):`
+    );
+    if (reason === null) return; // user clicked Cancel in prompt
+
+    if (cancellingId === item.id) return;
+    setCancellingId(item.id);
+
+    try {
+      const res = await axios.post(
+        `${BASE_URL}api/remove`,
+        new URLSearchParams({ id: item.id, type: 'fms_trips', reason }).toString(),
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+      if (res.data.status) {
+        // Update local state to reflect CANCELLED status (don't remove from list)
+        setList(list.map(t => t.id === item.id ? { ...t, status: 'CANCELLED' } : t));
+        toast.success('Trip cancelled successfully. Historical records are preserved.');
+      } else {
+        toast.error(res.data.message || 'Failed to cancel trip');
       }
+    } catch (error) {
+      console.error('Error cancelling trip:', error);
+      toast.error(error.response?.data?.message || 'Error cancelling trip');
+    } finally {
+      setCancellingId(null);
     }
   };
+
 
   const handleItemsPerPageChange = (e) => {
     setItemsPerPage(parseInt(e.target.value, 10));
@@ -139,10 +163,11 @@ const Triplist = () => {
                           <tr role="row">
                             <th style={{ width: "62.2px" }}>Invoice #</th>
                             <th style={{ width: "79.2px" }}>Company</th>
-                            <th style={{ width: "397.2px" }}>Pickup</th>
-                            <th style={{ width: "331.2px" }}>Delivery</th>
+                            <th style={{ width: "200px" }}>Pickup</th>
+                            <th style={{ width: "200px" }}>Delivery</th>
+                            <th style={{ width: "80px" }}>Status</th>
                             <th style={{ width: "120px" }}>Custom Paper</th>
-                            <th style={{ width: 178 }}>Action</th>
+                            <th style={{ width: 200 }}>Action</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -156,8 +181,25 @@ const Triplist = () => {
                               <td>{item.company}</td>
                               <td>{item.pickup_address}</td>
                               <td>{item.delivery_address}</td>
-                              <td>{item.custom_paper_name || item.custom_paper || "N/A"}</td>
                               <td>
+                                <span style={{
+                                  display: 'inline-block',
+                                  padding: '2px 8px',
+                                  borderRadius: 10,
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  background:
+                                    item.status === 'COMPLETED' ? '#28a745' :
+                                      item.status === 'IN_PROGRESS' ? '#007bff' :
+                                        item.status === 'PAUSED' ? '#ffc107' :
+                                          item.status === 'CANCELLED' ? '#dc3545' : '#6c757d',
+                                  color: '#fff',
+                                }}>
+                                  {item.status || 'ACTIVE'}
+                                </span>
+                              </td>
+                              <td>{item.custom_paper_name || item.custom_paper || 'N/A'}</td>
+                              <td style={{ opacity: item.status === 'CANCELLED' ? 0.5 : 1 }}>
                                 <Link
                                   type="button"
                                   className="btn btn-info btn-xs"
@@ -211,13 +253,18 @@ const Triplist = () => {
                                 >
                                   Add Stop
                                 </Link>
-                                <button
-                                  type="button"
-                                  className="btn btn-danger btn-xs"
-                                  onClick={() => handleRemove(item.id)}
-                                >
-                                  <i className="fa fa-trash" />
-                                </button>
+                                {/* Safe Cancel — replaces hard delete */}
+                                {item.status !== 'CANCELLED' && item.status !== 'COMPLETED' && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-danger btn-xs"
+                                    title="Cancel this trip (records preserved)"
+                                    onClick={() => handleCancel(item)}
+                                    disabled={cancellingId === item.id}
+                                  >
+                                    <i className={`fa ${cancellingId === item.id ? 'fa-spinner fa-spin' : 'fa-ban'}`} /> Cancel
+                                  </button>
+                                )}
                               </td>
                             </tr>
                           ))}

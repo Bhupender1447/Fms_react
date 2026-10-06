@@ -40,19 +40,28 @@ const TripViewer = () => {
     try {
       setIsLoading(true);
       const response = await axios.get(`${BASE_URL}api/trip/${tripId}`);
-      const tripData = response.data;
+      const tripData = response.data.data || response.data;
       
+      const originAddress = tripData.pickup_address || tripData.origin;
+      if (!tripData.origin_coords && !originAddress) {
+        throw new Error("Trip origin address is missing.");
+      }
       const originCoords = tripData.origin_coords 
           ? tripData.origin_coords 
-          : await MapService.geocode(tripData.pickup_address || tripData.origin);
+          : await MapService.geocode(originAddress);
           
+      const destAddress = tripData.delivery_address || tripData.destination;
+      if (!tripData.destination_coords && !destAddress) {
+        throw new Error("Trip destination address is missing.");
+      }
       const destCoords = tripData.destination_coords 
           ? tripData.destination_coords 
-          : await MapService.geocode(tripData.delivery_address || tripData.destination);
+          : await MapService.geocode(destAddress);
       
       let stopCoords = [];
       if (tripData.stops && tripData.stops.length > 0) {
         for (const stop of tripData.stops) {
+          if (!stop.coords && !stop.location) continue;
           const coords = stop.coords ? stop.coords : await MapService.geocode(stop.location);
           stopCoords.push(coords);
         }
@@ -73,17 +82,22 @@ const TripViewer = () => {
       setMarkers([origin, ...waypoints, destination]);
       let parsedPath = [];
       if (routeResult.path) {
-        if (typeof routeResult.path === 'string') {
-          try { parsedPath = JSON.parse(routeResult.path); } catch (e) {}
-        } else if (Array.isArray(routeResult.path)) {
-          parsedPath = routeResult.path;
+        let rawPath = routeResult.path;
+        if (typeof rawPath === 'string') {
+          try { rawPath = JSON.parse(rawPath); } catch (e) {}
+        }
+        
+        if (Array.isArray(rawPath)) {
+          parsedPath = rawPath;
+        } else if (rawPath && rawPath.coordinates && Array.isArray(rawPath.coordinates)) {
+          parsedPath = rawPath.coordinates;
         }
       }
       
-      if (parsedPath.length > 0) {
+      if (parsedPath && parsedPath.length > 0) {
         setRoutePath(parsedPath.map(p => ({ 
-          lat: parseFloat(p.lat !== undefined ? p.lat : (p[0] !== undefined ? p[0] : p.latitude)), 
-          lng: parseFloat(p.lng !== undefined ? p.lng : (p[1] !== undefined ? p[1] : p.longitude)) 
+          lat: parseFloat(p.lat !== undefined ? p.lat : (p[1] !== undefined ? p[1] : p.latitude)), 
+          lng: parseFloat(p.lng !== undefined ? p.lng : (p[0] !== undefined ? p[0] : p.longitude)) 
         })));
       } else {
           setRoutePath([origin, ...waypoints, destination]);

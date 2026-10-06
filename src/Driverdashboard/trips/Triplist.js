@@ -100,6 +100,40 @@ const TripDriverlist = () => {
                               <td>{item.pickup_address}</td>
                               <td>{item.delivery_address}</td>
                               <td>
+                                {/* Trip status badge */}
+                                {item.status && (
+                                  <span className="badge-status" style={{
+                                    marginBottom: 4,
+                                    background:
+                                      item.status === 'COMPLETED'   ? '#ecfdf5' :
+                                      item.status === 'IN_PROGRESS' ? '#eff6ff' :
+                                      item.status === 'PAUSED'      ? '#fffbeb' :
+                                      item.status === 'CANCELLED'   ? '#fef2f2' : '#f1f5f9',
+                                    color:
+                                      item.status === 'COMPLETED'   ? '#065f46' :
+                                      item.status === 'IN_PROGRESS' ? '#1e40af' :
+                                      item.status === 'PAUSED'      ? '#92400e' :
+                                      item.status === 'CANCELLED'   ? '#991b1b' : '#475569',
+                                    border: `1px solid ${
+                                      item.status === 'COMPLETED'   ? '#a7f3d0' :
+                                      item.status === 'IN_PROGRESS' ? '#bfdbfe' :
+                                      item.status === 'PAUSED'      ? '#fde68a' :
+                                      item.status === 'CANCELLED'   ? '#fecaca' : '#cbd5e1'
+                                    }`,
+                                  }}>
+                                    <span style={{
+                                      width: 6,
+                                      height: 6,
+                                      borderRadius: '50%',
+                                      backgroundColor:
+                                        item.status === 'COMPLETED'   ? '#10b981' :
+                                        item.status === 'IN_PROGRESS' ? '#3b82f6' :
+                                        item.status === 'PAUSED'      ? '#f59e0b' :
+                                        item.status === 'CANCELLED'   ? '#ef4444' : '#64748b'
+                                    }} />
+                                    {item.status}
+                                  </span>
+                                )}
 
                                 <Link
                                   target="_blank"
@@ -116,9 +150,15 @@ const TripDriverlist = () => {
                                   Invoice
                                 </Link>
 
-                                <Link to={{ pathname: '/tripdetails', state: { value: item } }}>
-                                  Go to Trip Details
-                                </Link>
+                                {/* Update Status — only for non-terminal trips */}
+                                {item.status !== 'COMPLETED' && item.status !== 'CANCELLED' && item.tmsTriptId && (
+                                  <Link
+                                    to={`/tripstatus/${item.tmsTriptId}`}
+                                    className="btn btn-success btn-xs"
+                                  >
+                                    <i className="fa fa-refresh" /> Update Status
+                                  </Link>
+                                )}
                               </td>
                             </tr>
                           ))}

@@ -614,7 +614,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       .get(`${BASE_URL}api/getOrderData`)
       .then((res) => {
         setdata(res.data);
-        setFormData({ customerorderno: res && res.data.triprno });
+        setFormData(prev => ({ ...prev, customerorderno: res && res.data.triprno }));
         console.log(res.data);
       })
       .catch((error) => seterror(error));

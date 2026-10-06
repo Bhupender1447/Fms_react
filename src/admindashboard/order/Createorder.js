@@ -35,6 +35,7 @@ const Createorder = () => {
     pickup_address: "",
     pickupdate: "",
     pickuptime: "",
+    appt: "NO",
     pickup_refno: "",
     pickup_desc: "",
     manageTablestops_length: "",
@@ -58,6 +59,7 @@ const Createorder = () => {
   };
 
   const [formData, setFormData] = useState(initialState);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // OCR Logic
   const [ocrFile, setOcrFile] = useState(null);
   const [isOcrLoading, setIsOcrLoading] = useState(false);
@@ -339,7 +341,7 @@ const Createorder = () => {
       .get(`${BASE_URL}api/getOrderData`)
       .then((res) => {
         setdata(res.data);
-        setFormData({ customerorderno: res && res.data.orderno });
+        setFormData(prev => ({ ...prev, customerorderno: res && res.data.orderno }));
         console.log(res.data);
       })
       .catch((error) => seterror(error));
@@ -348,6 +350,8 @@ const Createorder = () => {
 
   let handleonSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const form = new FormData();
     form.append("userid", userdata.id);
@@ -374,6 +378,7 @@ const Createorder = () => {
     form.append("pickupdate", formData.pickupdate);
     form.append("pickuptime", formData.pickuptime);
     form.append("pickup_refno", formData.pickup_refno);
+    form.append("appt", formData.appt);
     form.append("pickup_desc", formData.pickup_desc);
     form.append("Location12", JSON.stringify(stops));
     form.append("manageTablestops_length", formData.manageTablestops_length);
@@ -431,6 +436,8 @@ const Createorder = () => {
       });
 
       navigate(-1);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1786,8 +1793,9 @@ const Createorder = () => {
                   type="button"
                   className="btn btn-primary"
                   onClick={handleonSubmit}
+                  disabled={isSubmitting}
                 >
-                  Save Order
+                  {isSubmitting ? "Saving..." : "Save Order"}
                 </button>
                 {getdataid ? (
                   <>

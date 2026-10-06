@@ -29,6 +29,7 @@ const Createorder = () => {
     pickup_address: "",
     pickupdate: "",
     pickuptime: "",
+    appt: "NO",
     pickup_refno: "",
     pickup_desc: "",
     manageTablestops_length: "",
@@ -267,7 +268,7 @@ const Createorder = () => {
     axios.get(`${BASE_URL}api/getOrderData`)
       .then(res => {
         setdata(res.data)
-        setFormData({ customerorderno: res && res.data.orderno })
+        setFormData(prev => ({ ...prev, customerorderno: res && res.data.orderno }))
         console.log(res.data)
       })
       .catch(error => seterror(error))
@@ -304,6 +305,7 @@ const Createorder = () => {
     form.append('pickupdate', formData.pickupdate);
     form.append('pickuptime', formData.pickuptime);
     form.append('pickup_refno', formData.pickup_refno);
+    form.append('appt', formData.appt);
     form.append('pickup_desc', formData.pickup_desc);
     form.append('manageTablestops_length', formData.manageTablestops_length);
     form.append('delivery', formData.delivery);
