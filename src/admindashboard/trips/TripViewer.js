@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import { GoogleMap, useJsApiLoader, Polyline, Marker } from '@react-google-maps/api';
+import { GoogleMap, PolylineF, MarkerF } from '@react-google-maps/api';
 import MapService from "../../services/MapService";
 import { BASE_URL } from "../../config";
-import { GOOGLE_MAPS_LIBRARIES } from "../../mapConfig";
 import "bootstrap/dist/css/bootstrap.min.css"; 
 
 const containerStyle = {
@@ -24,8 +23,11 @@ const TripViewer = () => {
   const [markers, setMarkers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [provider, setProvider] = useState('google');
-
   const [isLoaded, setIsLoaded] = useState(false);
+
+  const mapRef = useRef(null);
+  const polylineRef = useRef(null);
+
   useEffect(() => {
     const checkGoogle = setInterval(() => {
       if (window.google && window.google.maps) {
@@ -36,11 +38,87 @@ const TripViewer = () => {
     return () => clearInterval(checkGoogle);
   }, []);
 
+  const fitBounds = useCallback((map, path, markList) => {
+    if (!map || !window.google || !window.google.maps) return;
+    const bounds = new window.google.maps.LatLngBounds();
+    let hasPoints = false;
+    if (path && path.length > 0) {
+      const step = Math.max(1, Math.floor(path.length / 200));
+      for (let i = 0; i < path.length; i += step) {
+        bounds.extend(path[i]);
+        hasPoints = true;
+      }
+      bounds.extend(path[path.length - 1]);
+    }
+    if (markList && markList.length > 0) {
+      markList.forEach(m => {
+        bounds.extend(m);
+        hasPoints = true;
+      });
+    }
+    if (hasPoints) {
+      map.fitBounds(bounds);
+    }
+  }, []);
+
+  const drawPolylineOnMap = useCallback((map, path, currentProvider) => {
+    if (!map || !window.google || !window.google.maps) return;
+
+    if (polylineRef.current) {
+      polylineRef.current.setMap(null);
+      polylineRef.current = null;
+    }
+
+    if (path && path.length > 0) {
+      const polyline = new window.google.maps.Polyline({
+        path: path,
+        geodesic: true,
+        strokeColor: currentProvider === 'ptv' ? '#28a745' : '#0055ff',
+        strokeOpacity: 0.85,
+        strokeWeight: 6,
+        map: map
+      });
+      polylineRef.current = polyline;
+    }
+  }, []);
+
+  const onLoadMap = useCallback((map) => {
+    mapRef.current = map;
+    if (routePath && routePath.length > 0) {
+      drawPolylineOnMap(map, routePath, provider);
+      fitBounds(map, routePath, markers);
+    } else if (markers && markers.length > 0) {
+      fitBounds(map, [], markers);
+    }
+  }, [routePath, markers, provider, drawPolylineOnMap, fitBounds]);
+
+  useEffect(() => {
+    if (mapRef.current) {
+      drawPolylineOnMap(mapRef.current, routePath, provider);
+      if (routePath.length > 0 || markers.length > 0) {
+        fitBounds(mapRef.current, routePath, markers);
+      }
+    }
+    return () => {
+      if (polylineRef.current) {
+        polylineRef.current.setMap(null);
+        polylineRef.current = null;
+      }
+    };
+  }, [routePath, markers, provider, drawPolylineOnMap, fitBounds]);
+
   const fetchTripAndCalculateRoute = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const response = await axios.get(`${BASE_URL}api/trip/${tripId}`);
+      if (response.data && response.data.status === 'error') {
+        throw new Error(response.data.message || "Trip not found.");
+      }
       const tripData = response.data.data || response.data;
+      if (!tripData || tripData.status === 'error') {
+        throw new Error(tripData?.message || "Trip not found.");
+      }
       
       const originAddress = tripData.pickup_address || tripData.origin;
       if (!tripData.origin_coords && !originAddress) {
@@ -71,7 +149,10 @@ const TripViewer = () => {
       const destination = { lat: parseFloat(destCoords.lat), lng: parseFloat(destCoords.lng) };
       const waypoints = stopCoords.map(c => ({ lat: parseFloat(c.lat), lng: parseFloat(c.lng) }));
 
-      const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : null;
+      const currentMarkers = [origin, ...waypoints, destination];
+      setMarkers(currentMarkers);
+
+      const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : { type: 'car' };
       const routeResult = await MapService.getRoute(
           origin, 
           destination, 
@@ -79,31 +160,15 @@ const TripViewer = () => {
           vehicleProfile
       );
 
-      setMarkers([origin, ...waypoints, destination]);
-      let parsedPath = [];
-      if (routeResult.path) {
-        let rawPath = routeResult.path;
-        if (typeof rawPath === 'string') {
-          try { rawPath = JSON.parse(rawPath); } catch (e) {}
-        }
-        
-        if (Array.isArray(rawPath)) {
-          parsedPath = rawPath;
-        } else if (rawPath && rawPath.coordinates && Array.isArray(rawPath.coordinates)) {
-          parsedPath = rawPath.coordinates;
-        }
+      const fullRoadPath = MapService.parseRoutePath(routeResult?.path);
+      if (fullRoadPath.length < 2) {
+        throw new Error("Road route geometry is unavailable or invalid.");
       }
-      
-      if (parsedPath && parsedPath.length > 0) {
-        setRoutePath(parsedPath.map(p => ({ 
-          lat: parseFloat(p.lat !== undefined ? p.lat : (p[1] !== undefined ? p[1] : p.latitude)), 
-          lng: parseFloat(p.lng !== undefined ? p.lng : (p[0] !== undefined ? p[0] : p.longitude)) 
-        })));
-      } else {
-          setRoutePath([origin, ...waypoints, destination]);
-      }
+
+      setRoutePath(fullRoadPath);
     } catch (err) {
       console.error("Error loading trip map:", err);
+      setRoutePath([]);
       setError(err);
     } finally {
       setIsLoading(false);
@@ -145,6 +210,7 @@ const TripViewer = () => {
           mapContainerStyle={containerStyle}
           center={markers.length > 0 ? markers[0] : defaultCenter}
           zoom={5}
+          onLoad={onLoadMap}
           options={{
             streetViewControl: false,
             mapTypeControl: false,
@@ -152,19 +218,19 @@ const TripViewer = () => {
           }}
         >
           {routePath.length > 0 && (
-            <Polyline 
-              key={routePath.length + provider}
+            <PolylineF 
+              key={`poly-${provider}-${routePath.length}`}
               path={routePath} 
               options={{ 
                 strokeColor: provider === 'ptv' ? '#28a745' : '#0055ff', 
-                strokeWeight: 5,
-                strokeOpacity: 0.8
+                strokeWeight: 6,
+                strokeOpacity: 0.85
               }} 
             />
           )}
           {markers.map((mark, index) => (
-            <Marker 
-              key={index} 
+            <MarkerF 
+              key={`marker-${index}-${mark.lat}-${mark.lng}`} 
               position={mark} 
               label={{
                 text: index === 0 ? "A" : index === markers.length - 1 ? "B" : index.toString(),

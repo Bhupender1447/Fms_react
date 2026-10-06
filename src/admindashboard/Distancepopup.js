@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { GoogleMap, useJsApiLoader, Polyline, Marker } from '@react-google-maps/api';
+import { GoogleMap, PolylineF, MarkerF } from '@react-google-maps/api';
 import MapService from "../services/MapService";
 import { GOOGLE_MAPS_LIBRARIES } from "../mapConfig";
 
@@ -54,6 +54,78 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
   const [routePath, setRoutePath] = useState([]);
   const [markers, setMarkers] = useState([]);
 
+  const mapRef = useRef(null);
+  const polylineRef = useRef(null);
+
+  const fitBounds = useCallback((map, path, markList) => {
+    if (!map || !window.google || !window.google.maps) return;
+    const bounds = new window.google.maps.LatLngBounds();
+    let hasPoints = false;
+    if (path && path.length > 0) {
+      const step = Math.max(1, Math.floor(path.length / 200));
+      for (let i = 0; i < path.length; i += step) {
+        bounds.extend(path[i]);
+        hasPoints = true;
+      }
+      bounds.extend(path[path.length - 1]);
+    }
+    if (markList && markList.length > 0) {
+      markList.forEach(m => {
+        bounds.extend(m);
+        hasPoints = true;
+      });
+    }
+    if (hasPoints) {
+      map.fitBounds(bounds, 50);
+    }
+  }, []);
+
+  const drawPolylineOnMap = useCallback((map, path, currentProvider) => {
+    if (!map || !window.google || !window.google.maps) return;
+
+    if (polylineRef.current) {
+      polylineRef.current.setMap(null);
+      polylineRef.current = null;
+    }
+
+    if (path && path.length > 0) {
+      const polyline = new window.google.maps.Polyline({
+        path: path,
+        geodesic: true,
+        strokeColor: currentProvider === 'ptv' ? '#28a745' : '#0055ff',
+        strokeOpacity: 0.85,
+        strokeWeight: 6,
+        map: map
+      });
+      polylineRef.current = polyline;
+    }
+  }, []);
+
+  const onLoadMap = useCallback((map) => {
+    mapRef.current = map;
+    if (routePath && routePath.length > 0) {
+      drawPolylineOnMap(map, routePath, provider);
+      fitBounds(map, routePath, markers);
+    } else if (markers && markers.length > 0) {
+      fitBounds(map, [], markers);
+    }
+  }, [routePath, markers, provider, drawPolylineOnMap, fitBounds]);
+
+  useEffect(() => {
+    if (mapRef.current) {
+      drawPolylineOnMap(mapRef.current, routePath, provider);
+      if (routePath.length > 0 || markers.length > 0) {
+        fitBounds(mapRef.current, routePath, markers);
+      }
+    }
+    return () => {
+      if (polylineRef.current) {
+        polylineRef.current.setMap(null);
+        polylineRef.current = null;
+      }
+    };
+  }, [routePath, markers, provider, drawPolylineOnMap, fitBounds]);
+
   // Expenses state
   const [expenses, setExpenses] = useState([{ type: "", amount: "" }]);
 
@@ -96,7 +168,7 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
       const origin = { lat: parseFloat(coords1.lat), lng: parseFloat(coords1.lng) };
       const destination = { lat: parseFloat(coords2.lat), lng: parseFloat(coords2.lng) };
 
-      const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : null;
+      const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : { type: 'car' };
       const routeResult = await MapService.getRoute(origin, destination, waypoints, vehicleProfile);
       
       let extractedToll = 0;
@@ -128,29 +200,17 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
       });
 
       // 3. Render Route path
-      let parsedPath = [];
-      if (routeResult.path) {
-        if (typeof routeResult.path === 'string') {
-          try { parsedPath = JSON.parse(routeResult.path); } catch (e) {}
-        } else if (Array.isArray(routeResult.path)) {
-          parsedPath = routeResult.path;
-        }
+      const fullRoadPath = MapService.parseRoutePath(routeResult?.path);
+      if (fullRoadPath.length < 2) {
+        throw new Error("Road route geometry is unavailable or invalid.");
       }
       
-      if (parsedPath.length > 0) {
-        setRoutePath(parsedPath.map(p => ({ 
-          lat: parseFloat(p.lat !== undefined ? p.lat : (p[0] !== undefined ? p[0] : p.latitude)), 
-          lng: parseFloat(p.lng !== undefined ? p.lng : (p[1] !== undefined ? p[1] : p.longitude)) 
-        })));
-      } else {
-        // Fallback to straight lines if path geometry isn't provided
-        setRoutePath([origin, ...waypoints, destination]);
-      }
-
+      setRoutePath(fullRoadPath);
       setMarkers([origin, ...waypoints, destination]);
 
     } catch (err) {
       console.error(err);
+      setRoutePath([]);
       setError(err.message || "Failed to calculate route or fetch coordinates");
     } finally {
       setIsLoading(false);
@@ -335,25 +395,26 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
                 mapContainerStyle={containerStyle}
                 center={markers.length > 0 ? markers[0] : center}
                 zoom={markers.length > 0 ? 5 : 4}
+                onLoad={onLoadMap}
                 options={{
                   streetViewControl: false,
                   mapTypeControl: false
                 }}
               >
                 {routePath.length > 0 && (
-                  <Polyline 
-                    key={routePath.length + provider}
+                  <PolylineF 
+                    key={`poly-${provider}-${routePath.length}`}
                     path={routePath} 
                     options={{ 
                       strokeColor: provider === 'ptv' ? '#28a745' : '#0055ff', 
-                      strokeWeight: 5,
-                      strokeOpacity: 0.8
+                      strokeWeight: 6,
+                      strokeOpacity: 0.85
                     }} 
                   />
                 )}
                 {markers.map((mark, index) => (
-                  <Marker 
-                    key={index} 
+                  <MarkerF 
+                    key={`marker-${index}-${mark.lat}-${mark.lng}`} 
                     position={mark} 
                     label={{
                       text: index === 0 ? "A" : index === markers.length - 1 ? "B" : index.toString(),

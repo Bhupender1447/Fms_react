@@ -37,11 +37,61 @@ class MapService {
         vehicle, // if null, backend defaults to standard car (Google Maps)
       };
       const response = await axios.post(`${BASE_URL}mapsapi/route`, payload);
+      if (response.data && response.data.status === false) {
+        throw new Error(response.data.message || response.data.error || "Failed to calculate route");
+      }
       return response.data;
     } catch (error) {
       console.error("Routing error:", error);
-      throw new Error(error.response?.data?.message || "Failed to calculate route");
+      throw new Error(error.response?.data?.message || error.message || "Failed to calculate route");
     }
+  }
+
+  /**
+   * Parse route path from API into Google Maps { lat, lng } points.
+   * Handles GeoJSON LineString [lng, lat] format correctly.
+   */
+  static parseRoutePath(rawPath) {
+    if (!rawPath) return [];
+
+    let parsed = rawPath;
+    while (typeof parsed === 'string') {
+      try {
+        const next = JSON.parse(parsed);
+        if (next === parsed) break;
+        parsed = next;
+      } catch (e) {
+        break;
+      }
+    }
+
+    let coords = null;
+    if (Array.isArray(parsed)) {
+      coords = parsed;
+    } else if (parsed && Array.isArray(parsed.coordinates)) {
+      coords = parsed.coordinates;
+    } else if (parsed && parsed.geometry && Array.isArray(parsed.geometry.coordinates)) {
+      coords = parsed.geometry.coordinates;
+    } else if (parsed && Array.isArray(parsed.features) && parsed.features[0]?.geometry?.coordinates) {
+      coords = parsed.features[0].geometry.coordinates;
+    }
+
+    if (!coords || !Array.isArray(coords)) return [];
+
+    return coords.map(p => {
+      if (Array.isArray(p)) {
+        // GeoJSON specification: index 0 is longitude, index 1 is latitude
+        const lng = parseFloat(p[0]);
+        const lat = parseFloat(p[1]);
+        return (!isNaN(lat) && !isNaN(lng)) ? { lat, lng } : null;
+      }
+      if (p && typeof p === 'object') {
+        const lat = parseFloat(p.lat !== undefined ? p.lat : p.latitude);
+        const lng = parseFloat(p.lng !== undefined ? p.lng : p.longitude);
+        return (!isNaN(lat) && !isNaN(lng)) ? { lat, lng } : null;
+      }
+      return null;
+    }).filter(Boolean);
   }
 
   /**

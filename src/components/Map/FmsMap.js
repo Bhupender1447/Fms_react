@@ -95,28 +95,17 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
       });
 
       // 3. Render Route path
-      let parsedPath = [];
-      if (routeResult.path) {
-        if (typeof routeResult.path === 'string') {
-          try { parsedPath = JSON.parse(routeResult.path); } catch (e) {}
-        } else if (Array.isArray(routeResult.path)) {
-          parsedPath = routeResult.path;
-        }
-      }
-      
-      if (parsedPath.length > 0) {
-        setRoutePath(parsedPath.map(p => ({ 
-          lat: parseFloat(p.lat !== undefined ? p.lat : (p[0] !== undefined ? p[0] : p.latitude)), 
-          lng: parseFloat(p.lng !== undefined ? p.lng : (p[1] !== undefined ? p[1] : p.longitude)) 
-        })));
-      } else {
-        setRoutePath([origin, destination]);
+      const fullRoadPath = MapService.parseRoutePath(routeResult?.path);
+      if (fullRoadPath.length < 2) {
+        throw new Error("Road route geometry is unavailable or invalid.");
       }
 
+      setRoutePath(fullRoadPath);
       setMarkers([origin, destination]);
 
     } catch (err) {
       console.error(err);
+      setRoutePath([]);
       setError(err.message || "Failed to calculate route or fetch coordinates");
     } finally {
       setIsLoading(false);

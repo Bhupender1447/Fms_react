@@ -80,30 +80,19 @@ const TripMap = () => {
           const destination = stopsCoords[stopsCoords.length - 1];
           const waypoints = stopsCoords.slice(1, stopsCoords.length - 1);
           
-          const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : null;
+          const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : { type: 'car' };
           const routeResult = await MapService.getRoute(origin, destination, waypoints, vehicleProfile);
           
-          let parsedPath = [];
-          if (routeResult.path) {
-            if (typeof routeResult.path === 'string') {
-              try { parsedPath = JSON.parse(routeResult.path); } catch (e) {}
-            } else if (Array.isArray(routeResult.path)) {
-              parsedPath = routeResult.path;
-            }
-          }
-          
           setMarkers(stopsCoords);
-          if (parsedPath.length > 0) {
-            setRoutePath(parsedPath.map(p => ({ 
-              lat: parseFloat(p.lat !== undefined ? p.lat : (p[0] !== undefined ? p[0] : p.latitude)), 
-              lng: parseFloat(p.lng !== undefined ? p.lng : (p[1] !== undefined ? p[1] : p.longitude)) 
-            })));
-          } else {
-            setRoutePath(stopsCoords);
+          const fullRoadPath = MapService.parseRoutePath(routeResult?.path);
+          if (fullRoadPath.length < 2) {
+            throw new Error("Road route geometry is unavailable or invalid.");
           }
+          setRoutePath(fullRoadPath);
         }
       } catch (err) {
         console.error("Error generating live route: ", err);
+        setRoutePath([]);
       } finally {
         setIsLoading(false);
       }
