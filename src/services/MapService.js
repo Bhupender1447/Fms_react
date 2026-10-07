@@ -23,18 +23,14 @@ class MapService {
     }
   }
 
-  /**
-   * Calculate a unified route. 
-   * If vehicle is provided and is a truck, the backend will use PTV.
-   * Otherwise, it will use Google.
-   */
-  static async getRoute(origin, destination, waypoints = [], vehicle = null) {
+  static async getRoute(origin, destination, waypoints = [], vehicle = null, routeChoice = 'fast') {
     try {
       const payload = {
         origin,
         destination,
         waypoints,
         vehicle, // if null, backend defaults to standard car (Google Maps)
+        routeChoice
       };
       const response = await axios.post(`${BASE_URL}mapsapi/route`, payload);
       if (response.data && response.data.status === false) {

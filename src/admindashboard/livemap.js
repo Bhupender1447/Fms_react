@@ -63,6 +63,8 @@ const TripMap = () => {
   const [markers, setMarkers] = useState([]);
   const [routePath, setRoutePath] = useState([]);
   const [provider, setProvider] = useState('google');
+  const [routeChoice, setRouteChoice] = useState('fast');
+  const [routeDetails, setRouteDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -81,9 +83,15 @@ const TripMap = () => {
           const waypoints = stopsCoords.slice(1, stopsCoords.length - 1);
           
           const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : { type: 'car' };
-          const routeResult = await MapService.getRoute(origin, destination, waypoints, vehicleProfile);
+          const routeResult = await MapService.getRoute(origin, destination, waypoints, vehicleProfile, routeChoice);
           
           setMarkers(stopsCoords);
+          setRouteDetails({
+            distanceMiles: routeResult?.distanceMiles,
+            distanceKms: routeResult?.distanceKms,
+            stateMileage: routeResult?.stateMileage || []
+          });
+
           const fullRoadPath = MapService.parseRoutePath(routeResult?.path);
           if (fullRoadPath.length < 2) {
             throw new Error("Road route geometry is unavailable or invalid.");
@@ -93,6 +101,7 @@ const TripMap = () => {
       } catch (err) {
         console.error("Error generating live route: ", err);
         setRoutePath([]);
+        setRouteDetails(null);
       } finally {
         setIsLoading(false);
       }
@@ -101,7 +110,7 @@ const TripMap = () => {
     if (showModal) {
       fetchRoute();
     }
-  }, [provider, showModal]);
+  }, [provider, routeChoice, showModal]);
 
   const openModal = () => setShowModal(true);
   const closeModal = () => setShowModal(false);
@@ -151,16 +160,44 @@ const TripMap = () => {
             <div className="d-flex justify-content-between align-items-center mb-2">
               <div className="d-flex align-items-center gap-2">
                 <label className="fw-bold m-0">Provider:</label>
-                <select className="form-select form-select-sm" value={provider} onChange={(e) => setProvider(e.target.value)}>
+                <select className="form-select form-select-sm" style={{ width: 'auto' }} value={provider} onChange={(e) => setProvider(e.target.value)}>
                   <option value="google">Google Maps (Car)</option>
                   <option value="ptv">PTV Maps (Truck)</option>
                 </select>
+
+                {provider === 'ptv' && (
+                  <>
+                    <label className="fw-bold m-0 ms-2">Route Option:</label>
+                    <select className="form-select form-select-sm" style={{ width: 'auto' }} value={routeChoice} onChange={(e) => setRouteChoice(e.target.value)}>
+                      <option value="fast">Fastest</option>
+                      <option value="shortest">Shortest</option>
+                      <option value="economic">Economic</option>
+                    </select>
+                  </>
+                )}
+
                 {isLoading && <div className="spinner-border spinner-border-sm text-primary ms-2" role="status"></div>}
               </div>
               <button onClick={closeModal} className="btn btn-secondary btn-sm">
                 Close Map
               </button>
             </div>
+
+            {routeDetails && !isLoading && (
+              <div className="alert alert-info py-2 mb-2 d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>Total Distance: </strong> 
+                  {routeDetails.distanceMiles ? `${routeDetails.distanceMiles} Miles` : 'N/A'} 
+                  <span className="mx-2">|</span> 
+                  {routeDetails.distanceKms ? `${routeDetails.distanceKms} Km` : 'N/A'}
+                </div>
+                {routeDetails.stateMileage && routeDetails.stateMileage.length > 0 && (
+                  <div>
+                    <strong>State/Legs:</strong> {routeDetails.stateMileage.length} routing legs detected
+                  </div>
+                )}
+              </div>
+            )}
 
             {isLoaded ? (
               <GoogleMap
@@ -175,7 +212,7 @@ const TripMap = () => {
               >
                 {routePath.length > 1 && (
                   <Polyline 
-                    key={routePath.length + provider}
+                    key={routePath.length + provider + routeChoice}
                     path={routePath} 
                     options={{ 
                       strokeColor: provider === 'ptv' ? '#28a745' : '#0055ff', 

@@ -48,6 +48,7 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
   const [place2, setPlace2] = useState(places2 || "");
   const [place3, setPlace3] = useState(Array.isArray(places3) ? places3 : []);
   const [provider, setProvider] = useState('google');
+  const [routeChoice, setRouteChoice] = useState('fast');
   const [routeInfo, setRouteInfo] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -169,7 +170,7 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
       const destination = { lat: parseFloat(coords2.lat), lng: parseFloat(coords2.lng) };
 
       const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : { type: 'car' };
-      const routeResult = await MapService.getRoute(origin, destination, waypoints, vehicleProfile);
+      const routeResult = await MapService.getRoute(origin, destination, waypoints, vehicleProfile, routeChoice);
       
       let extractedToll = 0;
       let hasTolls = false;
@@ -192,6 +193,9 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
 
       setRouteInfo({
         distance: routeResult.distance,
+        distanceMiles: routeResult.distanceMiles,
+        distanceKms: routeResult.distanceKms,
+        stateMileage: routeResult.stateMileage || [],
         distanceUnit: routeResult.distanceUnit,
         durationText: routeResult.durationText,
         durationHours: (routeResult.duration / 3600).toFixed(2),
@@ -245,6 +249,16 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
             <option value="google">Google Maps (Car)</option>
             <option value="ptv">PTV Maps (Truck)</option>
           </select>
+          {provider === 'ptv' && (
+            <>
+              <label className="fw-bold m-0 ms-2">Route:</label>
+              <select className="form-select form-select-sm w-auto" value={routeChoice} onChange={(e) => setRouteChoice(e.target.value)}>
+                <option value="fast">Fastest</option>
+                <option value="shortest">Shortest</option>
+                <option value="economic">Economic</option>
+              </select>
+            </>
+          )}
         </div>
       </div>
 
@@ -339,7 +353,10 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
               <h4 className="mb-3 border-bottom pb-2">Route Summary</h4>
               <div className="d-flex justify-content-between mb-2">
                 <span className="fw-bold text-muted">Distance:</span> 
-                <span className="fw-bold">{routeInfo.distance} {routeInfo.distanceUnit}</span>
+                <span className="fw-bold">
+                  {routeInfo.distanceMiles ? `${routeInfo.distanceMiles} Miles | ` : ''}
+                  {routeInfo.distanceKms ? `${routeInfo.distanceKms} Km` : `${routeInfo.distance} ${routeInfo.distanceUnit}`}
+                </span>
               </div>
               <div className="d-flex justify-content-between mb-2">
                 <span className="fw-bold text-muted">ETA:</span> 
@@ -349,10 +366,16 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
                 <span className="fw-bold text-muted">Tolls:</span> 
                 <span className="fw-bold">{routeInfo.tollAvailable ? `$${routeInfo.cost}` : 'N/A'}</span>
               </div>
+              {routeInfo.stateMileage && routeInfo.stateMileage.length > 0 && (
+                <div className="d-flex justify-content-between mb-2">
+                  <span className="fw-bold text-muted">State Legs:</span> 
+                  <span className="fw-bold">{routeInfo.stateMileage.length} segments</span>
+                </div>
+              )}
               {routeInfo.distance > 0 && routeInfo.tollAvailable && routeInfo.cost > 0 && (
                 <div className="d-flex justify-content-between">
                   <span className="fw-bold text-muted">Cost/Mile:</span> 
-                  <span className="fw-bold">${(routeInfo.cost / routeInfo.distance).toFixed(2)}</span>
+                  <span className="fw-bold">${(routeInfo.cost / (routeInfo.distanceMiles || (routeInfo.distance / 1609.34))).toFixed(2)}</span>
                 </div>
               )}
             </div>

@@ -34,6 +34,7 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
   const [place1, setPlace1] = useState(initialOrigin || '');
   const [place2, setPlace2] = useState(initialDestination || '');
   const [provider, setProvider] = useState('google'); // 'google' | 'ptv'
+  const [routeChoice, setRouteChoice] = useState('fast');
   const [routeInfo, setRouteInfo] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +65,7 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
       // If Google is selected, pass null for default car routing
       const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : null;
 
-      const routeResult = await MapService.getRoute(origin, destination, [], vehicleProfile);
+      const routeResult = await MapService.getRoute(origin, destination, [], vehicleProfile, routeChoice);
       
       let extractedToll = 0;
       let hasTolls = false;
@@ -87,6 +88,9 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
 
       setRouteInfo({
         distance: routeResult.distance,
+        distanceMiles: routeResult.distanceMiles,
+        distanceKms: routeResult.distanceKms,
+        stateMileage: routeResult.stateMileage || [],
         distanceUnit: routeResult.distanceUnit,
         durationText: routeResult.durationText,
         durationHours: (routeResult.duration / 3600).toFixed(2),
@@ -122,6 +126,16 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
             <option value="google">Google Maps (Car Routing)</option>
             <option value="ptv">PTV Maps (Truck Routing)</option>
           </select>
+          {provider === 'ptv' && (
+            <>
+              <label style={{ margin: '0 0 0 10px', fontWeight: 500 }}>Route Option:</label>
+              <select value={routeChoice} onChange={(e) => setRouteChoice(e.target.value)}>
+                <option value="fast">Fastest</option>
+                <option value="shortest">Shortest</option>
+                <option value="economic">Economic</option>
+              </select>
+            </>
+          )}
         </div>
       </div>
       
@@ -162,7 +176,10 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
             <div className="route-info-card">
               <div className="route-info-row">
                 <span className="route-info-label">Distance:</span>
-                <span className="route-info-value">{routeInfo.distance} {routeInfo.distanceUnit}</span>
+                <span className="route-info-value">
+                  {routeInfo.distanceMiles ? `${routeInfo.distanceMiles} Miles | ` : ''}
+                  {routeInfo.distanceKms ? `${routeInfo.distanceKms} Km` : `${routeInfo.distance} ${routeInfo.distanceUnit}`}
+                </span>
               </div>
               <div className="route-info-row">
                 <span className="route-info-label">ETA:</span>
@@ -174,10 +191,16 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
                   {routeInfo.tollAvailable ? `$${routeInfo.cost}` : 'N/A'}
                 </span>
               </div>
+              {routeInfo.stateMileage && routeInfo.stateMileage.length > 0 && (
+                <div className="route-info-row">
+                  <span className="route-info-label">State Legs:</span>
+                  <span className="route-info-value">{routeInfo.stateMileage.length} segments</span>
+                </div>
+              )}
               {routeInfo.distance > 0 && routeInfo.tollAvailable && routeInfo.cost > 0 && (
                 <div className="route-info-row">
                   <span className="route-info-label">Cost/Mile:</span>
-                  <span className="route-info-value">${(routeInfo.cost / routeInfo.distance).toFixed(2)}</span>
+                  <span className="route-info-value">${(routeInfo.cost / (routeInfo.distanceMiles || (routeInfo.distance / 1609.34))).toFixed(2)}</span>
                 </div>
               )}
             </div>
