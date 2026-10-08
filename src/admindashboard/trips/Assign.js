@@ -6,6 +6,7 @@ import { BASE_URL } from "../../config";
 const Assigntrip = () => {
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const { id } = useParams(); // Get the id from the URL
 
@@ -24,22 +25,27 @@ const Assigntrip = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const data = new FormData();
-    Object.keys(formData).forEach((key) => data.append(key, formData[key]));
+    setIsSubmitting(true);
+    const submitData = new FormData();
+    Object.keys(formData).forEach((key) => submitData.append(key, formData[key]));
 
     try {
       const response = await axios.post(
         `${BASE_URL}api/tripassign/${id}/1`,
-        data
+        submitData
       );
 
       console.log("Response:", response.data);
       if (response.data.redirect_url) {
-        alert();
         window.location.href = response.data.redirect_url;
+      } else {
+        alert("Trip assigned successfully");
       }
     } catch (error) {
       console.error("Error submitting form:", error);
+      alert("Error submitting form");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -153,7 +159,7 @@ const Assigntrip = () => {
                           </option>
                           {data.trailors?.map((trailor) => (
                             <option key={trailor.id} value={trailor.id}>
-                              {trailor.trailor}
+                              {trailor.trailor} {trailor.status ? `(${trailor.status})` : ''}
                             </option>
                           ))}
                         </select>
@@ -199,7 +205,7 @@ const Assigntrip = () => {
                           </option>
                           {data.trucks?.map((truck) => (
                             <option key={truck.id} value={truck.id}>
-                              {truck.name}
+                              {truck.name} {truck.status ? `(${truck.status})` : ''}
                             </option>
                           ))}
                         </select>
@@ -555,8 +561,8 @@ const Assigntrip = () => {
                 </div>
                 {/* /.box-body */}
                 <div className="box-footer">
-                  <button type="submit" className="btn btn-primary">
-                    Confirm Order
+                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                    {isSubmitting ? "Confirming..." : "Confirm Order"}
                   </button>
                   <Link
                     to="/trips"

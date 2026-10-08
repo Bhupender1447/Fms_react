@@ -47,6 +47,7 @@ const Createdrivers = () => {
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [isOcrLoading, setIsOcrLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
 
 
@@ -190,6 +191,7 @@ const Createdrivers = () => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const data = new FormData();
 
     for (const [key, value] of Object.entries(formData)) {
@@ -199,8 +201,12 @@ const Createdrivers = () => {
     try {
       const response = await axios.post(`${BASE_URL}api/createdrivers`, data);
       setmessage(response.data);
+      toast.success("Driver created successfully!");
     } catch (error) {
       console.error('Error submitting form', error);
+      toast.error("Error submitting form. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
   return (
@@ -1334,8 +1340,8 @@ const Createdrivers = () => {
                 </div>
                 {/* /.box-body */}
                 <div className="box-footer">
-                  <button type="submit" className="btn btn-primary">
-                    Save Changes
+                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                    {isSubmitting ? "Saving..." : "Save Changes"}
                   </button>
                   <Link
                     to="https://isovia.ca/fms/customers/"

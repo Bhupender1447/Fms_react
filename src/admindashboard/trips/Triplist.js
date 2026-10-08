@@ -239,7 +239,7 @@ const Triplist = () => {
                                   to={`/trips/assign/${item.id}`}
                                   className="btn btn-success btn-xs"
                                 >
-                                  Logistics
+                                  Assign
                                 </Link>
                                 <Link
                                   to={`/trips/split/${item.id}`}

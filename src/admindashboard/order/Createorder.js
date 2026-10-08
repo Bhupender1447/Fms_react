@@ -351,6 +351,12 @@ const Createorder = () => {
   let handleonSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    if (!formData.company || !formData.customer_id || !formData.pickup_from || !formData.delivery) {
+      toast.error("Please fill in required fields: Company, Customer, Pickup, and Delivery.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const form = new FormData();

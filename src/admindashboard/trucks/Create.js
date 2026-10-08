@@ -82,6 +82,7 @@ const Createtrucks = () => {
     return res;
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOcrLoading, setIsOcrLoading] = useState(false);
 
   const handleFileChange2 = async () => {
@@ -184,6 +185,7 @@ const Createtrucks = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     const data = new FormData();
     for (let key in formData) {
@@ -204,6 +206,9 @@ const Createtrucks = () => {
       .catch(error => {
         console.error('Error:', error);
         toast.error('Error creating truck. Please try again.');
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
   };
 
@@ -1142,8 +1147,8 @@ const Createtrucks = () => {
             </div>
             {/* /.box-body */}
             <div className="box-footer">
-              <button type="button" className="btn btn-primary" onClick={handleSubmit}>
-                Save Changes
+              <button type="button" className="btn btn-primary" onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Changes"}
               </button>
               <Link to="https://isovia.ca/fms/trucks/" className="btn btn-warning">
                 Back
