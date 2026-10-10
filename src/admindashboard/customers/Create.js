@@ -1,10 +1,13 @@
 import axios from 'axios';
 import { BASE_URL } from '../../config';
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 
 const Createcustomer = () => {
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     ctype: '',
     name: '',
@@ -46,6 +49,8 @@ const Createcustomer = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const formDataToSend = new FormData();
     for (let key in formData) {
@@ -54,10 +59,14 @@ const Createcustomer = () => {
 
     try {
       const response = await axios.post(`${BASE_URL}api/createcustomers`, formDataToSend);
-
-      console.log(response.data); // Log response data
+      console.log(response.data);
+      toast.success('Customer created successfully!');
+      navigate('/customers/');
     } catch (error) {
       console.error('Error:', error);
+      toast.error('Failed to create customer.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
   return (
@@ -90,7 +99,7 @@ const Createcustomer = () => {
               {/* /.box-header */}
               <form
                 role="form"
-                onSubmitCapture={handleSubmit}
+                onSubmit={handleSubmit}
                 encType="multipart/form-data"
               >
                 <div className="box-body">
