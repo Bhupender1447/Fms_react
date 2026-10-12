@@ -185,6 +185,7 @@ const Createtrucks = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
     const data = new FormData();

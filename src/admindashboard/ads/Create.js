@@ -4,6 +4,7 @@ import { BASE_URL } from '../../config';
 import { Link } from 'react-router-dom';
 
 const Createads = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // State management for form fields
   const [formData, setFormData] = useState({
     name: '',
@@ -28,6 +29,8 @@ const Createads = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const data = new FormData();
     for (const key in formData) {
@@ -39,6 +42,8 @@ const Createads = () => {
       alert(response.data.message);
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -218,8 +223,8 @@ const Createads = () => {
                   </div>
                 </div>
                 <div className="box-footer">
-                  <button type="submit" className="btn btn-primary">
-                    Save Changes
+                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                    {isSubmitting ? "Saving..." : "Save Changes"}
                   </button>
                   <Link to="/customers/" className="btn btn-warning">
                     Back

@@ -24,6 +24,7 @@ const SplitTripCityHighway = () => {
     highway_driver_id: "",
     highway_rate: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   /* ================= FETCH DRIVERS ================= */
 
@@ -65,6 +66,8 @@ const SplitTripCityHighway = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const payload = {
       tmsTriptId: formData.tmsTriptId,
@@ -95,6 +98,8 @@ const SplitTripCityHighway = () => {
     } catch (error) {
       console.error(error);
       toast.error("Trip split failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -226,8 +231,8 @@ const SplitTripCityHighway = () => {
             </div>
 
             <div className="box-footer">
-              <button type="submit" className="btn btn-primary">
-                Split Trip
+              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                {isSubmitting ? "Splitting..." : "Split Trip"}
               </button>
               <button
                 type="button"

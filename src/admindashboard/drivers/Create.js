@@ -191,6 +191,7 @@ const Createdrivers = () => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
     const data = new FormData();
 

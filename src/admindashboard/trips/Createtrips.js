@@ -11,6 +11,7 @@ const Createtrips = () => {
   const [, setOcrRaw] = useState(null);
   const [ocrFile, setOcrFile] = useState(null); // OCR State
   const [isOcrLoading, setIsOcrLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleOcrUpload = async () => {
     if (!ocrFile) {
@@ -639,6 +640,8 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
   let handleonSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const form = new FormData();
 
@@ -678,12 +681,16 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       navigate(-1);
     } catch (error) {
       console.error(error);
-      toast.error("Trip creation failed");
+      toast.error(error?.response?.data?.message || "Trip creation failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   let handleSaveAndAssign = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const form = new FormData();
     // Append regular fields
@@ -720,7 +727,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       navigate(`/trips/assign/${response.data.id}`);
     } catch (error) {
       console.error("Error:", error);
-      toast.error(error, {
+      toast.error(error?.response?.data?.message || "Trip creation failed", {
         position: "top-right",
         autoClose: 3000,
         hideProgressBar: false,
@@ -730,6 +737,8 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
         progress: undefined,
         theme: "colored",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -2353,7 +2362,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
         {/* /.box */}
         <div className="text-center">
           <button
-            type="submit"
+            type="button"
             className="btn btn-primary"
             onClick={() => setpopup(!popup)}
           >
@@ -2407,15 +2416,17 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                   type="button"
                   className="btn btn-primary"
                   onClick={handleonSubmit}
+                  disabled={isSubmitting}
                 >
-                  Save Trip
+                  {isSubmitting ? "Saving..." : "Save Trip"}
                 </button>
                 <button
                   type="button"
                   className="btn btn-success"
                   onClick={handleSaveAndAssign}
+                  disabled={isSubmitting}
                 >
-                  Save Trip and Assign Dispatch
+                  {isSubmitting ? "Saving..." : "Save Trip and Assign Dispatch"}
                 </button>
 
                 <button

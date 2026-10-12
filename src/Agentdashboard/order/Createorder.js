@@ -273,9 +273,12 @@ const Createorder = () => {
 
 
   const [rows, setRows] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   let handleonSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const form = new FormData();
     form.append('company', formData.company);
@@ -325,10 +328,14 @@ const Createorder = () => {
     try {
       const response = await axios.post('https://isovia.ca/fms_api/api/create', form);
       setmessage(response.data.message);
+      toast.success("Order created successfully!");
       return response.data;
     } catch (error) {
       console.error('Error:', error);
+      toast.error(error?.response?.data?.message || "Error creating order. Please try again.");
       throw error; // Rethrow the error to handle it in the calling code
+    } finally {
+      setIsSubmitting(false);
     }
   }
   { console.log(formData?.commodity) }
@@ -1457,8 +1464,8 @@ const Createorder = () => {
         </div>
         {/* col-md-12 */}
         <div className="text-center">
-          <button onClick={handleonSubmit} className="btn btn-primary">
-            Save
+          <button onClick={handleonSubmit} className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save"}
           </button>
           <a href="/orders/" className="btn btn-warning">
             Back

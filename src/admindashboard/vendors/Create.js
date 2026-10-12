@@ -3,9 +3,12 @@
 import axios from "axios";
 import { BASE_URL } from "../../config";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const Createvendors = () => {
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setmessage] = useState();
   const [formData, setFormData] = useState({
     name: "",
@@ -45,6 +48,8 @@ const Createvendors = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const data = new FormData();
     for (const key in formData) {
@@ -57,8 +62,13 @@ const Createvendors = () => {
         data
       );
       setmessage(response.data.message);
+      toast.success("Vendor created successfully!");
+      navigate('/vendors');
     } catch (error) {
       console.error(error);
+      toast.error(error?.response?.data?.message || "Error creating vendor. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -930,8 +940,9 @@ const Createvendors = () => {
                 type="button"
                 className="btn btn-primary"
                 onClick={handleSubmit}
+                disabled={isSubmitting}
               >
-                Save Changes
+                {isSubmitting ? "Saving..." : "Save Changes"}
               </button>
               <Link to="/customers/" className="btn btn-warning">
                 Back

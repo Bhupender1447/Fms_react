@@ -10,9 +10,12 @@ const SplitTripModal = ({ yards, onClose, onSuccess }) => {
   const [yardId, setYardId] = useState(""); // State for selected yard
   const [error, setError] = useState(""); // State for error messages
   const [data, setdata] = useState(""); // State for error messages
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent default form submission
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     // Prepare the data for the API request
     const data = {
@@ -40,6 +43,8 @@ const SplitTripModal = ({ yards, onClose, onSuccess }) => {
       // Handle errors
       setError("An error occurred while creating the trip split.");
       console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -112,8 +117,8 @@ const SplitTripModal = ({ yards, onClose, onSuccess }) => {
                 <button type="button" className="btn btn-secondary" onClick={onClose}>
                   Close
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Submit
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? "Submitting..." : "Submit"}
                 </button>
               </div>
             </form>

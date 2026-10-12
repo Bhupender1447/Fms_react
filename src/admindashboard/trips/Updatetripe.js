@@ -51,6 +51,7 @@ const Updatetrip = () => {
     }));
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     company: "",
     customerorderno: "",
@@ -391,6 +392,9 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
   let handleonSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     const form = new FormData();
     form.append('userid', userdata.id);
     form.append('company', formData.company);
@@ -448,6 +452,8 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
     } catch (error) {
       console.error('Error:', error);
       throw error;
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -813,7 +819,9 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
             </div>
           </div>
           <div className="text-center">
-            <button type="submit" className="btn btn-primary">Save</button>
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save"}
+            </button>
             <a href="/trips/" className="btn btn-warning" style={{ marginLeft: '10px' }}>Back</a>
           </div>
         </section>

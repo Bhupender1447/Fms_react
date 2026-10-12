@@ -2,9 +2,11 @@ import axios from "axios";
 import { BASE_URL } from "../../config";
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const CarrierDataPopup = ({ brokerData, popup, setpopup }) => {
   const [showModal] = useState(popup);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   let navigate = useNavigate();
 
   const handleClose = () => setpopup(false);
@@ -12,15 +14,22 @@ const CarrierDataPopup = ({ brokerData, popup, setpopup }) => {
 
   const handleSubmit = async (e, CarrierData) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     const formData = new FormData();
     formData.append("usdot", CarrierData);
 
     try {
       await axios.post(`${BASE_URL}api/createcarriers`, formData);
+      toast.success("Carrier created successfully!");
       setpopup(false);
       navigate("/carriers");
     } catch (error) {
       console.error(error);
+      toast.error(error?.response?.data?.message || "Failed to create carrier");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -115,8 +124,9 @@ const CarrierDataPopup = ({ brokerData, popup, setpopup }) => {
                 type="button"
                 className="btn btn-secondary"
                 onClick={(e) => handleSubmit(e, brokerData.usdot)}
+                disabled={isSubmitting}
               >
-                Save
+                {isSubmitting ? "Saving..." : "Save"}
               </button>
               <button type="button" className="btn btn-secondary" onClick={handleClose}>
                 Close

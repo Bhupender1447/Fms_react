@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { BASE_URL } from '../../config';
 
 const Createterms = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     company: '',
@@ -18,6 +19,8 @@ const Createterms = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const data = new FormData();
     for (const key in formData) {
@@ -34,6 +37,8 @@ const Createterms = () => {
       }
     } catch (error) {
       console.error('Error submitting form', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -166,8 +171,8 @@ const Createterms = () => {
                 </div>
                 {/* /.box-body */}
                 <div className="box-footer">
-                  <button type="submit" className="btn btn-primary">
-                    Save Changes
+                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                    {isSubmitting ? "Saving..." : "Save Changes"}
                   </button>
                   <Link
                     to="/customers/"

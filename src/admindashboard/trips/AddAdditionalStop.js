@@ -25,6 +25,7 @@ const AddAdditionalStop = () => {
     lat: "",
     lng: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   /* ================= INPUT CHANGE ================= */
 
@@ -40,6 +41,8 @@ const AddAdditionalStop = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const payload = {
       ...formData,
@@ -62,6 +65,8 @@ const AddAdditionalStop = () => {
     } catch (error) {
       console.error(error);
       toast.error("Failed to add stop");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -228,8 +233,8 @@ const AddAdditionalStop = () => {
             </div>
 
             <div className="box-footer">
-              <button type="submit" className="btn btn-primary">
-                Add Stop
+              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                {isSubmitting ? "Adding..." : "Add Stop"}
               </button>
               <button
                 type="button"

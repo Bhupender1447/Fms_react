@@ -25,6 +25,7 @@ const Assigntrip = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
     const submitData = new FormData();
     Object.keys(formData).forEach((key) => submitData.append(key, formData[key]));
