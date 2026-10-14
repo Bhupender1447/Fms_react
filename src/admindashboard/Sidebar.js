@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { BASE_URL } from '../config';
 
 const Sidebar = () => {
   let navigate = useNavigate();
+  const { pathname } = useLocation();
   const [update, setUpdate] = useState(0);
   const loginData = JSON.parse(localStorage.getItem('logindetail'));
 
@@ -27,14 +29,34 @@ const Sidebar = () => {
   }, []);
 
   useEffect(() => {
+    const links = document.querySelectorAll('.main-sidebar .sidebar-menu a[href]');
+    document.querySelectorAll('.main-sidebar .sidebar-menu li.active').forEach((item) => {
+      item.classList.remove('active');
+    });
+
+    links.forEach((link) => {
+      const href = link.getAttribute('href');
+      if (!href || href === '#' || link.classList.contains('dropdown-toggle')) return;
+
+      const targetPath = new URL(href, window.location.origin).pathname;
+      if (targetPath === pathname) {
+        link.closest('li')?.classList.add('active');
+        link.closest('li.dropdown')?.classList.add('active');
+        link.closest('li.dropdown')?.querySelector('.dropdown-menu')?.classList.add('show');
+      }
+    });
+  }, [pathname]);
+
+  useEffect(() => {
     if (!loginData || (loginData.role !== 'admin' && loginData.role !== 'agent')) {
       navigate('/alllogin');
     }
   }, [update, navigate]);
 
-  const logout = () => {
-    setUpdate(update + 1);
+  const logout = async () => {
+    try { await fetch(`${BASE_URL}api/logout`, { credentials: 'include' }); } catch (error) { /* Clear local state below. */ }
     localStorage.removeItem('logindetail');
+    setUpdate(update + 1);
   };
 
   return (
@@ -52,8 +74,25 @@ const Sidebar = () => {
             </ul>
           </li>
 
+          {/* Loadboard */}
+          <li className="nav-item"><Link className="nav-link" to="/loadboard"><i className="fa fa-exchange" /> <span>Loadboard</span></Link></li>
+
+          {/* SIS World Model */}
+          <li className="nav-item"><Link className="nav-link" to="/sis/world-model"><i className="fa fa-cubes" /> <span>World Model</span></Link></li>
+
           {/* Live Update Map */}
           <li className="nav-item"><Link className="nav-link" to="/tripsmap"><i className="fa fa-map-marker" /> <span>Live Update Map</span></Link></li>
+
+          {/* Carrier Routes */}
+          <li className="nav-item dropdown">
+            <Link to="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
+              <i className="fa fa-road" /> <span>Route</span>
+            </Link>
+            <ul className="dropdown-menu bg-dark text-light">
+              <li className="nav-item"><Link className="dropdown-item" to="/routes/create"><i className="fa fa-circle-o" /> Create Route</Link></li>
+              <li className="nav-item"><Link className="dropdown-item" to="/routes/manage"><i className="fa fa-circle-o" /> Manage Routes</Link></li>
+            </ul>
+          </li>
 
           {/* Orders */}
           <li className="nav-item dropdown">
@@ -77,15 +116,13 @@ const Sidebar = () => {
             </ul>
           </li>
 
-          {/* Dispatch Board */}
-          <li className="nav-item"><Link className="nav-link" to="/DispatchBoard"><i className="fa fa-clipboard" /> <span>Dispatch Board / Freight board</span></Link></li>
-
           {/* Driver */}
           <li className="nav-item dropdown">
             <Link to="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
               <i className="fa fa-user" /> <span>Driver</span>
             </Link>
             <ul className="dropdown-menu bg-dark text-light">
+              <li className="nav-item"><Link className="dropdown-item" to="/drivers/listing"><i className="fa fa-circle-o" /> Driver Listing</Link></li>
               <li className="nav-item"><Link className="dropdown-item" to="/driverpaylist"><i className="fa fa-circle-o" /> Driver pay list</Link></li>
               <li className="nav-item"><Link className="dropdown-item" to="/driverbulkupload"><i className="fa fa-circle-o" /> Driver Bulk Upload</Link></li>
             </ul>
@@ -177,6 +214,7 @@ const Sidebar = () => {
               <li className="nav-item"><Link className="dropdown-item" to="/gomotive/vehicletable"><i className="fa fa-circle-o" /> Go Motive Data</Link></li>
               <li className="nav-item"><Link className="dropdown-item" to="/samsara/samsarausers"><i className="fa fa-circle-o" /> Samsara Data</Link></li>
               <li className="nav-item"><Link className="dropdown-item" to="/driverdutynotification"><i className="fa fa-circle-o" /> Driver Duty Notification</Link></li>
+              <li className="nav-item"><Link className="dropdown-item" to="/hos-fleet"><i className="fa fa-circle-o" /> Driver &amp; Truck HOS Links</Link></li>
             </ul>
           </li>
 
@@ -226,7 +264,7 @@ const Sidebar = () => {
 
           {/* Logout */}
           <li className="nav-item">
-            <Link className="nav-link" onClick={logout} style={{ cursor: 'pointer' }}>
+            <Link className="nav-link" to="/alllogin" onClick={logout} style={{ cursor: 'pointer' }}>
               <i className="glyphicon glyphicon-log-out" /> <span>Logout</span>
             </Link>
           </li>

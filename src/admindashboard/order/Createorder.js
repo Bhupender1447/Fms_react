@@ -1,15 +1,18 @@
 /* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from "axios";
+import { Alert } from "../../design-system/components";
+import "../../design-system/forms.css";
 import { useEffect, useState } from "react";
 import Distancepopup from "../Distancepopup";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { BASE_URL } from "../../config";
+import AddressAutocomplete from "../../components/Map/AddressAutocomplete";
 
 const Createorder = () => {
   const navigate = useNavigate();
   const [data, setdata] = useState([]);
-  const [, seterror] = useState([]);
+  const [referenceError, seterror] = useState(null);
   const [getdataid, setgetdataid] = useState(0);
   let userdata = JSON.parse(localStorage.getItem("logindetail"));
   const initialState = {
@@ -60,6 +63,7 @@ const Createorder = () => {
 
   const [formData, setFormData] = useState(initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState("");
   // OCR Logic
   const [ocrFile, setOcrFile] = useState(null);
   const [isOcrLoading, setIsOcrLoading] = useState(false);
@@ -357,6 +361,7 @@ const Createorder = () => {
       return;
     }
 
+    setSaveError("");
     setIsSubmitting(true);
 
     const form = new FormData();
@@ -429,8 +434,8 @@ const Createorder = () => {
 
       navigate(-1);
     } catch (error) {
-      console.error("Error:", error);
-      toast.error(error, {
+      setSaveError("The order could not be saved. Your entries are preserved. Check your connection before retrying.");
+      toast.error("The order could not be saved. Check your connection and try again.", {
         position: "top-right",
         autoClose: 3000,
         hideProgressBar: false,
@@ -441,7 +446,6 @@ const Createorder = () => {
         theme: "colored",
       });
 
-      navigate(-1);
     } finally {
       setIsSubmitting(false);
     }
@@ -451,11 +455,11 @@ const Createorder = () => {
 
 
   return (
-    <div className="content-wrapper">
+    <div className="content-wrapper iso-ui iso-form-workspace" data-iso-theme="light">
       <section className="content-header">
         <h1>
-          Manage
-          <small>Orders</small>
+          Create order
+          <small>Customer, route and pricing details</small>
         </h1>
         <ol className="breadcrumb">
           <li>
@@ -467,6 +471,7 @@ const Createorder = () => {
         </ol>
       </section>
       <section className="content">
+        {referenceError && <Alert tone="danger" title="Order reference data could not be loaded">Company and customer options may be unavailable. Check your connection and reload this page before saving.</Alert>}
         {/* Small boxes (Stat box) */}
         <div className="row">
           <div className="col-md-12 col-xs-12">
@@ -475,10 +480,12 @@ const Createorder = () => {
             <div className="box box-solid">
               <div className="box-body">
                 <div className="form-group">
-                  <label>Upload Document (OCR Auto-fill)</label>
+                  <label htmlFor="order-ocr-document">Upload Document (OCR Auto-fill)</label>
                   <div className="input-group">
                     <input
                       type="file"
+                      id="order-ocr-document"
+                      aria-describedby="order-ocr-help"
                       className="form-control"
                       onChange={handleOcrFileChange}
                       accept=".pdf,.png,.jpg,.jpeg"
@@ -501,7 +508,7 @@ const Createorder = () => {
                       </button>
                     </span>
                   </div>
-                  <p className="help-block">Select a PDF or Image to auto-populate form fields.</p>
+                  <p className="help-block" id="order-ocr-help">Upload a PDF or image, then review every extracted field before saving. Company, customer, pickup and delivery are required.</p>
                 </div>
               </div>
             </div>
@@ -529,7 +536,7 @@ const Createorder = () => {
                   <div className="col-md-6 col-xs-12 pull pull-left">
                     <div className="col-md-12 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Company</label>
+                        <label htmlFor="company">Company</label>
                         <select
                           className="form-control"
                           id="company"
@@ -555,7 +562,7 @@ const Createorder = () => {
                     />
                     <div className="col-md-6 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Shipment Type</label>
+                        <label htmlFor="shipmenttype">Shipment Type</label>
                         <select
                           className="form-control"
                           id="shipmenttype"
@@ -572,7 +579,7 @@ const Createorder = () => {
                     </div>
                     <div className="col-md-6 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Commmission</label>
+                        <label htmlFor="commission">Commmission</label>
                         <select
                           className="form-control"
                           id="commission"
@@ -588,7 +595,7 @@ const Createorder = () => {
                   <div className="col-md-6 col-xs-12 pull pull-right">
                     <div className="col-md-12 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Brokers</label>
+                        <label htmlFor="customer_id">Brokers</label>
                         <select
                           className="form-control"
                           id="customer_id"
@@ -610,7 +617,7 @@ const Createorder = () => {
                     </div>
                     <div className="col-md-3 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Load Type</label>
+                        <label htmlFor="loadtype">Load Type</label>
                         <select
                           className="form-control"
                           id="loadtype"
@@ -628,7 +635,7 @@ const Createorder = () => {
                     </div>
                     <div className="col-md-3 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Frieght on</label>
+                        <label htmlFor="frieghton">Frieght on</label>
                         <select
                           className="form-control"
                           id="frieghton"
@@ -642,7 +649,7 @@ const Createorder = () => {
                     </div>
                     <div className="col-md-3 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Salesman</label>
+                        <label htmlFor="salesman">Salesman</label>
                         <select
                           className="form-control"
                           id="salesman"
@@ -658,7 +665,7 @@ const Createorder = () => {
                     </div>
                     <div className="col-md-3 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="username">Scale #</label>
+                        <label htmlFor="scaleticketno">Scale #</label>
                         <input
                           type="text"
                           className="form-control"
@@ -675,7 +682,7 @@ const Createorder = () => {
                     </div>
                     <div className="col-md-3 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="username">Load no #</label>
+                        <label htmlFor="scaleticketno">Load no #</label>
                         <input
                           type="text"
                           className="form-control"
@@ -695,7 +702,7 @@ const Createorder = () => {
            <div class="col-md-12 col-xs-12 pull pull-left">
           
           <div class="form-group">
-            <label for="description">Description</label>
+            <label htmlFor="carrier_desc">Description</label>
             <textarea type="text" class="form-control" id="carrier_desc" name="carrier_desc"  autocomplete="off">
                               </textarea>
           </div> 
@@ -706,7 +713,7 @@ const Createorder = () => {
                 {/*   
              <div class="col-md-4 col-xs-12 pull pull-left">
               <div class="form-group">
-              <label for="store">Weight</label>
+              <label htmlFor="weight">Weight</label>
                <select class="form-control" id="weight" name="weight">
                       
                       <option value="Gallons">Gallons</option>
@@ -725,7 +732,7 @@ const Createorder = () => {
                 {/*
               <div class="col-md-3 col-xs-12 pull pull-left">
               <div class="form-group">
-              <label for="store">Measurement*</label>
+              <label htmlFor="measurement">Measurement*</label>
               <select class="form-control" id="measurement" name="measurement">
               <option value="Centimeter">Centimeter</option>
                <option value="Feet">Feet</option>
@@ -739,7 +746,7 @@ const Createorder = () => {
              <div class="col-md-3 col-xs-12 pull pull-left">
               
                   <div class="form-group">
-                  <label for="username">L*</label>
+                  <label htmlFor="l">L*</label>
                   <input type="text" class="form-control" id="l" name="l"  autocomplete="off">
                   </div>
               
@@ -747,7 +754,7 @@ const Createorder = () => {
                  <div class="col-md-3 col-xs-12 pull pull-left">
               
                   <div class="form-group">
-                  <label for="username">B*</label>
+                  <label htmlFor="b">B*</label>
                   <input type="text" class="form-control" id="b" name="b"  autocomplete="off">
                   </div>
               
@@ -755,7 +762,7 @@ const Createorder = () => {
                  <div class="col-md-3 col-xs-12 pull pull-left">
               
                   <div class="form-group">
-                  <label for="username">H*</label>
+                  <label htmlFor="h">H*</label>
                   <input type="text" class="form-control" id="h" name="h"  autocomplete="off">
                   </div>
               
@@ -769,7 +776,7 @@ const Createorder = () => {
            <div class="col-md-12 col-xs-12 pull pull-left">
           
           <div class="form-group">
-            <label for="description">Description</label>
+            <label htmlFor="shipment_desc">Description</label>
             <textarea type="text" class="form-control" id="shipment_desc" name="shipment_desc" placeholder="Enter Shipment  Notes" autocomplete="off">
                               </textarea>
           </div> 
@@ -890,18 +897,7 @@ const Createorder = () => {
                 </div>
               </div>
               <div className="col-md-12 col-xs-12 pull pull-left">
-                <div className="form-group">
-                  <label htmlFor="username">Pickup Address</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="pickup_address"
-                    name="pickup_address"
-                    autoComplete="off"
-                    value={formData.pickup_address}
-                    onChange={handleInputChange}
-                  />
-                </div>
+                <AddressAutocomplete id="pickup_address" name="pickup_address" label="Pickup Address" value={formData.pickup_address} onChange={handleInputChange} />
               </div>
               <div className="col-md-4 col-xs-12 pull pull-left">
                 <label htmlFor="store">Pickup Date</label>
@@ -930,7 +926,7 @@ const Createorder = () => {
               </div>
               <div className="col-md-4 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="username">Refrence No.*</label>
+                  <label htmlFor="pickup_refno">Refrence No.*</label>
                   <input
                     type="text"
                     className="form-control"
@@ -966,7 +962,7 @@ const Createorder = () => {
               </div> */}
               <div className="col-md-12 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="description">Pickup Description</label>
+                  <label htmlFor="pickup_desc">Pickup Description</label>
                   <textarea
                     type="text"
                     className="form-control"
@@ -983,7 +979,7 @@ const Createorder = () => {
             <div className="col-md-6 col-xs-12 pull pull-right">
               <div className="col-md-12 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="store">Deliver To</label>
+                  <label htmlFor="delivery">Deliver To</label>
                   <select
                     className="form-control"
                     id="delivery"
@@ -999,18 +995,7 @@ const Createorder = () => {
                 </div>
               </div>
               <div className="col-md-12 col-xs-12 pull pull-left">
-                <div className="form-group">
-                  <label htmlFor="username">Delivery Address</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="delivery_address"
-                    name="delivery_address"
-                    autoComplete="off"
-                    value={formData.delivery_address}
-                    onChange={handleInputChange}
-                  />
-                </div>
+                <AddressAutocomplete id="delivery_address" name="delivery_address" label="Delivery Address" value={formData.delivery_address} onChange={handleInputChange} />
               </div>
               <div className="col-md-4 col-xs-12 pull pull-left">
                 <label htmlFor="store">Delivery Date</label>
@@ -1039,12 +1024,11 @@ const Createorder = () => {
               </div>
               <div className="col-md-4 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="username">Refrence No.*</label>
+                  <label htmlFor="delivery_refno">Refrence No.*</label>
                   <input
                     type="text"
                     className="form-control"
                     id="delivery_refno"
-                    defaultValue="ISV_TRIP-1230"
                     name="delivery_refno"
                     autoComplete="off"
                     value={
@@ -1076,7 +1060,7 @@ const Createorder = () => {
               </div> */}
               <div className="col-md-4 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="store">Appointment</label>
+                  <label htmlFor="dappointment">Appointment</label>
                   <select
                     className="form-control"
                     id="dappointment"
@@ -1091,7 +1075,7 @@ const Createorder = () => {
               </div>
               <div className="col-md-12 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="description">Delivery Description</label>
+                  <label htmlFor="delivery_desc">Delivery Description</label>
                   <textarea
                     type="text"
                     className="form-control"
@@ -1101,7 +1085,6 @@ const Createorder = () => {
                     autoComplete="off"
                     value={formData.delivery_desc}
                     onChange={handleInputChange}
-                    defaultValue={"                                    "}
                   />
                 </div>
               </div>
@@ -1137,7 +1120,7 @@ const Createorder = () => {
             {/*
                       <div class="col-md-2 col-xs-12 pull pull-left">
                       <div class="form-group">
-                      <label for="store">Stop Type</label>
+                      <label htmlFor="stoptype">Stop Type</label>
                       <select class="form-control" id="stoptype" name="stoptype">
                       
                       <option value="Delivery">Delivery</option>
@@ -1149,7 +1132,7 @@ const Createorder = () => {
                       
                       <div class="col-md-6 col-xs-12 pull pull-left">
                       <div class="form-group">
-                      <label for="username">Location</label>
+                      <label htmlFor="pac-location">Location</label>
                       <input id="pac-location" name="pac-location" type="text" class="form-control" placeholder="Enter Location Name, Address etc." autocomplete="off" />
                       
                       </div>
@@ -1467,7 +1450,7 @@ const Createorder = () => {
               </table>
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="description">Selecct Trailor Type</label>
+                  <label htmlFor="trailortype">Selecct Trailor Type</label>
                   <select
                     className="form-control"
                     id="trailortype"
@@ -1475,7 +1458,7 @@ const Createorder = () => {
                     value={formData.trailortype}
                     onChange={handleInputChange}
                   >
-                    <option value="" disabled="" selected="">
+                    <option value="" disabled>
                       Choose Trailor Type
                     </option>
                     {data.trailors?.map((item) => (
@@ -1488,7 +1471,7 @@ const Createorder = () => {
               </div>
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="store">View Manifest</label>
+                  <label htmlFor="manifest">View Manifest</label>
                   <select
                     className="form-control"
                     id="manifest"
@@ -1503,7 +1486,7 @@ const Createorder = () => {
               </div>
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="store">Hazmat</label>
+                  <label htmlFor="hazmat">Hazmat</label>
                   <select
                     className="form-control"
                     id="hazmat"
@@ -1518,7 +1501,7 @@ const Createorder = () => {
               </div>
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="username">Addl. Charges</label>
+                  <label htmlFor="addlcharge">Addl. Charges</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1533,7 +1516,7 @@ const Createorder = () => {
               {/*
                <div class="col-md-2 col-xs-12 pull pull-left">
               <div class="form-group">
-              <label for="store">Refer</label>
+              <label htmlFor="refer">Refer</label>
               <select class="form-control" id="refer" name="refer">
              <option value="C">C</option>
                 <option value="F">F</option>
@@ -1544,7 +1527,7 @@ const Createorder = () => {
           */}
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="username">Delivery by APPT*</label>
+                  <label htmlFor="appt">Delivery by APPT*</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1558,7 +1541,7 @@ const Createorder = () => {
               </div>
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="store">PIP</label>
+                  <label htmlFor="pip">PIP</label>
                   <select
                     className="form-control"
                     id="pip"
@@ -1573,7 +1556,7 @@ const Createorder = () => {
               </div>
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="store">CTPAT</label>
+                  <label htmlFor="ctpat">CTPAT</label>
                   <select
                     className="form-control"
                     id="ctpat"
@@ -1769,15 +1752,18 @@ const Createorder = () => {
       {popup && (
         <div
           className="modal fade show"
+          role="dialog"
+          aria-labelledby="order-save-title"
           style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
         >
           <div className="modal-dialog modal-lg" style={{ maxWidth: "90%" }}>
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Distance Calculator</h5>
+                <h5 className="modal-title" id="order-save-title">Review route and save order</h5>
                 <button
                   type="button"
                   className="close"
+                  aria-label="Close order review"
                   onClick={() => setpopup(false)}
                 >
                   <span aria-hidden="true">×</span>
@@ -1795,6 +1781,7 @@ const Createorder = () => {
                 />
               </div>
               <div className="modal-footer">
+                {saveError && <Alert tone="danger" title="Order save failed">{saveError} If a request timed out, check the list for an existing record before retrying.</Alert>}
                 <button
                   type="button"
                   className="btn btn-primary"

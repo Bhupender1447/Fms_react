@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { GOOGLE_MAPS_API_KEY } from '../mapConfig';
 
 const Addstop = ({ setpopup1, popup1 }) => {
   const locationRef = useRef(null);
@@ -49,7 +50,7 @@ const Addstop = ({ setpopup1, popup1 }) => {
       initializeAutocomplete();
     } else {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}&libraries=places`;
       script.async = true;
       script.onload = initializeAutocomplete;
       document.body.appendChild(script);

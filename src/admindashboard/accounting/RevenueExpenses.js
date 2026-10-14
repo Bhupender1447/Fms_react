@@ -2,39 +2,46 @@
 import axios from 'axios';
 import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-
-const data = [
-  { name: 'January', Revenue: 20000, Expenses: 12000 },
-  { name: 'February', Revenue: 24000, Expenses: 15000 },
-  { name: 'March', Revenue: 22000, Expenses: 17000 },
-];
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const RevenueExpenses = () => {
-  const [payrollData, setpayrollData] = useState([])
+  const [activity, setActivity] = useState([]);
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await axios.get(`${BASE_URL}api/getRevenueExpenses`);
-        setpayrollData(Array.isArray(response.data) ? response.data : []);
+        const rows = Array.isArray(response.data) ? response.data : [];
+        setActivity(rows.map((row) => ({
+          ...row,
+          Revenue: Number(row.Revenue) || 0,
+          Expenses: Number(row.Expenses) || 0,
+        })));
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     };
     fetchData();
-  }, [])
+  }, []);
+
   return (
-    <div>
-      <h2>Revenue vs Expenses</h2>
-      <BarChart width={400} height={300} data={payrollData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Bar dataKey="Revenue" fill="#82ca9d" />
-        <Bar dataKey="Expenses" fill="#8884d8" />
-      </BarChart>
+    <div className="accounting-chart-content">
+      <div className="accounting-chart-title">
+        <h3>Revenue &amp; expenses by month</h3>
+        <p>Active orders, grouped by month name</p>
+      </div>
+      <div className="accounting-chart-frame">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={activity} margin={{ top: 12, right: 16, bottom: 4, left: 4 }}>
+            <CartesianGrid stroke="#e5ece8" vertical={false} />
+            <XAxis dataKey="name" axisLine={false} tickLine={false} />
+            <YAxis axisLine={false} tickLine={false} width={72} />
+            <Tooltip formatter={(value) => Number(value).toLocaleString()} />
+            <Legend />
+            <Bar dataKey="Revenue" fill="#087f78" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="Expenses" fill="#df9141" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

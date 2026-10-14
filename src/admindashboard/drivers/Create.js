@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { BASE_URL } from '../../config';
+import { getOcrErrorMessage, getOcrResponseErrorMessage } from '../../services/ocrErrors';
 
 const Createdrivers = () => {
   const [message, setmessage] = useState();
@@ -164,12 +165,12 @@ const Createdrivers = () => {
         });
 
       } else {
-        toast.error("OCR failed or no data found");
+        toast.error(getOcrResponseErrorMessage(response));
       }
 
     } catch (error) {
-      console.error("OCR error:", error);
-      toast.error("Error processing OCR");
+      console.error("Driver OCR request failed:", error.response?.status || error.message);
+      toast.error(getOcrErrorMessage(error, "Error processing OCR"));
     } finally {
       setIsOcrLoading(false);
     }
@@ -191,7 +192,6 @@ const Createdrivers = () => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
     setIsSubmitting(true);
     const data = new FormData();
 

@@ -30,11 +30,11 @@ const Adminheader = () => {
   <Link to="/admin" className="logo">
     {/* mini logo for sidebar mini 50x50 pixels */}
     <span className="logo-mini">
-      <b>ADN</b>
+      <b>IFM</b>
     </span>
     {/* logo for regular state and mobile devices */}
     <span className="logo-lg">
-      <b>Admin</b>
+      <b>ISOVIA</b>
     </span>
   </Link>
   {/* Header Navbar: style can be found in header.less */}

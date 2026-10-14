@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { BASE_URL } from '../../config';
+import { getOcrErrorMessage, getOcrResponseErrorMessage } from '../../services/ocrErrors';
 
 const Updatedrivers = () => {
   const [message, setMessage] = useState('');
@@ -115,12 +116,12 @@ const Updatedrivers = () => {
           return updated;
         });
       } else {
-        toast.error("OCR failed or no data found");
+        toast.error(getOcrResponseErrorMessage(response));
       }
 
     } catch (error) {
-      console.error("OCR error:", error);
-      toast.error("Error processing OCR");
+      console.error("Driver OCR request failed:", error.response?.status || error.message);
+      toast.error(getOcrErrorMessage(error, "Error processing OCR"));
     }
   };
 

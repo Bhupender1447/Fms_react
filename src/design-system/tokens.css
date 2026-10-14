@@ -1,0 +1,79 @@
+:root {
+  --iso-burgundy: #710D2D;
+  --iso-burgundy-hover: #560A22;
+  --iso-crimson: #D7194B;
+  --iso-coral: #FF625F;
+  --iso-brand-highlight: #F083A1;
+  --iso-cyan: #24B8F2;
+  --iso-blue: #1769D2;
+  --iso-navy: #241019;
+  --iso-immersive: #14090F;
+  --iso-font-body: 'DM Sans', 'Segoe UI', sans-serif;
+  --iso-font-heading: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --iso-space-1: .25rem;
+  --iso-space-2: .5rem;
+  --iso-space-3: .75rem;
+  --iso-space-4: 1rem;
+  --iso-space-6: 1.5rem;
+  --iso-space-8: 2rem;
+  --iso-radius-sm: .375rem;
+  --iso-radius-md: .75rem;
+  --iso-radius-lg: 1rem;
+  --iso-motion: 140ms;
+}
+
+:root, [data-iso-theme='light'] {
+  color-scheme: light;
+  --iso-bg: #FAF5F7;
+  --iso-surface: #FFFFFF;
+  --iso-surface-raised: #F6EDF1;
+  --iso-border: #E8D8DF;
+  --iso-control-border: #9B7483;
+  --iso-text: #111827;
+  --iso-muted: #705563;
+  --iso-primary: var(--iso-burgundy);
+  --iso-primary-hover: #560A22;
+  --iso-on-primary: #FFFFFF;
+  --iso-accent: var(--iso-crimson);
+  --iso-tracking: var(--iso-primary);
+  --iso-focus: var(--iso-primary);
+  --iso-success: #116D49;
+  --iso-success-bg: #EAF7F0;
+  --iso-warning: #805008;
+  --iso-warning-bg: #FFF5DE;
+  --iso-danger: #C62843;
+  --iso-danger-bg: #FFF0F3;
+  --iso-info: var(--iso-primary);
+  --iso-info-bg: #F9EAF0;
+  --iso-shadow: 0 8px 24px rgb(16 24 39 / 6%);
+}
+
+[data-iso-theme='dark'] {
+  color-scheme: dark;
+  --iso-bg: var(--iso-immersive);
+  --iso-surface: var(--iso-navy);
+  --iso-surface-raised: #341A27;
+  --iso-border: #654152;
+  --iso-control-border: #BA8194;
+  --iso-text: #F3F6FC;
+  --iso-muted: #D2B7C3;
+  --iso-primary: #F083A1;
+  --iso-primary-hover: #F7A3BA;
+  --iso-on-primary: #330517;
+  --iso-accent: #FF819E;
+  --iso-tracking: var(--iso-accent);
+  --iso-focus: var(--iso-accent);
+  --iso-success: #86E2B7;
+  --iso-success-bg: #12382E;
+  --iso-warning: #FFD583;
+  --iso-warning-bg: #382B15;
+  --iso-danger: #FF9CAF;
+  --iso-danger-bg: #3C1B2A;
+  --iso-info: #FFABC4;
+  --iso-info-bg: #431829;
+  --iso-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --iso-motion: 0ms; }
+}

@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { BASE_URL } from '../../config';
+import MapService from '../../services/MapService';
+import { GOOGLE_MAPS_API_KEY } from '../../mapConfig';
 
 const DriverDutyStatus = () => {
   // State management
@@ -26,7 +28,7 @@ const DriverDutyStatus = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchDrivers = async () => {
     try {
-      const response = await fetch(`${BASE_URL}api/getDriversDutyStatus`);
+      const response = await fetch(`${BASE_URL}api/getDriversDutyStatus`, { credentials: 'include' });
       const data = await response.json();
 
       if (data.status === 'success') {
@@ -77,15 +79,11 @@ const DriverDutyStatus = () => {
   // Get address from coordinates
   const getAddressFromCoordinates = async (lat, lng, driverId) => {
     try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
-      );
-      const data = await response.json();
-
-      if (data.status === 'OK' && data.results?.length > 0) {
+      const data = await MapService.reverseGeocode(lat, lng);
+      if (data.address) {
         setDriverLocations(prev => ({
           ...prev,
-          [driverId]: data.results[0].formatted_address,
+          [driverId]: data.address,
         }));
       } else {
         setDriverLocations(prev => ({
@@ -107,9 +105,9 @@ const DriverDutyStatus = () => {
     try {
       const response = await fetch(`${BASE_URL}api/locationbyDriver`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          Cookie: 'ci_session=ubqk26tq79t7fkjf1km4km66k7eavhs7; ci_session=gtmq88v6jr8aj7js3pno5a45bqpq8fjf',
         },
         body: `driver_id=${driverId}`,
       });
@@ -150,8 +148,13 @@ const DriverDutyStatus = () => {
       }
 
       googleScriptRef.current = true;
+      if (!GOOGLE_MAPS_API_KEY) {
+        googleScriptRef.current = null;
+        reject(new Error('Google Maps is not configured. Add REACT_APP_GOOGLE_MAPS_API_KEY to the React environment.'));
+        return;
+      }
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}&libraries=places`;
       script.async = true;
       script.defer = true;
       script.onload = () => {
@@ -160,6 +163,7 @@ const DriverDutyStatus = () => {
       };
       script.onerror = () => {
         console.error('Failed to load Google Maps script');
+        googleScriptRef.current = null;
         reject(new Error('Failed to load Google Maps script'));
       };
       document.head.appendChild(script);

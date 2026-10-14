@@ -218,7 +218,7 @@
   }
 
   .number-list-services-text.active {
-    border-bottom: 2px solid #ea1854;
+    border-bottom: 2px solid var(--iso-primary);
   }
 
   /* Service content */
@@ -250,7 +250,7 @@
     gap: 8px;
     font-size: 0.9rem;
     padding: 8px 16px;
-    background-color: #ea1854;
+    background-color: var(--iso-primary);
     color: #fff;
     border-radius: 6px;
     text-decoration: none;
@@ -301,14 +301,14 @@
 
   .counter-section h4.counter {
     font-size: 2.2rem;
-    color: #ea1854;
+    color: var(--iso-primary);
     font-weight: 700;
     margin-bottom: 8px;
   }
 
   .counter-section p {
     font-size: 1rem;
-    color: #055160;
+    color: var(--iso-primary);
     font-weight: 500;
     margin: 0;
   }
@@ -335,7 +335,7 @@
 
   .blog-subtitle {
     font-size: 1rem;
-    color: #f1f1f1;
+    color: var(--iso-bg);
     width: 90%;
     margin: 0 auto;
   }
@@ -367,7 +367,7 @@
   .blog-article-title {
     font-size: 1.3rem;
     font-weight: 600;
-    color: #055160;
+    color: var(--iso-primary);
   }
 
   .blog-article-excerpt {
@@ -377,7 +377,7 @@
 
   .read-more {
     font-size: 0.95rem;
-    color: #ea1854;
+    color: var(--iso-primary);
   }
 
   /* View all button */
@@ -388,7 +388,7 @@
 }
   .view-all-btn a {
     display: inline-block;
-    background-color: #ea1854;
+    background-color: var(--iso-primary);
     padding: 12px 28px;
     border-radius: 40px;
     font-size: 1rem;
@@ -398,7 +398,7 @@
   }
 
   .view-all-btn a:hover {
-    background-color: #055160;
+    background-color: var(--iso-primary);
   }
 section.partners-section-home {
     margin-top: 0px;
@@ -472,7 +472,7 @@ section.partners-section-home {
     transform: translateX(-50%);
     width: 2px;
     height: 90%;
-    background: linear-gradient(180deg, #00f260, #0575e6, #ff6a00);
+    background: linear-gradient(180deg, #00f260, var(--iso-primary), #ff6a00);
     opacity: 0.25;
   }
 
@@ -1024,7 +1024,7 @@ footer.footer {
     transform: scale(0.85);
   }
 .col-md-6.left-side-blog {
-    background-color: #387689;
+    background-color: var(--iso-primary);
     color: #fff;
     position: relative;
     right: 0px;

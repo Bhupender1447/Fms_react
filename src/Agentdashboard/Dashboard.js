@@ -1,6 +1,7 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { BASE_URL } from '../config'
 import './user.css'
 
 const AgentDashboard = () => {
@@ -33,7 +34,7 @@ const AgentDashboard = () => {
   }, []);
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/cpanel')
+    axios.get(`${BASE_URL}api/cpanel`)
       .then(res => setdata(res.data))
       .catch(error => console.error(error))
 

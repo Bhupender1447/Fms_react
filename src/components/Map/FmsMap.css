@@ -89,7 +89,7 @@
 .fms-calc-btn {
   width: 100%;
   padding: 10px;
-  background: #0056b3;
+  background: var(--iso-primary);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -99,7 +99,7 @@
 }
 
 .fms-calc-btn:hover {
-  background: #004494;
+  background: var(--iso-primary-hover);
 }
 
 .fms-calc-btn:disabled {

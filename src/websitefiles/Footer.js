@@ -1,106 +1,20 @@
-
 import { Link } from 'react-router-dom';
+import './public-shell.css';
 
-const Footer = () => {
-  return (
-   
-    <><footer className="footer">
-  <div className="container">
-    <div className="footer-bg">
-      <div className="container footer-section">
-        <div className="footer-area">
-          <div className="row">
-            <div className="col-lg-4 col-md-4 col-sm-12 ">
-              <div className="logo-footer">
-                <Link to="#">
-                  <img src="images/logo.png" alt="" />{" "}
-                </Link>
-              </div>
-            </div>
-            <div className="col-lg-8 col-md-8 col-sm-12 ">
-              <div className="navigation-footer">
-                <div className="row">
-                  <div className="col-md-4">
-                    <div className="address-link">
-                      <h4>Address</h4>
-                      <ul className="adres-list">
-                        <li>33 Sir Jacobs Crescent, Brampton, ON L7A 3V2</li>
-                        <li>Phone: +16472415999</li>
-                        <li>Isoviafreightmanagement@gmail.com</li>
-                      </ul>
-                    </div>
-                  </div>
-                  <div className="col-md-8">
-                    <div className="social-media-links">
-                      <ul className="social-links">
-                        <li>
-                          <Link to="#">
-                            <i className="fa-brands fa-facebook-f" />
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="#">
-                            <i className="fa-brands fa-instagram" />
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="#">
-                            <i className="fa-brands fa-linkedin-in" />
-                          </Link>
-                        </li>
-                      </ul>
-                    </div>
-                    <div className="software-links">
-                      <div className="software-links-list ">
-                        <ul className="list-software">
-                          <h4>Softwares</h4>
-                          <Link to="#">
-                            <li className="software-1">
-                              Isovia Freight Management System
-                            </li>
-                          </Link>
-                          <Link to="#">
-                            <li>Isovia Fleet Management System</li>
-                          </Link>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <hr />
-          <div className="navigation-icons">
-            <ul className="list-navigation">
-              <li className="navigation-footer">
-                <Link to="#">Home</Link>
-              </li>
-              <li className="navigation-footer">
-                <Link to="#">About</Link>
-              </li>
-              <li className="navigation-footer">
-                <Link to="#">Login</Link>
-              </li>
-              <li className="navigation-footer">
-                <Link to="#">Register</Link>
-              </li>
-              <li className="navigation-footer">
-                <Link to="#">Contact Us</Link>
-              </li>
-            </ul>
-            <span className="footer-copyright">
-              Copyright © 2025 ISOVIA Technology Solutions Inc. All Rights
-              Reserved.
-            </span>
-          </div>
-        </div>
+const Footer = () => (
+  <footer className="iso-ui iso-public-footer" data-iso-theme="dark">
+    <div className="iso-public-footer-main">
+      <div className="iso-public-footer-brand">
+        <Link className="iso-public-brand" to="/" aria-label="Isovia home"><img src="/images/logo.png" alt="" /><span>ISOVIA<small>FREIGHT SYSTEMS</small></span></Link>
+        <p>Freight Connected. Without Limits.</p>
+        <p>Where freight connects. Beyond borders.</p>
       </div>
+      <nav className="iso-public-footer-column" aria-label="Explore Isovia"><h2>Explore</h2><a href="/#products">Product ecosystem</a><Link to="/freightmanagement">IFM platform</Link><Link to="/partner">Partners</Link><Link to="/news">News</Link></nav>
+      <nav className="iso-public-footer-column" aria-label="Workspace access"><h2>Workspace</h2><Link to="/admin-login">Admin access</Link><Link to="/agents-login">Agent access</Link><Link to="/driver-login">Driver access</Link></nav>
+      <div className="iso-public-footer-column"><h2>Contact</h2><a href="mailto:Isoviafreightmanagement@gmail.com">Isoviafreightmanagement@gmail.com</a><a href="tel:+16472415999">+1 647 241 5999</a><small>Brampton, Ontario, Canada</small></div>
     </div>
-  </div>
-</footer>
-</>
-  )
-}
+    <div className="iso-public-footer-bottom"><span>© {new Date().getFullYear()} Isovia Technology Solutions Inc.</span><span>Freight management · Fleet operations · Driver workflows</span></div>
+  </footer>
+);
 
-export default Footer
+export default Footer;

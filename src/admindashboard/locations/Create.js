@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { GOOGLE_MAPS_API_KEY } from '../../mapConfig';
 
 const Createlocation = () => {
   const nameRef = useRef(null);
@@ -55,7 +56,7 @@ const Createlocation = () => {
       initialize();
     } else {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}&libraries=places`;
       script.async = true;
       script.onload = () => initialize();
       document.body.appendChild(script);

@@ -1,13 +1,10 @@
 import axios from 'axios';
 import { BASE_URL } from '../../config';
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { Link } from 'react-router-dom';
 
 
 const Createcustomer = () => {
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     ctype: '',
     name: '',
@@ -49,8 +46,6 @@ const Createcustomer = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
-    setIsSubmitting(true);
 
     const formDataToSend = new FormData();
     for (let key in formData) {
@@ -59,14 +54,10 @@ const Createcustomer = () => {
 
     try {
       const response = await axios.post(`${BASE_URL}api/createcustomers`, formDataToSend);
+
       console.log(response.data); // Log response data
-      toast.success("Customer created successfully!");
-      navigate('/customers');
     } catch (error) {
       console.error('Error:', error);
-      toast.error(error?.response?.data?.message || "Failed to create customer. Please try again.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
   return (
@@ -99,7 +90,7 @@ const Createcustomer = () => {
               {/* /.box-header */}
               <form
                 role="form"
-                onSubmit={handleSubmit}
+                onSubmitCapture={handleSubmit}
                 encType="multipart/form-data"
               >
                 <div className="box-body">
@@ -1190,8 +1181,8 @@ const Createcustomer = () => {
                 </div>
                 {/* /.box-body */}
                 <div className="box-footer">
-                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                    {isSubmitting ? "Saving..." : "Save Changes"}
+                  <button type="submit" className="btn btn-primary">
+                    Save Changes
                   </button>
                   <Link
                     to="/customers/"

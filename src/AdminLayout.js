@@ -1,11 +1,11 @@
 import React, { useEffect } from "react";
+import { acquireStylesheets, loadLayoutScript } from "./design-system/layoutStyles";
 
 const AdminLayout = ({ children }) => {
   useEffect(() => {
     // ------------------ CSS LOAD ------------------
     const cssLinks = [
-      "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Poppins&display=swap",
-      "https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700",
+      "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
       `${process.env.PUBLIC_URL}/css/bootstrap.css`,
       `${process.env.PUBLIC_URL}/bower_components/font-awesome/css/font-awesome.min.css`,
       `${process.env.PUBLIC_URL}/bower_components/Ionicons/css/ionicons.min.css`,
@@ -22,24 +22,13 @@ const AdminLayout = ({ children }) => {
       `${process.env.PUBLIC_URL}/css/style.css`,
       `${process.env.PUBLIC_URL}/css/responsive.css`,
       "http://www.shieldui.com/shared/components/latest/css/light/all.min.css",
+      `${process.env.PUBLIC_URL}/css/admin-modern.css`,
+      `${process.env.PUBLIC_URL}/css/isovia-brand.css`,
     ];
 
-    cssLinks.forEach((href) => {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = href;
-      document.head.appendChild(link);
-    });
-
-    // ------------------ JS LOAD ------------------
-    const loadScript = (src) =>
-      new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = src;
-        script.onload = resolve;
-        script.onerror = reject;
-        document.body.appendChild(script);
-      });
+    const releaseStyles = acquireStylesheets(cssLinks, 'operational');
+    let active = true;
+    const loadScript = (src) => active ? loadLayoutScript(src) : Promise.reject(new Error('Layout unmounted'));
 
     const loadScripts = async () => {
       try {
@@ -49,6 +38,7 @@ const AdminLayout = ({ children }) => {
         // jQuery UI
         await loadScript(`${process.env.PUBLIC_URL}/bower_components/jquery-ui/jquery-ui.min.js`);
 
+        if (!active) return;
         // Bridge
         const bridgeScript = document.createElement("script");
         bridgeScript.innerHTML = `$.widget.bridge("uibutton", $.ui.button);`;
@@ -97,18 +87,13 @@ const AdminLayout = ({ children }) => {
           await loadScript(src);
         }
       } catch (error) {
-        console.error("Error loading scripts:", error);
+        if (active) console.error("Error loading scripts:", error);
       }
     };
 
     loadScripts();
 
-    return () => {
-      cssLinks.forEach((href) => {
-        const link = document.querySelector(`link[to="${href}"]`);
-        if (link) link.remove();
-      });
-    };
+    return () => { active = false; releaseStyles(); };
   }, []);
 
   return <div className="admin-layout">{children}</div>;

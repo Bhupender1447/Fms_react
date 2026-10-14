@@ -1,13 +1,10 @@
 import axios from 'axios';
 import { BASE_URL } from '../../config';
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { Link } from 'react-router-dom';
 
 
 const Createbrokers = () => {
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setmessage] = useState()
   const [formData, setFormData] = useState({
     name: '',
@@ -29,8 +26,6 @@ const Createbrokers = () => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
-    setIsSubmitting(true);
 
     const data = new FormData();
     Object.keys(formData).forEach(key => {
@@ -43,14 +38,9 @@ const Createbrokers = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
-      setmessage(response.data.message);
-      toast.success("Broker created successfully!");
-      navigate('/brokers');
+      setmessage(response.data.message)
     } catch (error) {
       console.error('There was an error submitting the form!', error);
-      toast.error(error?.response?.data?.message || 'There was an error submitting the form!');
-    } finally {
-      setIsSubmitting(false);
     }
   };
   return (
@@ -580,8 +570,8 @@ const Createbrokers = () => {
                 </div>
                 {/* /.box-body */}
                 <div className="box-footer">
-                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                    {isSubmitting ? "Saving..." : "Save Changes"}
+                  <button type="submit" className="btn btn-primary">
+                    Save Changes
                   </button>
                   <Link
                     to="/customers/"

@@ -2,6 +2,7 @@ import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'react-toastify';
 import { BASE_URL } from '../../config';
+import { getOcrErrorMessage, getOcrResponseErrorMessage } from '../../services/ocrErrors';
 
 const Createorder = () => {
   const [data, setdata] = useState([])
@@ -93,9 +94,6 @@ const Createorder = () => {
 
     try {
       const response = await axios.post(`${BASE_URL}OCRController/simple_openai_process`, formDataOCR, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
         withCredentials: true
       });
 
@@ -221,12 +219,12 @@ const Createorder = () => {
           return updated;
         });
       } else {
-        setOcrMessage({ type: 'error', text: 'OCR processing failed or no data found.' });
+        setOcrMessage({ type: 'error', text: getOcrResponseErrorMessage(response) });
       }
 
     } catch (error) {
-      console.error('OCR Error:', error);
-      setOcrMessage({ type: 'error', text: 'Error communicating with OCR service.' });
+      console.error('Order OCR request failed:', error.response?.status || error.message);
+      setOcrMessage({ type: 'error', text: getOcrErrorMessage(error, 'Error communicating with OCR service.') });
     } finally {
       setOcrLoading(false);
     }
@@ -261,7 +259,7 @@ const Createorder = () => {
 
 
   useEffect(() => {
-    axios.get('https://isovia.ca/fms_api/api/getOrderData')
+    axios.get(`${BASE_URL}api/getOrderData`)
       .then(res => {
         setdata(res.data)
         setFormData(prev => ({ ...prev, customerorderno: res && res.data.orderno }))
@@ -273,12 +271,9 @@ const Createorder = () => {
 
 
   const [rows, setRows] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   let handleonSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
-    setIsSubmitting(true);
 
     const form = new FormData();
     form.append('company', formData.company);
@@ -326,16 +321,12 @@ const Createorder = () => {
     form.append('net_amount', formData.net_amount);
 
     try {
-      const response = await axios.post('https://isovia.ca/fms_api/api/create', form);
+      const response = await axios.post(`${BASE_URL}api/create`, form);
       setmessage(response.data.message);
-      toast.success("Order created successfully!");
       return response.data;
     } catch (error) {
       console.error('Error:', error);
-      toast.error(error?.response?.data?.message || "Error creating order. Please try again.");
       throw error; // Rethrow the error to handle it in the calling code
-    } finally {
-      setIsSubmitting(false);
     }
   }
   { console.log(formData?.commodity) }
@@ -1464,8 +1455,8 @@ const Createorder = () => {
         </div>
         {/* col-md-12 */}
         <div className="text-center">
-          <button onClick={handleonSubmit} className="btn btn-primary" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save"}
+          <button onClick={handleonSubmit} className="btn btn-primary">
+            Save
           </button>
           <a href="/orders/" className="btn btn-warning">
             Back

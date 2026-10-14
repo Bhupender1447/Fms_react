@@ -1,0 +1,44 @@
+
+.sis-world-page { padding: 28px; margin-left: 230px; min-height: calc(100vh - 100px); }
+.sis-world-notice { margin-bottom: 18px; }
+.sis-world-quality { padding: 20px; }
+.sis-world-quality h2 { margin-top: 0; font-size: 20px; }
+.sis-world-quality p { color: var(--iso-muted); }
+.sis-world-quality > dl { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 16px; }
+.sis-world-quality dt, .sis-world-details dt { color: var(--iso-muted); font-weight: 500; }
+.sis-world-quality dd, .sis-world-details dd { margin: 4px 0 10px; overflow-wrap: anywhere; }
+.sis-world-details { margin-top: 10px; }
+.sis-world-details summary { color: var(--iso-tracking); cursor: pointer; padding: 6px 0; }
+.sis-world-details summary:focus-visible { outline: 3px solid var(--iso-focus); outline-offset: 3px; }
+.sis-world-details dl { margin: 10px 0; }
+.sis-world-attributes > div { padding: 6px 0; border-top: 1px solid var(--iso-border); }
+.sis-world-summary { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin-bottom: 20px; }
+.sis-world-summary article { display: flex; flex-direction: column; gap: 8px; padding: 18px; }
+.sis-world-summary article > span { color: var(--iso-muted); font-size: 13px; }
+.sis-world-summary article > strong { color: var(--iso-text); font-size: 24px; }
+.sis-world-summary article .sis-world-source { font-size: 17px; text-transform: capitalize; }
+.sis-world-summary article .sis-world-time { font-size: 14px; }
+.sis-world-panel { padding: 0; margin-bottom: 20px; overflow: hidden; }
+.sis-world-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px; border-bottom: 1px solid var(--iso-border); }
+.sis-world-toolbar h2 { margin: 0; font-size: 20px; }
+.sis-world-toolbar p { margin: 6px 0 0; color: var(--iso-muted); font-size: 13px; }
+.sis-world-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.sis-world-result-count { margin: 0; padding: 14px 20px; color: var(--iso-muted); border-bottom: 1px solid var(--iso-border); }
+.sis-world-filters .iso-field { min-width: 160px; }
+.sis-world-table-wrap { overflow-x: auto; }
+.sis-world-table { width: 100%; min-width: 880px; border-collapse: collapse; font-size: 14px; }
+.sis-world-table th { padding: 14px 18px; text-align: left; color: var(--iso-muted); background: var(--iso-surface-raised); font-size: 12px; }
+.sis-world-table td { padding: 15px 18px; border-top: 1px solid var(--iso-border); color: var(--iso-text); vertical-align: middle; }
+.sis-world-table code { color: var(--iso-tracking); background: transparent; white-space: nowrap; }
+.sis-world-summary-cell { min-width: 260px; }
+.sis-world-pagination { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 20px; border-top: 1px solid var(--iso-border); color: var(--iso-muted); font-size: 13px; }
+.sis-world-pagination > div { display: flex; gap: 8px; }
+.sis-world-relations ul { list-style: none; margin: 0; padding: 4px 20px 16px; }
+.sis-world-relations li { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--iso-border); color: var(--iso-muted); font-size: 14px; }
+.sis-world-relations li:last-child { border-bottom: 0; }
+.sis-world-relations li strong { color: var(--iso-tracking); text-transform: capitalize; }
+.sis-world-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (min-width: 768px) { .sidebar-collapse .sis-world-page { margin-left: 50px; } }
+@media (max-width: 1100px) { .sis-world-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }.sis-world-toolbar { flex-direction: column; align-items: stretch; } }
+@media (max-width: 767px) { .sis-world-page { margin-left: 0; padding: 20px 14px; } }
+@media (max-width: 580px) { .sis-world-summary { grid-template-columns: 1fr; }.sis-world-filters { flex-direction: column; align-items: stretch; }.sis-world-pagination { flex-direction: column; align-items: stretch; }.sis-world-pagination > div { justify-content: space-between; } }

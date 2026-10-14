@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BASE_URL } from '../../config';
 import * as XLSX from 'xlsx';
-import Adminheader from '../Adminheader';
 
 const Iftalisting = () => {
   const [data, setData] = useState(null);
@@ -10,15 +9,6 @@ const Iftalisting = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [fullData, setFullData] = useState([]); // Stores complete parsed data for export
-
-  const api = axios.create({
-    baseURL: BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL,
-    timeout: 30000,
-    headers: {
-      Cookie: 'ci_session=40a2k4qco7jhjdbei4vksmluienbgu2e',
-      Accept: 'application/json',
-    },
-  });
 
   // Function to export data to Excel
   const exportToExcel = () => {
@@ -41,7 +31,11 @@ const Iftalisting = () => {
         setLoading(true);
         setError(null);
 
-        const res = await api.get('/fms_api/api/getExpense');
+        const res = await axios.get(`${BASE_URL}api/getExpense`, {
+          timeout: 30000,
+          withCredentials: true,
+          headers: { Accept: 'application/json' },
+        });
         setData(res.data || null);
 
         const normalized = [];
@@ -76,7 +70,7 @@ const Iftalisting = () => {
             // Create full data for export - flatten etc data with parent fields
             if (etcParsed) {
               // Get the maximum length of arrays in etcParsed
-              const maxLength = Math.max(
+              const maxLength = Math.max(0,
                 ...Object.values(etcParsed).map(arr => Array.isArray(arr) ? arr.length : 0)
               );
 
@@ -128,12 +122,12 @@ const Iftalisting = () => {
     };
 
     fetchExpenses();
-  }, [api]);
+  }, []);
 
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h1 className="h4 mb-0">Iftalisting</h1>
+        <h1 className="h4 mb-0">IFTA expense records</h1>
         {!loading && !error && fullData.length > 0 && (
           <button
             onClick={exportToExcel}

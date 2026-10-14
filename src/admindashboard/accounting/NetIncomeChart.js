@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { BASE_URL } from '../../config';
 import React, { useEffect, useState } from 'react';
-import { AreaChart, Area, Tooltip, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
+import { AreaChart, Area, Tooltip, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = { income: '#087f78', grid: '#e5ece8' };
 
 const NetIncomeChart = () => {
   const [data, setData] = useState([]);
@@ -13,17 +13,13 @@ const NetIncomeChart = () => {
       try {
         const response = await axios.get(`${BASE_URL}api/getlocationIncome`);
 
-        // Check if response.data is an array
         const rawData = Array.isArray(response.data) ? response.data : [];
-
-        // Filter out entries with null or zero values
-        const filteredData = rawData.filter(entry => entry.value && parseFloat(entry.value) > 0);
-
-        // Convert value to number
-        const formattedData = filteredData.map(entry => ({
-          name: entry.name,
-          value: parseFloat(entry.value),
-        }));
+        const formattedData = rawData
+          .map((entry) => ({
+            name: entry.name || 'Unspecified location',
+            value: entry.value === null || entry.value === '' ? null : Number(entry.value),
+          }))
+          .filter((entry) => entry.value !== null && Number.isFinite(entry.value));
 
         setData(formattedData);
       } catch (error) {
@@ -35,17 +31,22 @@ const NetIncomeChart = () => {
   }, []);
 
   return (
-    <div>
-      {/* Title can be added here if needed */}
-      <h2 style={{ textAlign: 'center' }}>Net Income by Location</h2>
-      <AreaChart width={400} height={300} data={data} style={{ margin: '0 auto' }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Area type="monotone" dataKey="value" stroke={COLORS[2]} fill={COLORS[2]} fillOpacity={0.6} />
-      </AreaChart>
+    <div className="accounting-chart-content">
+      <div className="accounting-chart-title">
+        <h3>Net income by location</h3>
+        <p>Net order amounts grouped by delivery address</p>
+      </div>
+      <div className="accounting-chart-frame">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 12, right: 16, bottom: 18, left: 4 }}>
+            <CartesianGrid stroke={COLORS.grid} vertical={false} />
+            <XAxis dataKey="name" axisLine={false} tickLine={false} interval={0} angle={-24} textAnchor="end" height={62} />
+            <YAxis axisLine={false} tickLine={false} width={72} />
+            <Tooltip formatter={(value) => Number(value).toLocaleString()} />
+            <Area type="monotone" dataKey="value" name="Net amount" stroke={COLORS.income} fill={COLORS.income} fillOpacity={0.18} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

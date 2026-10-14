@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import Sidebar from './Sidebar'
+import AdminLayout from '../AdminLayout';
 import { Link } from 'react-router-dom';
 
 const Agentheader = () => {
@@ -24,6 +25,7 @@ const Agentheader = () => {
   }, []);
 
   return (<>
+<AdminLayout />
 <header className="main-header">
   {/* Logo */}
   <Link to="/agentdashboard" className="logo">

@@ -12,6 +12,10 @@ import { useEffect, useState } from "react";
 import Adminheader from "./admindashboard/Adminheader";
 import Dashboard from "./admindashboard/Dashboard";
 import Footeradmin from "./admindashboard/Footer";
+import CreateRoute from "./admindashboard/routes/CreateRoute";
+import ManageRoutes from "./admindashboard/routes/ManageRoutes";
+import RouteDetails from "./admindashboard/routes/RouteDetails";
+import RouteOverview from "./admindashboard/routes/RouteOverview";
 // import Login from "./websitefiles/Login";
 import Createorder from "./admindashboard/order/Createorder";
 import Orders from "./admindashboard/order/Orders";
@@ -126,6 +130,8 @@ import SamsaraDrivers from "./admindashboard/Samsara/SamsaraUsers";
 // import Carrieruploadpdf from "./websitefiles/Carrieruploadpdf";
 import TripMap from "./admindashboard/livemap";
 import DispatchBoard from "./admindashboard/Dispatch_board";
+import Loadboard from "./admindashboard/Loadboard";
+import WorldModel from "./admindashboard/sis/WorldModel";
 // import Article1 from "./websitefiles/blogs/Article1";
 // import Article2 from "./websitefiles/blogs/Article2";
 // import Article3 from "./websitefiles/blogs/Article3";
@@ -143,7 +149,9 @@ import TripForm from "./Driverdashboard/dutystatus/onduty";
 import OffDutyButton from "./Driverdashboard/dutystatus/offduty";
 import Dutylist from "./Driverdashboard/dutystatus/listofduty";
 import DriverHOS from "./admindashboard/drivers/Hosview";
+import DriverListing from "./admindashboard/drivers/DriverListing";
 import DriverDutyNotification from "./admindashboard/hos/DriverDutyNotification";
+import FleetHosRoster from "./admindashboard/hos/FleetHosRoster";
 import Dutychart from "./Driverdashboard/dutystatus/Dutychart";
 import TripLogChart from "./Driverdashboard/dutystatus/Logs";
 import DailyLogDetail from "./Driverdashboard/dutystatus/DailyLogDetail";
@@ -289,6 +297,7 @@ function App() {
         <Route path="/checkhos" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><CheckHos /><Footeradmin /></div>} />
         <Route path="/hosgetall" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><VehicleDriverLogs /><Footeradmin /></div>} />
         <Route path="/driverdutynotification" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><DriverDutyNotification /><Footeradmin /></div>} />
+        <Route path="/hos-fleet" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><FleetHosRoster /><Footeradmin /></div>} />
         <Route path="/accounting" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Dashboardaccounting /><Footeradmin /></div>} />
         <Route path="/createorder" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Createorder /><Footeradmin /></div>} />
         <Route path="/orderlist" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Orders /><Footeradmin /></div>} />
@@ -309,9 +318,15 @@ function App() {
         {/* <Route path="/gomotive/logtable" element={<div className="skin-blue sidebar-mini"><AdminLayout/><Adminheader /><LogTable /><Footeradmin /></div>} /> */}
         <Route path="/createtrips" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Createtrips /><Footeradmin /></div>} />
         <Route path="/tripsmap" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><TripMap /><Footeradmin /></div>} />
+        <Route path="/routes/create" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><CreateRoute /><Footeradmin /></div>} />
+        <Route path="/routes/manage" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><ManageRoutes /><Footeradmin /></div>} />
+        <Route path="/routes/view" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><RouteOverview /><Footeradmin /></div>} />
+        <Route path="/routes/:routeId" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><RouteDetails /><Footeradmin /></div>} />
         <Route path="/tripviewer/:tripId" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><TripViewer /><Footeradmin /></div>} />
         <Route path="/tripsplit/:tripId" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><SplitRoutes /><Footeradmin /></div>} />
         <Route path="/DispatchBoard" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><DispatchBoard /><Footeradmin /></div>} />
+        <Route path="/loadboard" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Loadboard /><Footeradmin /></div>} />
+        <Route path="/sis/world-model" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><WorldModel /><Footeradmin /></div>} />
         <Route path="/triplist" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Triplist /><Footeradmin /></div>} />
         <Route path="/trips/update/:id" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Updatetrip /><Footeradmin /></div>} />
         <Route path="trips/assign/:id" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Assigntrip /><Footeradmin /></div>} />
@@ -332,6 +347,7 @@ function App() {
         <Route path="/owners/update/:id" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Updateowners /><Footeradmin /></div>} />
         <Route path="/ownerbulkupload" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Ownerbulk /><Footeradmin /></div>} />
         <Route path="/drivers" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Drivers /><Footeradmin /></div>} />
+        <Route path="/drivers/listing" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><DriverListing /><Footeradmin /></div>} />
         <Route path="/drivers/hos/:id" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><DriverHOS /><Footeradmin /></div>} />
         <Route path="/drivers/create" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Createdrivers /><Footeradmin /></div>} />
         <Route path="/drivers/update/:id" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Updatedrivers /><Footeradmin /></div>} />

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { BASE_URL } from '../config'
 
 const Sidebar = () => {
   let navigate = useNavigate();
@@ -19,10 +20,10 @@ useEffect(()=>{
 },[navigate, update])
 
 
-let logout=()=>{
-  setupdate(update+1)
+let logout=async()=>{
+  try { await fetch(`${BASE_URL}api/logout`, { credentials: 'include' }) } catch (error) { /* Clear local state below. */ }
   localStorage.removeItem('logindetail')
-
+  setupdate(update+1)
 }
   return (
 <aside className="main-sidebar">

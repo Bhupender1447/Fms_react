@@ -10,6 +10,10 @@ const DriverHOS = () => {
   const [loading, setLoading] = useState(true);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [error, setError] = useState(null);
+  const [hosSnapshot, setHosSnapshot] = useState(null);
+  const [snapshotLoading, setSnapshotLoading] = useState(true);
+  const [snapshotError, setSnapshotError] = useState('');
+  const [snapshotUpdatedAt, setSnapshotUpdatedAt] = useState(null);
   const [zoomImage, setZoomImage] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date()); // Track current time for ongoing trips
 
@@ -37,6 +41,31 @@ const DriverHOS = () => {
     };
 
     fetchData();
+  }, [id]);
+
+  useEffect(() => {
+    let active = true;
+    let requestPending = false;
+    const fetchSnapshot = async () => {
+      if (requestPending) return;
+      requestPending = true;
+      try {
+        const response = await axios.get(`${BASE_URL}api/drivers/${id}/hos`, { withCredentials: true });
+        if (!active) return;
+        if (response.data?.status !== 'success') throw new Error(response.data?.message || 'Could not load current HOS details.');
+        setHosSnapshot(response.data);
+        setSnapshotError('');
+        setSnapshotUpdatedAt(new Date());
+      } catch (snapshotLoadError) {
+        if (active) setSnapshotError(snapshotLoadError.response?.data?.message || snapshotLoadError.message || 'Could not load current HOS details.');
+      } finally {
+        requestPending = false;
+        if (active) setSnapshotLoading(false);
+      }
+    };
+    fetchSnapshot();
+    const interval = window.setInterval(fetchSnapshot, 30000);
+    return () => { active = false; window.clearInterval(interval); };
   }, [id]);
 
   // Calculate remaining hours for a trip (8.5 hour shift)
@@ -138,11 +167,25 @@ const DriverHOS = () => {
               <div>
                 <h1 className="h3 mb-0">
                   <i className="fas fa-user-clock me-2 text-primary"></i>
-                  Driver HOS & Trip Details
+                  {hosSnapshot?.driver?.name || 'Driver'} HOS &amp; Trip Details
                 </h1>
-                <small className="text-muted">Driver ID: {id}</small>
+                <small className="text-muted">Driver ID: {id} · Auto refresh every 30 seconds</small>
               </div>
               <div className="d-flex gap-2">
+                <button className="btn btn-outline-primary" type="button" onClick={() => {
+                  setSnapshotLoading(true);
+                  axios.get(`${BASE_URL}api/drivers/${id}/hos`, { withCredentials: true })
+                    .then((response) => {
+                      if (response.data?.status !== 'success') throw new Error(response.data?.message || 'Could not refresh HOS details.');
+                      setHosSnapshot(response.data);
+                      setSnapshotError('');
+                      setSnapshotUpdatedAt(new Date());
+                    })
+                    .catch((refreshError) => setSnapshotError(refreshError.response?.data?.message || refreshError.message || 'Could not refresh HOS details.'))
+                    .finally(() => setSnapshotLoading(false));
+                }} disabled={snapshotLoading}>
+                  <i className={`fas fa-sync-alt me-2${snapshotLoading ? ' fa-spin' : ''}`}></i>Refresh HOS
+                </button>
                 <button className="btn btn-outline-primary">
                   <i className="fas fa-download me-2"></i>Export
                 </button>
@@ -152,6 +195,58 @@ const DriverHOS = () => {
               </div>
             </div>
             <hr className="mt-3" />
+          </div>
+
+          {/* Current driver HOS snapshot */}
+          <div className="col-12">
+            <div className="card border-0 shadow-sm">
+              <div className="card-header bg-white border-bottom d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                  <h5 className="mb-1"><i className="fas fa-clock me-2 text-primary"></i>Current HOS details</h5>
+                  <small className="text-muted">{hosSnapshot?.source || 'IFM duty status and HOS activity logs'} · Refreshes every 30 seconds</small>
+                </div>
+                <div className="text-end">
+                  <span className={`badge ${hosSnapshot?.freshness === 'current' ? 'bg-success' : hosSnapshot?.freshness === 'delayed' ? 'bg-warning text-dark' : 'bg-secondary'}`}>
+                    {snapshotLoading ? 'Refreshing' : hosSnapshot?.freshness === 'current' ? 'Recent data' : hosSnapshot?.freshness === 'delayed' ? 'Delayed data' : hosSnapshot?.freshness === 'stale' ? 'Stale data' : 'No HOS data'}
+                  </span>
+                  <div className="small text-muted mt-1">Checked {snapshotUpdatedAt ? snapshotUpdatedAt.toLocaleTimeString() : 'not yet'}</div>
+                </div>
+              </div>
+              <div className="card-body">
+                {snapshotError && <div className="alert alert-warning" role="alert">{snapshotError}</div>}
+                {snapshotLoading && !hosSnapshot ? <div className="text-muted" role="status">Loading driver HOS details…</div> : (
+                  <>
+                    <div className="row g-3 mb-3">
+                      <div className="col-md-3"><strong>Duty status</strong><div className="text-capitalize">{hosSnapshot?.duty_status?.status || 'Unknown'}</div></div>
+                      <div className="col-md-3"><strong>Duty started</strong><div>{hosSnapshot?.duty_status?.login_time || 'No active duty record'}</div></div>
+                      <div className="col-md-3"><strong>Truck</strong><div>{hosSnapshot?.duty_status?.odotrucks || hosSnapshot?.latest_hos?.truck_id || 'Not linked'}</div></div>
+                      <div className="col-md-3"><strong>Latest HOS activity</strong><div className="text-capitalize">{hosSnapshot?.latest_hos?.activity_type || 'No HOS log'}</div></div>
+                    </div>
+                    <div className="small text-muted mb-3">Source record time: {hosSnapshot?.last_updated || 'Unavailable'}</div>
+                    <div className="alert alert-info py-2 mb-3">
+                      HOS records are shown as available in IFM. Compliance status is <strong>unverified</strong>; confirm against the driver’s official ELD records.
+                    </div>
+                    <h6>Recent HOS activity</h6>
+                    {hosSnapshot?.recent_hos?.length ? (
+                      <div className="table-responsive">
+                        <table className="table table-sm table-striped mb-0">
+                          <thead><tr><th>Activity</th><th>Start</th><th>End</th><th>Duration</th><th>Updated</th></tr></thead>
+                          <tbody>{hosSnapshot.recent_hos.map((log) => (
+                            <tr key={log.id}>
+                              <td className="text-capitalize">{log.activity_type || 'Activity'}</td>
+                              <td>{log.start_time || '—'}</td>
+                              <td>{log.end_time || 'In progress'}</td>
+                              <td>{log.duration_minutes == null ? '—' : `${log.duration_minutes} min`}</td>
+                              <td>{log.updated_at || log.created_at || '—'}</td>
+                            </tr>
+                          ))}</tbody>
+                        </table>
+                      </div>
+                    ) : <p className="text-muted mb-0">{snapshotError ? 'HOS history could not be loaded.' : 'No HOS activity records are available for this driver.'}</p>}
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Quick Stats */}

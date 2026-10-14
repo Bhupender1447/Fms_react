@@ -1,17 +1,49 @@
 /* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from "axios";
+import { Alert } from "../../design-system/components";
+import "../../design-system/forms.css";
 import React, { useEffect, useState } from "react";
 import Distancepopup from "../Distancepopup";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { BASE_URL } from "../../config";
+import { getOcrErrorMessage, getOcrResponseErrorMessage } from "../../services/ocrErrors";
+
+const normalizeName = (value) => String(value || "")
+  .toLowerCase()
+  .replace(/\b(incorporated|inc|limited|ltd|corporation|corp|llc)\b/g, "")
+  .replace(/[^a-z0-9]+/g, " ")
+  .trim();
+
+const getCustomerName = (customer) => customer?.name || customer?.legal || customer?.company_name || customer?.customer_name || customer?.Broker || "";
+
+const companyNameSimilarity = (left, right) => {
+  const a = normalizeName(left);
+  const b = normalizeName(right);
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  if (a.includes(b) || b.includes(a)) return 0.88;
+
+  const aTokens = new Set(a.split(/\s+/));
+  const bTokens = new Set(b.split(/\s+/));
+  const shared = [...aTokens].filter((token) => bTokens.has(token)).length;
+  const tokenScore = shared / new Set([...aTokens, ...bTokens]).size;
+  const bigrams = (value) => new Set(value.replace(/\s/g, "").split("").slice(1).map((char, index) => value.replace(/\s/g, "")[index] + char));
+  const aGrams = bigrams(a);
+  const bGrams = bigrams(b);
+  const gramShared = [...aGrams].filter((gram) => bGrams.has(gram)).length;
+  const gramScore = (2 * gramShared) / Math.max(1, aGrams.size + bGrams.size);
+  return Math.max(tokenScore, gramScore);
+};
 
 const Createtrips = () => {
   const navigate = useNavigate();
   const [, setOcrRaw] = useState(null);
   const [ocrFile, setOcrFile] = useState(null); // OCR State
   const [isOcrLoading, setIsOcrLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [ocrCustomerNotice, setOcrCustomerNotice] = useState("");
+  const [ocrBrokerInfo, setOcrBrokerInfo] = useState(null);
+  const [pendingCompanyMatch, setPendingCompanyMatch] = useState(null);
 
   const handleOcrUpload = async () => {
     if (!ocrFile) {
@@ -27,14 +59,24 @@ const Createtrips = () => {
     const structuredPrompt = `Extract the trip information into a strict JSON format with the following keys exactly:
 {
   "loadno": "Load or reference number",
-  "salesman": "Salesman or driver name",
+  "company": "Carrier or company name shown in the customer or billing details",
+  "customer": "Customer or broker account name, preferably the bill-to party",
+  "broker_name": "Broker or bill-to company name shown on the document",
+  "broker_contact": "Broker contact person name shown on the document",
+  "broker_address": "Broker or bill-to mailing address shown on the document",
+  "broker_phone": "Broker phone number shown on the document",
+  "broker_email": "Broker email address shown on the document",
+  "customerorderno": "Customer purchase order or customer order number",
+  "salesman": "Salesperson name, only if explicitly shown",
   "pickup_address": "Full pickup or shipper address",
   "pickup_from": "Pickup company or location name",
   "delivery_address": "Full delivery or consignee address",
   "delivery": "Delivery company or location name",
+  "stops": [{ "stoptype": "Pickup or Delivery", "name": "Stop company or location name", "address": "Full stop address", "date": "Stop date in YYYY-MM-DD format", "time": "Stop time if shown" }],
   "pickupdate": "Pickup date in exactly YYYY-MM-DD format",
   "deliverydate": "Delivery date in exactly YYYY-MM-DD format",
   "rate": "Rate or cost as a pure number (no currency symbols)",
+  "currency": "Currency explicitly shown for the rate or total; return CAD or USD when identifiable",
   "gross_amount": "Total gross amount as a pure number",
   "trailortype": "Trailer type if mentioned",
   "commodity": "Commodity description",
@@ -55,11 +97,11 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
         setOcrRaw(response.data.data);
         applyOCRToAllFields(response.data);
       } else {
-        toast.error("OCR failed or no data found");
+        toast.error(getOcrResponseErrorMessage(response));
       }
     } catch (err) {
-      console.error(err);
-      toast.error("Error processing OCR file");
+      console.error("Trip OCR request failed:", err.response?.status || err.message);
+      toast.error(getOcrErrorMessage(err, "Error processing OCR file"));
     } finally {
       setIsOcrLoading(false);
     }
@@ -199,7 +241,10 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
   const addStop = () => {
     const newStop = {
       stoptype: "Delivery", // Default value
-      location: "", // Default value
+      name: "",
+      location: "",
+      date: "",
+      time: "",
     };
     setStops([...stops, newStop]);
   };
@@ -261,6 +306,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
     rate: "",
     ratevalue: "",
+    currency: "CAD",
     gross_amount: "",
     hst: "",
     hstamount: "",
@@ -271,6 +317,8 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
   const [, setmessage] = useState();
   const [popup, setpopup] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [popup1, setpopup1] = useState(false);
 
   const normalizeShipments = () => {
@@ -364,12 +412,116 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
     });
 
     const sourceKeys = Object.keys(combinedSource);
+    const normalizeKey = (key) => key.toLowerCase().replace(/^(gpt|rec)_/, "").replace(/[^a-z0-9]+/g, "_");
     const getMatch = (synonyms) => {
-      const key = sourceKeys.find(k => synonyms.some(s => k.toLowerCase().includes(s.toLowerCase())));
-      return key ? combinedSource[key] : null;
+      const terms = synonyms.map(normalizeKey);
+      const exactKey = sourceKeys.find((key) => terms.includes(normalizeKey(key)));
+      if (exactKey) return combinedSource[exactKey];
+      const suffixKey = sourceKeys.find((key) => terms.some((term) => normalizeKey(key).endsWith(`_${term}`)));
+      if (suffixKey) return combinedSource[suffixKey];
+      const partialKey = sourceKeys.find((key) => terms.some((term) => normalizeKey(key).includes(term)));
+      return partialKey ? combinedSource[partialKey] : null;
     };
 
+    const companyVal = getMatch(["company_name", "company", "carrier_name", "billing_company"]);
+    const brokerVal = getMatch(["broker_name", "broker", "customer_name", "customer", "bill_to"]);
+    const brokerOcrFields = {
+      name: brokerVal,
+      contact: getMatch(["broker_contact", "broker_contact_name", "customer_contact", "bill_to_contact"]),
+      address: getMatch(["broker_address", "customer_address", "bill_to_address"]),
+      phone: getMatch(["broker_phone", "customer_phone", "bill_to_phone"]),
+      email: getMatch(["broker_email", "customer_email", "bill_to_email"]),
+    };
+    const visibleBrokerOcrFields = Object.fromEntries(
+      Object.entries(brokerOcrFields)
+        .filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== "")
+        .map(([key, value]) => [key, String(value).trim()])
+    );
+    setOcrBrokerInfo(Object.keys(visibleBrokerOcrFields).length ? visibleBrokerOcrFields : null);
+    const customerOrderVal = getMatch(["customerorderno", "customer_order_no", "purchase_order_number", "po_number", "customer_po", "reference_number"]);
+    const salesmanVal = getMatch(["salesman", "salesperson"]);
+    const extractedStops = Array.isArray(gptData.stops)
+      ? gptData.stops
+      : Array.isArray(ocrDataRaw.stops) ? ocrDataRaw.stops : [];
+    const findKnownName = (options, value, labelKey) => {
+      const requested = normalizeName(value);
+      if (!requested) return null;
+      const label = (option) => labelKey === "customer" ? getCustomerName(option) : option[labelKey];
+      const exact = options.find((option) => normalizeName(label(option)) === requested);
+      if (exact) return exact;
+      const ranked = options
+        .map((option) => ({ option, score: companyNameSimilarity(requested, label(option)) }))
+        .filter((candidate) => candidate.score >= 0.62)
+        .sort((left, right) => right.score - left.score);
+      if (!ranked.length) return null;
+      if (ranked.length > 1 && ranked[0].score - ranked[1].score < 0.06) return null;
+      return ranked[0].option;
+    };
+    const companyCandidates = (data.company_data || [])
+      .map((company) => ({
+        company,
+        score: companyNameSimilarity(companyVal, company.company_name),
+      }))
+      .filter((candidate) => candidate.score >= 0.42)
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 5);
+    const matchedBroker = findKnownName(data.customers || [], brokerVal, "customer");
+    const matchedSalesman = findKnownName(data.customers || [], salesmanVal, "customer");
+    const customerNotes = [];
+    if (companyVal && companyCandidates.length === 0) customerNotes.push(`Company “${companyVal}” was read but no similar company was found. Select the correct company manually.`);
+    if (brokerVal && !matchedBroker) customerNotes.push(`Customer/broker “${brokerVal}” was read but could not be matched to a broker account.`);
+    if (salesmanVal && !matchedSalesman) customerNotes.push(`Salesperson “${salesmanVal}” was read but could not be matched to a user record.`);
+    setOcrCustomerNotice(customerNotes.join(" "));
+    if (companyVal && companyCandidates.length > 0) {
+      setPendingCompanyMatch({
+        ocrName: String(companyVal).trim(),
+        candidates: companyCandidates,
+        selectedId: String(companyCandidates[0].company.id),
+      });
+    } else {
+      setPendingCompanyMatch(null);
+    }
+
     let localMatchCount = 0;
+    const asStopText = (value) => typeof value === "string" || typeof value === "number" ? String(value).trim() : "";
+    const ocrStops = extractedStops.map((stop) => {
+      if (typeof stop === "string") {
+        return { stoptype: "Delivery", name: "", location: stop.trim(), date: "", time: "" };
+      }
+      if (!stop || typeof stop !== "object") return null;
+      const name = asStopText(stop.name || stop.location_name || stop.company || stop.label);
+      const address = asStopText(stop.address || stop.full_address || stop.location || stop.address1);
+      const rawType = asStopText(stop.stoptype || stop.stop_type || stop.type).toLowerCase();
+      return {
+        stoptype: /pickup|origin|shipper|load/.test(rawType) ? "Pickup" : "Delivery",
+        name,
+        location: address || name,
+        date: asStopText(stop.date || stop.stop_date || stop.arrival_date),
+        time: asStopText(stop.time || stop.stop_time || stop.arrival_time),
+      };
+    }).filter((stop) => stop && stop.location);
+
+    let mappedStops = ocrStops;
+    if (mappedStops.length === 0) {
+      const pickupStopAddress = getMatch(["pickup_address", "shipper_address", "origin_address"]);
+      const pickupStopName = getMatch(["pickup_from", "shipper", "origin", "pickup_location"]);
+      const deliveryStopAddress = getMatch(["delivery_address", "consignee_address", "destination_address"]);
+      const deliveryStopName = getMatch(["delivery", "consignee", "destination", "delivery_location"]);
+      mappedStops = [
+        (pickupStopAddress || pickupStopName) && {
+          stoptype: "Pickup", name: asStopText(pickupStopName),
+          location: asStopText(pickupStopAddress || pickupStopName), date: "", time: "",
+        },
+        (deliveryStopAddress || deliveryStopName) && {
+          stoptype: "Delivery", name: asStopText(deliveryStopName),
+          location: asStopText(deliveryStopAddress || deliveryStopName), date: "", time: "",
+        },
+      ].filter(Boolean);
+    }
+    if (mappedStops.length > 0) {
+      setStops(mappedStops);
+      localMatchCount += mappedStops.length;
+    }
 
     setFormData((prev) => {
       const updated = { ...prev };
@@ -383,20 +535,22 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       };
 
       // 1. Map Load Number & Salesman (Allow overwrite for loadno)
-      const loadVal = getMatch(['rec_load_number', 'gpt_number_load', 'loadno', 'load_number', 'load']);
-      if (loadVal) {
-        updated.loadno = String(loadVal);
+      if (customerOrderVal) {
+        updated.customerorderno = String(customerOrderVal).trim();
+        localMatchCount++;
+      }
+      if (matchedBroker) {
+        updated.customer_id = String(matchedBroker.id);
+        localMatchCount++;
+      }
+      if (matchedSalesman) {
+        updated.salesman = String(matchedSalesman.id);
         localMatchCount++;
       }
 
-      const salesmanVal = getMatch(['rec_name', 'gpt_name_0', 'salesman', 'names', 'driver_name']);
-      if (salesmanVal && isFieldEmpty(updated.salesman)) {
-        const sales = data.customers?.find(c => c.name?.toLowerCase().includes(String(salesmanVal).toLowerCase()));
-        if (sales) {
-          updated.salesman = sales.id;
-        } else {
-          updated.salesman = String(salesmanVal);
-        }
+      const loadVal = getMatch(['rec_load_number', 'gpt_number_load', 'loadno', 'load_number', 'load']);
+      if (loadVal) {
+        updated.loadno = String(loadVal);
         localMatchCount++;
       }
 
@@ -461,6 +615,14 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       if (grossVal && isFieldEmpty(updated.gross_amount)) {
         updated.gross_amount = String(grossVal).replace(/[^\d.]/g, "");
         localMatchCount++;
+      }
+
+      const currencyVal = getMatch(["currency", "currency_code", "charge_currency"]);
+      if (currencyVal) {
+        const normalizedCurrency = String(currencyVal).toUpperCase();
+        if (/\bUSD\b|US\s*\$|U\.S\.\s*DOLLAR/.test(normalizedCurrency)) updated.currency = "USD";
+        else if (/\bCAD\b|CA\s*\$|CANADIAN\s*DOLLAR/.test(normalizedCurrency)) updated.currency = "CAD";
+        else if (normalizedCurrency.trim() === "USD" || normalizedCurrency.trim() === "CAD") updated.currency = normalizedCurrency.trim();
       }
 
       // Explicitly map Commodity, Weight, and Unit (Handle specific unit mappings like LBS -> Pounds)
@@ -545,6 +707,18 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
     }, 500);
   };
 
+  const confirmOcrCompany = () => {
+    if (!pendingCompanyMatch) return;
+    const selected = pendingCompanyMatch.candidates.find(
+      (candidate) => String(candidate.company.id) === pendingCompanyMatch.selectedId
+    );
+    if (!selected) return;
+    setFormData((prev) => ({ ...prev, company: selected.company.company_name }));
+    setPendingCompanyMatch(null);
+    setOcrCustomerNotice((prev) => prev.replace(/Company “[^”]+” was read but no similar company was found\. Select the correct company manually\.?\s*/g, ""));
+    toast.success(`Company confirmed: ${selected.company.company_name}`);
+  };
+
 
   const calculateAmounts = (name, value) => {
     const rate = parseFloat(name === "rate" ? value : formData.rate) || 0;
@@ -615,7 +789,11 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       .get(`${BASE_URL}api/getOrderData`)
       .then((res) => {
         setdata(res.data);
-        setFormData(prev => ({ ...prev, customerorderno: res && res.data.triprno }));
+        setFormData(prev => ({
+          ...prev,
+          customerorderno: res && res.data.triprno,
+          loadno: (res && res.data.loadno) || prev.loadno,
+        }));
         console.log(res.data);
       })
       .catch((error) => seterror(error));
@@ -638,9 +816,10 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
 
 
-  let handleonSubmit = async (e) => {
+  const handleonSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+    setSaveError("");
     setIsSubmitting(true);
 
     const form = new FormData();
@@ -680,16 +859,17 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
       navigate(-1);
     } catch (error) {
-      console.error(error);
-      toast.error(error?.response?.data?.message || "Trip creation failed");
+      setSaveError("The trip could not be saved. Your entries are preserved. Check your connection before retrying.");
+      toast.error("Trip creation failed");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  let handleSaveAndAssign = async (e) => {
+  const handleSaveAndAssign = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+    setSaveError("");
     setIsSubmitting(true);
 
     const form = new FormData();
@@ -726,8 +906,8 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
       navigate(`/trips/assign/${response.data.id}`);
     } catch (error) {
-      console.error("Error:", error);
-      toast.error(error?.response?.data?.message || "Trip creation failed", {
+      setSaveError("The trip could not be saved or assigned. Your entries are preserved. Check your connection before retrying.");
+      toast.error("Trip creation failed", {
         position: "top-right",
         autoClose: 3000,
         hideProgressBar: false,
@@ -749,15 +929,40 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
     setRows((prevRows) => prevRows.filter((row, i) => i !== index - 1));
   };
 
+  const selectedCompanyRecord = (data.company_data || []).find(
+    (company) => company.company_name === formData.company
+  );
+  const selectedBrokerRecord = (data.customers || []).find(
+    (customer) => String(customer.id) === String(formData.customer_id)
+  );
+  const companyDetails = (company) => Object.entries(company || {}).filter(
+    ([key, value]) => !["id", "company_name"].includes(key.toLowerCase()) &&
+      value !== null && value !== undefined && String(value).trim() !== "" &&
+      ["string", "number", "boolean"].includes(typeof value)
+  );
+  const brokerDetails = (broker) => [
+    ["Legal name", broker?.legal],
+    ["Address", broker?.address1],
+    ["Address line 2", broker?.address2],
+    ["Phone", broker?.phone],
+    ["Toll free", broker?.tollfree],
+    ["Extension", broker?.ext],
+    ["Email", broker?.email],
+    ["Website", broker?.website],
+    ["Pickup email", broker?.pickupmail],
+    ["Delivery email", broker?.deliverymail],
+  ].filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== "");
+
   return (
-    <div className="content-wrapper">
+    <div className="content-wrapper trip-create-page iso-ui iso-form-workspace" data-iso-theme="light">
       <section className="content-header">
         <div className="form-group">
-          <label>Upload Document (OCR Auto-fill)</label>
+          <label htmlFor="product_image">Upload Document (OCR Auto-fill)</label>
           <div className="input-group">
             <input
               type="file"
               id="product_image"
+              aria-describedby="trip-ocr-help"
               name="product_image"
               accept=".png,.jpg,.jpeg,.pdf"
               className="form-control"
@@ -781,23 +986,28 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </button>
             </span>
           </div>
-          <p className="help-block">Select a PDF or Image to auto-populate form fields.</p>
+          <p className="help-block" id="trip-ocr-help">Upload a PDF or image, then review customer matches, stop sequence and pricing before saving.</p>
         </div>
 
-        <h1>
-          Manage
-          <small>Trips</small>
-        </h1>
+        <h1>Create trip <small>Enter shipment and route details</small></h1>
         <ol className="breadcrumb">
           <li>
             <Link to="#">
               <i className="fa fa-dashboard" /> Home
             </Link>
           </li>
-          <li className="active">Orders</li>
+          <li className="active">Trips</li>
         </ol>
       </section>
       <section className="content">
+        <nav className="trip-form-navigation" aria-label="Trip form sections">
+          <span className="trip-form-navigation-label">Jump to</span>
+          <a href="#trip-customer-details">Customer</a>
+          <a href="#trip-route-details">Pickup &amp; delivery</a>
+          <a href="#trip-shipment-details">Cargo</a>
+          <a href="#trip-revenue-details">Pricing</a>
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => setpopup(true)}>Review &amp; save</button>
+        </nav>
         {/* Small boxes (Stat box) */}
         <div className="row">
           <div className="col-md-12 col-xs-12">
@@ -805,12 +1015,13 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
             <div className="box">
               <div className="col-md-12 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <h4>
+                  <h4 id="trip-customer-details">
                     <span className="label label-success">
                       CUSTOMER DETAILS
                     </span>
                   </h4>
                   <h3 align="center">TRIP # : {data && data.triprno}</h3>
+                  {ocrCustomerNotice && <div className="alert alert-info" role="status">{ocrCustomerNotice}</div>}
                 </div>
               </div>
               {/* /.box-header */}
@@ -824,7 +1035,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                   <div className="col-md-6 col-xs-12 pull pull-left">
                     <div className="col-md-12 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Company</label>
+                        <label htmlFor="company">Company</label>
                         <select
                           className="form-control"
                           id="company"
@@ -833,27 +1044,88 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                           onChange={handleInputChange}
                         >
                           <option value="">Select Company</option>
+                          {formData.company && !data.company_data?.some((item) => item.company_name === formData.company) && (
+                            <option value={formData.company}>{formData.company} (from OCR; review)</option>
+                          )}
                           {data.company_data?.map((item) => (
-                            <option value={item.company_name}>
+                            <option key={item.id || item.company_name} value={item.company_name}>
                               {item.company_name}
                             </option>
                           ))}
                         </select>
+                        {pendingCompanyMatch && (
+                          <div className="alert alert-warning" role="status" style={{ marginTop: 10 }}>
+                            <strong>Confirm company from OCR</strong>
+                            <p style={{ margin: "6px 0" }}>
+                              OCR read <strong>{pendingCompanyMatch.ocrName}</strong>. Choose the matching company and review its saved details before confirming.
+                            </p>
+                            <select
+                              className="form-control"
+                              aria-label="Suggested company matches"
+                              value={pendingCompanyMatch.selectedId}
+                              onChange={(event) => setPendingCompanyMatch((prev) => ({ ...prev, selectedId: event.target.value }))}
+                            >
+                              {pendingCompanyMatch.candidates.map(({ company, score }) => (
+                                <option key={company.id} value={String(company.id)}>
+                                  {company.company_name} ({Math.round(score * 100)}% similar)
+                                </option>
+                              ))}
+                            </select>
+                            {companyDetails(pendingCompanyMatch.candidates.find(
+                              ({ company }) => String(company.id) === pendingCompanyMatch.selectedId
+                            )?.company).length > 0 && (
+                              <dl className="row" style={{ margin: "10px 0" }}>
+                                {companyDetails(pendingCompanyMatch.candidates.find(
+                                  ({ company }) => String(company.id) === pendingCompanyMatch.selectedId
+                                )?.company).map(([key, value]) => (
+                                  <React.Fragment key={key}>
+                                    <dt className="col-sm-4">{key.replace(/_/g, " ")}</dt>
+                                    <dd className="col-sm-8">{String(value)}</dd>
+                                  </React.Fragment>
+                                ))}
+                              </dl>
+                            )}
+                            <button type="button" className="btn btn-primary btn-sm" onClick={confirmOcrCompany}>
+                              Confirm this company
+                            </button>{" "}
+                            <button type="button" className="btn btn-default btn-sm" onClick={() => setPendingCompanyMatch(null)}>
+                              Dismiss suggestion
+                            </button>
+                          </div>
+                        )}
+                        {!pendingCompanyMatch && selectedCompanyRecord && companyDetails(selectedCompanyRecord).length > 0 && (
+                          <div className="well well-sm" aria-label="Selected company details" style={{ marginTop: 10, marginBottom: 0 }}>
+                            <strong>Company details</strong>
+                            <dl className="row" style={{ margin: "8px 0 0" }}>
+                              {companyDetails(selectedCompanyRecord).map(([key, value]) => (
+                                <React.Fragment key={key}>
+                                  <dt className="col-sm-4">{key.replace(/_/g, " ")}</dt>
+                                  <dd className="col-sm-8">{String(value)}</dd>
+                                </React.Fragment>
+                              ))}
+                            </dl>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <input
-                      type="hidden"
-                      className="form-control"
-                      id="customerorderno"
-                      name="customerorderno"
-                      defaultValue={data && data.triprno}
-                      placeholder="Enter Customer Order #"
-                      autoComplete="off"
-                      value={data && data.triprno}
-                    />
+                    <div className="col-md-12 col-xs-12">
+                      <div className="form-group">
+                        <label htmlFor="customerorderno">Customer Order / PO #</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="customerorderno"
+                          name="customerorderno"
+                          placeholder="Enter the customer's PO or order number"
+                          autoComplete="off"
+                          value={formData.customerorderno || ""}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
                     <div className="col-md-6 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Shipment Type</label>
+                        <label htmlFor="shipmenttype">Shipment Type</label>
                         <select
                           className="form-control"
                           id="shipmenttype"
@@ -870,7 +1142,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                     </div>
                     <div className="col-md-6 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Commmission</label>
+                        <label htmlFor="commission">Commmission</label>
                         <select
                           className="form-control"
                           id="commission"
@@ -905,7 +1177,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                   <div className="col-md-6 col-xs-12 pull pull-right">
                     <div className="col-md-12 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Brokers</label>
+                        <label htmlFor="customer_id">Brokers</label>
                         <select
                           className="form-control"
                           id="customer_id"
@@ -913,21 +1185,44 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                           value={formData.customer_id}
                           onChange={handleInputChange}
                         >
-                          <option value={23}>
-                            RELIANCE LOGISTICS GROUP INC.
-                          </option>
-                          <option value={19}>LOYAL EXPRESS TRANSPORT</option>
-                          <option value={18}>META FACEBOOK</option>
-                          <option value={17}>BAKERS FIELD</option>
-                          <option value={15}>
-                            NATIONAL PRODUCE MARKETING INC
-                          </option>
+                          <option value="">Select customer/broker</option>
+                          {data.customers?.map((customer) => (
+                            <option key={customer.id} value={customer.id}>{getCustomerName(customer)}</option>
+                          ))}
                         </select>
+                        {selectedBrokerRecord && (
+                          <div className="well well-sm" aria-label="Selected broker details" style={{ marginTop: 10, marginBottom: 0 }}>
+                            <strong>{getCustomerName(selectedBrokerRecord)} details</strong>
+                            {brokerDetails(selectedBrokerRecord).length > 0 ? (
+                              <dl className="row" style={{ margin: "8px 0 0" }}>
+                                {brokerDetails(selectedBrokerRecord).map(([label, value]) => (
+                                  <React.Fragment key={label}>
+                                    <dt className="col-sm-4">{label}</dt>
+                                    <dd className="col-sm-8">{String(value)}</dd>
+                                  </React.Fragment>
+                                ))}
+                              </dl>
+                            ) : <p style={{ margin: "8px 0 0" }}>No additional broker contact details are available.</p>}
+                          </div>
+                        )}
+                        {ocrBrokerInfo && (
+                          <div className="alert alert-info" aria-label="Broker information read by OCR" style={{ marginTop: 10, marginBottom: 0 }}>
+                            <strong>Broker information read from OCR</strong>
+                            <dl className="row" style={{ margin: "8px 0 0" }}>
+                              {Object.entries(ocrBrokerInfo).map(([key, value]) => (
+                                <React.Fragment key={key}>
+                                  <dt className="col-sm-4">{key.charAt(0).toUpperCase() + key.slice(1)}</dt>
+                                  <dd className="col-sm-8">{value}</dd>
+                                </React.Fragment>
+                              ))}
+                            </dl>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="col-md-3 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Load Type</label>
+                        <label htmlFor="loadtype">Load Type</label>
                         <select
                           className="form-control"
                           id="loadtype"
@@ -945,7 +1240,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                     </div>
                     <div className="col-md-3 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Frieght on</label>
+                        <label htmlFor="frieghton">Frieght on</label>
                         <select
                           className="form-control"
                           id="frieghton"
@@ -959,7 +1254,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                     </div>
                     <div className="col-md-3 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="store">Salesman</label>
+                        <label htmlFor="salesman">Salesman</label>
                         <select
                           className="form-control"
                           id="salesman"
@@ -967,35 +1262,31 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                           value={formData.salesman}
                           onChange={handleInputChange}
                         >
+                          <option value="">Select salesperson</option>
                           {data.customers?.map((item) => (
-                            <option value={item.id}>{item.name}</option>
+                            <option key={item.id} value={item.id}>{item.name}</option>
                           ))}
                         </select>
                       </div>
                     </div>
                     <div className="col-md-3 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="username">Load no #</label>
+                          <label htmlFor="loadno">Load number</label>
                         <input
                           type="text"
                           className="form-control"
-                          id="scaleticketno"
-                          name="loadon"
-                          defaultValue={data && data.loadno}
+                            id="loadno"
+                            name="loadno"
                           placeholder="Enter Load #"
                           autoComplete="off"
-                          value={
-                            formData.loadno
-                              ? formData.loadno
-                              : data && data.loadno
-                          }
+                            value={formData.loadno || ""}
                           onChange={handleInputChange}
                         />
                       </div>
                     </div>
                     <div className="col-md-3 col-xs-12 pull pull-left">
                       <div className="form-group">
-                        <label htmlFor="username">Scale . #</label>
+                        <label htmlFor="scaleticketno">Scale . #</label>
                         <input
                           type="text"
                           className="form-control"
@@ -1017,7 +1308,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
            <div class="col-md-12 col-xs-12 pull pull-left">
           
           <div class="form-group">
-            <label for="description">Description</label>
+            <label htmlFor="carrier_desc">Description</label>
             <textarea type="text" class="form-control" id="carrier_desc" name="carrier_desc"  autocomplete="off">
                               </textarea>
           </div> 
@@ -1028,7 +1319,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                 {/*   
              <div class="col-md-4 col-xs-12 pull pull-left">
               <div class="form-group">
-              <label for="store">Weight</label>
+              <label htmlFor="weight">Weight</label>
                <select class="form-control" id="weight" name="weight">
                       
                       <option value="Gallons">Gallons</option>
@@ -1047,7 +1338,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                 {/*
               <div class="col-md-3 col-xs-12 pull pull-left">
               <div class="form-group">
-              <label for="store">Measurement*</label>
+              <label htmlFor="measurement">Measurement*</label>
               <select class="form-control" id="measurement" name="measurement">
               <option value="Centimeter">Centimeter</option>
                <option value="Feet">Feet</option>
@@ -1061,7 +1352,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
              <div class="col-md-3 col-xs-12 pull pull-left">
               
                   <div class="form-group">
-                  <label for="username">L*</label>
+                  <label htmlFor="l">L*</label>
                   <input type="text" class="form-control" id="l" name="l"  autocomplete="off">
                   </div>
               
@@ -1069,7 +1360,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                  <div class="col-md-3 col-xs-12 pull pull-left">
               
                   <div class="form-group">
-                  <label for="username">B*</label>
+                  <label htmlFor="b">B*</label>
                   <input type="text" class="form-control" id="b" name="b"  autocomplete="off">
                   </div>
               
@@ -1077,7 +1368,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                  <div class="col-md-3 col-xs-12 pull pull-left">
               
                   <div class="form-group">
-                  <label for="username">H*</label>
+                  <label htmlFor="h">H*</label>
                   <input type="text" class="form-control" id="h" name="h"  autocomplete="off">
                   </div>
               
@@ -1091,7 +1382,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
            <div class="col-md-12 col-xs-12 pull pull-left">
           
           <div class="form-group">
-            <label for="description">Description</label>
+            <label htmlFor="shipment_desc">Description</label>
             <textarea type="text" class="form-control" id="shipment_desc" name="shipment_desc" placeholder="Enter Shipment  Notes" autocomplete="off">
                               </textarea>
           </div> 
@@ -1183,7 +1474,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
             </div>
             <div className="col-md-12 col-xs-12 pull pull-left">
               <div className="form-group">
-                <h4>
+                <h4 id="trip-route-details">
                   <span className="label label-success">
                     PICKUP/DELIVERY DETAIL
                   </span>
@@ -1213,7 +1504,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </div>
               <div className="col-md-12 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="username">Pickup Address</label>
+                  <label htmlFor="pickup_address">Pickup Address</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1252,7 +1543,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </div>
               <div className="col-md-4 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="username">Refrence No.*</label>
+                  <label htmlFor="pickup_refno">Refrence No.*</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1289,7 +1580,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </div> */}
               <div className="col-md-12 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="description">Pickup Description</label>
+                  <label htmlFor="pickup_desc">Pickup Description</label>
                   <textarea
                     type="text"
                     className="form-control"
@@ -1307,7 +1598,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
             <div className="col-md-6 col-xs-12 pull pull-right">
               <div className="col-md-12 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="store">Deliver To</label>
+                  <label htmlFor="delivery">Deliver To</label>
                   <select
                     className="form-control"
                     id="delivery"
@@ -1324,7 +1615,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </div>
               <div className="col-md-12 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="username">Delivery Address</label>
+                  <label htmlFor="delivery_address">Delivery Address</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1363,7 +1654,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </div>
               <div className="col-md-4 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="username">Refrence No.*</label>
+                  <label htmlFor="delivery_refno">Refrence No.*</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1400,7 +1691,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </div> */}
               <div className="col-md-4 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="store">Appointment</label>
+                  <label htmlFor="dappointment">Appointment</label>
                   <select
                     className="form-control"
                     id="dappointment"
@@ -1415,7 +1706,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </div>
               <div className="col-md-12 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="description">Delivery Description</label>
+                  <label htmlFor="delivery_desc">Delivery Description</label>
                   <textarea
                     type="text"
                     className="form-control"
@@ -1527,21 +1818,40 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                 </select>
               </div>
               <div className="form-group">
-                <label>Location</label>
-                <select
+                <label>Stop name</label>
+                <input
                   className="form-control"
-                  value={stop.location}
-                  onChange={(e) =>
-                    handleStopChange(index, "location", e.target.value)
-                  }
-                >
-                  <option value="">Select Location</option>
+                  type="text"
+                  placeholder="Company or location name"
+                  value={stop.name || ""}
+                  onChange={(e) => handleStopChange(index, "name", e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Stop address / location</label>
+                <input
+                  className="form-control"
+                  type="text"
+                  list={`trip-stop-locations-${index}`}
+                  placeholder="Enter or select a saved location"
+                  value={stop.location || ""}
+                  onChange={(e) => handleStopChange(index, "location", e.target.value)}
+                />
+                <datalist id={`trip-stop-locations-${index}`}>
                   {data.locations?.map((item) => (
-                    <option key={item.id} value={item.address1}>
-                      {item.name}
-                    </option>
+                    <option key={item.id} value={item.address1 || item.name}>{item.name}</option>
                   ))}
-                </select>
+                </datalist>
+              </div>
+              <div className="row">
+                <div className="col-sm-6 form-group">
+                  <label>Stop date</label>
+                  <input className="form-control" type="date" value={stop.date || ""} onChange={(e) => handleStopChange(index, "date", e.target.value)} />
+                </div>
+                <div className="col-sm-6 form-group">
+                  <label>Stop time</label>
+                  <input className="form-control" type="time" value={stop.time || ""} onChange={(e) => handleStopChange(index, "time", e.target.value)} />
+                </div>
               </div>
             </div>
           ))}
@@ -1689,7 +1999,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
           </div>
           <div className="col-md-12 col-xs-12 pull pull-left">
             <div className="form-group">
-              <h4>
+              <h4 id="trip-shipment-details">
                 <span className="label label-success">SHIPMENT DETAIL</span>
               </h4>
             </div>
@@ -1950,6 +2260,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                     </div>
                   </div>
                   <div className="modal-footer">
+                {saveError && <Alert tone="danger" title="Trip save failed">{saveError} If a request timed out, check the list for an existing record before retrying.</Alert>}
                     <button
                       type="button"
                       className="btn btn-secondary"
@@ -1977,7 +2288,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                     <td>
                       <div className="col-md-12 col-xs-12 pull pull-left">
                         <div className="form-group">
-                          <label htmlFor="username">Commodities(s)</label>
+                          <label htmlFor="commodity[]">Commodities(s)</label>
                           <input
                             type="text"
                             className="form-control"
@@ -1994,7 +2305,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                     <td>
                       <div className="col-md-12 col-xs-12 pull pull-left">
                         <div className="form-group">
-                          <label htmlFor="username">Weight</label>
+                          <label htmlFor="weight[]">Weight</label>
                           <input
                             type="text"
                             className="form-control"
@@ -2011,7 +2322,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                     <td>
                       <div className="col-md-12 col-xs-12 pull pull-left">
                         <div className="form-group">
-                          <label htmlFor="username">Packages(s)</label>
+                          <label htmlFor="unit[]">Packages(s)</label>
                           <select
                             className="form-control"
                             id="unit[]"
@@ -2036,7 +2347,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                     <td>
                       <div className="col-md-12 col-xs-12 pull pull-left">
                         <div className="form-group">
-                          <label htmlFor="username">Packages(s)</label>
+                          <label htmlFor="package[]">Packages(s)</label>
                           <input
                             type="text"
                             className="form-control"
@@ -2069,7 +2380,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </table>
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="description">Selecct Trailor Type</label>
+                  <label htmlFor="trailortype">Selecct Trailor Type</label>
                   <select
                     className="form-control"
                     id="trailortype"
@@ -2090,7 +2401,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </div>
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="store">View Manifest</label>
+                  <label htmlFor="manifest">View Manifest</label>
                   <select
                     className="form-control"
                     id="manifest"
@@ -2105,7 +2416,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </div>
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="store">Hazmat</label>
+                  <label htmlFor="hazmat">Hazmat</label>
                   <select
                     className="form-control"
                     id="hazmat"
@@ -2120,7 +2431,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </div>
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="username">Addl. Charges</label>
+                  <label htmlFor="addlcharge">Addl. Charges</label>
                   <input
                     type="text"
                     className="form-control"
@@ -2135,7 +2446,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               {/*
                <div class="col-md-2 col-xs-12 pull pull-left">
               <div class="form-group">
-              <label for="store">Refer</label>
+              <label htmlFor="refer">Refer</label>
               <select class="form-control" id="refer" name="refer">
              <option value="C">C</option>
                 <option value="F">F</option>
@@ -2146,7 +2457,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
           */}
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="username">Delivery by APPT*</label>
+                  <label htmlFor="appt">Delivery by APPT*</label>
                   <input
                     type="text"
                     className="form-control"
@@ -2160,7 +2471,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </div>
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="store">PIP</label>
+                  <label htmlFor="pip">PIP</label>
                   <select
                     className="form-control"
                     id="pip"
@@ -2175,7 +2486,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
               </div>
               <div className="col-md-3 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <label htmlFor="store">CTPAT</label>
+                  <label htmlFor="ctpat">CTPAT</label>
                   <select
                     className="form-control"
                     id="ctpat"
@@ -2191,7 +2502,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
             </div>
             <div className="col-md-12 col-xs-12 pull pull-left">
               <div className="form-group">
-                <h4>
+                <h4 id="trip-revenue-details">
                   <span className="label label-success">REVENUE DETAILS</span>
                 </h4>
               </div>
@@ -2199,6 +2510,13 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
             <div className="col-md-6 col-xs-12 pull pull-left">
               <div className="table-responsive">
                 <label htmlFor="store">Revenue Item | Revenue Method</label>
+                <div className="form-group">
+                  <label htmlFor="currency">Revenue Currency</label>
+                  <select className="form-control" id="currency" name="currency" value={formData.currency} onChange={handleInputChange}>
+                    <option value="CAD">CAD — Canadian Dollar</option>
+                    <option value="USD">USD — US Dollar</option>
+                  </select>
+                </div>
                 <table className="table table-bordered" id="dynamic_field">
                   <tbody>
                     <tr>
@@ -2217,7 +2535,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                         <input
                           type="number"
                           name="rate"
-                          placeholder="Enter Rate (0.00)"
+                          placeholder={`Enter Rate (${formData.currency})`}
                           className="form-control name_list"
                           required=""
                           value={formData.rate}
@@ -2257,7 +2575,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                       <th scope="row" />
                       <td />
                       <td />
-                      <td>Gross Amount</td>
+                      <td>Gross Amount ({formData.currency})</td>
                       <td className="text-right">
                         {" "}
                         <input
@@ -2336,7 +2654,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                       <th scope="row" />
                       <td />
                       <td />
-                      <td>Net Amount</td>
+                      <td>Net Amount ({formData.currency})</td>
                       <td>
                         {" "}
                         <input
@@ -2364,11 +2682,11 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
           <button
             type="button"
             className="btn btn-primary"
-            onClick={() => setpopup(!popup)}
+            onClick={() => setpopup(true)}
           >
-            Create Estimate
+            Review &amp; Save Trip
           </button>
-          <button onClick={() => navigate(-1)} className="btn btn-warning">
+          <button type="button" onClick={() => navigate(-1)} className="btn btn-outline-secondary">
             Back
           </button>
         </div>
@@ -2380,6 +2698,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
           style={{ display: "block" }}
           tabIndex={-1}
           role="dialog"
+          aria-labelledby="trip-save-title"
         >
           <div
             className="modal-dialog custom-modal"
@@ -2392,7 +2711,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
           >
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Modal title</h5>
+                <h5 className="modal-title" id="trip-save-title">Review route and save trip</h5>
                 <button
                   type="button"
                   className="close"
@@ -2426,7 +2745,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                   onClick={handleSaveAndAssign}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Saving..." : "Save Trip and Assign Dispatch"}
+                  Save &amp; Assign Dispatch
                 </button>
 
                 <button

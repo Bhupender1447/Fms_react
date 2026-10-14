@@ -1,77 +1,39 @@
-<<<<<<< HEAD
-# Getting Started with Create React App
+# Isovia React Client
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React 18 single-page client built with Create React App 5. The PHP/CodeIgniter API is a separate project at `../../fms_api-main/fms_api-main`.
 
-## Available Scripts
+## Local Setup
 
-In the project directory, you can run:
+Requirements: Node.js and npm. Install the exact dependency versions from the lockfile:
 
-### `npm start`
+```sh
+npm ci
+```
 
- // "homepage": "/new",
-  <BrowserRouter basename="/new">
+Configure the API origin with `REACT_APP_API_URL` in an untracked local `.env` file. The current fallback in `src/config.js` points to the configured Isovia API and should not be used as a substitute for an approved staging environment.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```env
+REACT_APP_API_URL=http://localhost:8080/
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+The example origin above is illustrative; configure it to match the local or staging API base path. Some legacy screens still use direct absolute API URLs, so changing this value alone does not redirect every request.
 
-### `npm test`
+## Commands
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```sh
+npm start
+npm test -- --watchAll=false
+npm run build
+```
 
-### `npm run build`
+The current test suite contains only the Create React App starter test and does not cover Isovia workflows.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## API And Database
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+The frontend does not provision the MySQL database. No verified FMS schema dump, migration sequence, or sanitized fixture was found with this client. Use the backend owner's approved local/staging setup instructions; do not import the unrelated `restaurant.sql` file.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The router currently uses the site root as its base path. Deploying under a subpath requires coordinated React router, static-asset, and PHP API configuration changes.
 
-### `npm run eject`
+## External Services
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-=======
-# Fms_react
->>>>>>> dd55b78bb7ef443c3fec429d02296a8db8cc8e89
+Some pages require provider configuration such as Google Maps, Samsara/Gomotive, OCR, or routing services. Use sandbox credentials and approved test data; never add credentials to this repository or upload production records to tests.

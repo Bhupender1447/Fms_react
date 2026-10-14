@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
 import { Helmet } from "react-helmet-async";
+import './ptv-partner.css';
 
 const Partners = () => {
   return (
@@ -60,21 +61,17 @@ const Partners = () => {
               </Link>
             </div>
           </div>
-          {/* Trimble */}
+          {/* PTV */}
           <div className="col-md-6  partners-section-cols">
             <div className="partner-card h-100">
               <div className="partners-info">
-                <h4 className="fw-semibold text-white mb-3">Trimble</h4>
-                <img
-                  src="images/trimbleconnect.png"
-                  alt=""
-                  className="partners-logo"
-                />
+                <h4 className="fw-semibold text-white mb-3">PTV</h4>
+                <span className="ptv-partner-mark" aria-label="PTV">PTV</span>
               </div>
               <p className="text-light mb-4">
-                Provides advanced GPS tracking and fleet management
-                solutions.Enables Isovia to deliver real-time vehicle and asset
-                tracking.
+                PTV Maps is referenced in IFM's truck-routing interface for
+                truck-profile routing. Provider configuration and live routing
+                have not been verified in staging.
               </p>
               <Link to="#" className="btn btn-outline-light px-4">
                 Visit Our Partner

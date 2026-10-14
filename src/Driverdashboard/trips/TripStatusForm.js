@@ -191,6 +191,24 @@ function TripStatusForm() {
                         <th>Delivery</th>
                         <td>{trip.delivery_address || '—'}</td>
                       </tr>
+                      {Array.isArray(trip.stops) && trip.stops.length > 0 && (
+                        <tr>
+                          <th>Stops</th>
+                          <td>
+                            <ol className="mb-0">
+                              {trip.stops.map((stop, index) => (
+                                <li key={stop.id || `${stop.stoptype}-${index}`}>
+                                  <strong>{stop.stoptype || 'Stop'}:</strong>{' '}
+                                  {stop.location || stop.address1 || 'Location pending'}
+                                  {stop.address1 && stop.location && stop.address1 !== stop.location
+                                    ? ` — ${stop.address1}`
+                                    : ''}
+                                </li>
+                              ))}
+                            </ol>
+                          </td>
+                        </tr>
+                      )}
                       <tr>
                         <th>Truck</th>
                         <td>{trip.truck_id || '—'}</td>

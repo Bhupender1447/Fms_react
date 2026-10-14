@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { GOOGLE_MAPS_API_KEY } from '../../mapConfig';
 
 const UpdateLocation = () => {
   const nameRef = useRef(null);
@@ -74,7 +75,7 @@ const UpdateLocation = () => {
       initializeAutocomplete();
     } else {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY_ALT}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}&libraries=places`;
       script.async = true;
       script.onload = () => initializeAutocomplete();
       document.body.appendChild(script);

@@ -3,7 +3,6 @@ import axios from 'axios';
 import { BASE_URL } from '../../config';
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { toast } from 'react-toastify';
 
 const Updatetrailors = () => {
     const { id } = useParams();
@@ -58,121 +57,6 @@ const Updatetrailors = () => {
     const [existingImages, setExistingImages] = useState({});
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
-
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [isOcrLoading, setIsOcrLoading] = useState(false);
-
-    // OCR Logic
-    const flattenObject = (obj, prefix = "", res = {}) => {
-        for (let key in obj) {
-            const value = obj[key];
-            const newKey = prefix ? `${prefix}_${key}` : key;
-
-            if (typeof value === "object" && value !== null) {
-                flattenObject(value, newKey, res);
-            } else {
-                res[newKey.toLowerCase()] = String(value);
-            }
-        }
-        return res;
-    };
-
-    const handleOcrUpload = async () => {
-        if (!selectedFile) {
-            toast.warning("Please select a file first");
-            return;
-        }
-
-        setIsOcrLoading(true);
-
-        const ocrData = new FormData();
-        ocrData.append("file", selectedFile);
-        ocrData.append("module_type", "trailer");
-        ocrData.append(
-            "prompt",
-            `Extract trailer details into strict JSON exactly matching these keys: {"owner_name":"Company/Owner Name","plate_number":"Plate number","vin_number":"VIN","trailer_type":"Trailer type","make":"Make/Brand","model":"Model","year":"Year","country":"Country","province":"Province/State","color":"Color","registered_weight":"Weight","length":"Length"}. Return ONLY JSON.`
-        );
-
-        try {
-            const response = await axios.post(
-                `${BASE_URL}OCRController/simple_openai_process`,
-                ocrData,
-                { withCredentials: true }
-            );
-
-            if (response.data.success) {
-                let matchCount = 0;
-                const gptData = response.data.gpt_response?.structured_json || {};
-                const ocrDataRaw = response.data.data || {};
-                const flatOCR = flattenObject(ocrDataRaw);
-                const flatGPT = flattenObject(gptData);
-
-                const combinedSource = { ...flatOCR, ...flatGPT };
-
-                setFormData(prev => {
-                    const updated = { ...prev };
-                    const sourceKeys = Object.keys(combinedSource);
-
-                    const getMatch = (synonyms) => {
-                        const key = sourceKeys.find(k => synonyms.some(s => {
-                            const kLower = k.toLowerCase();
-                            const sLower = s.toLowerCase();
-                            return kLower === sLower || kLower === `gpt_${sLower}` || kLower.includes(sLower);
-                        }));
-                        return key ? combinedSource[key] : null;
-                    };
-
-                    const fieldMap = {
-                        plate_number: ['plate_number', 'plateno', 'plate', 'licence_plate', 'license_plate'],
-                        vin_number: ['vin_number', 'vin', 'serial_number'],
-                        trailer_type: ['trailer_type', 'trailortype', 'type'],
-                        make: ['make', 'brand'],
-                        model: ['model'],
-                        year: ['year'],
-                        registered_weight: ['registered_weight', 'weight', 'gross_weight'],
-                        owner_name: ['owner_name', 'owner', 'company', 'name'],
-                        country: ['country'],
-                        province: ['province', 'state'],
-                        color: ['color', 'colour'],
-                        length: ['length'],
-                    };
-
-                    Object.keys(fieldMap).forEach(field => {
-                        const val = getMatch(fieldMap[field]);
-                        if (val !== null && val !== undefined && String(val).trim() !== "") {
-                            updated[field] = String(val);
-                            matchCount++;
-                        }
-                    });
-
-                    // Catch-all for any other matching fields in updated
-                    Object.keys(updated).forEach(field => {
-                        if (fieldMap[field]) return;
-                        const val = getMatch([field]);
-                        if (val !== null && val !== undefined && String(val).trim() !== "") {
-                            updated[field] = String(val);
-                            matchCount++;
-                        }
-                    });
-
-                    if (matchCount > 0) {
-                        toast.success(`OCR processed successfully. Mapped ${matchCount} details.`);
-                    } else {
-                        toast.warning("OCR processed but no matching fields found.");
-                    }
-
-                    return updated;
-                });
-            } else {
-                toast.error("OCR failed or no data found");
-            }
-        } catch (err) {
-            console.error("OCR Error:", err);
-            toast.error("Error processing OCR");
-        } finally {
-            setIsOcrLoading(false);
-        }
-    };
 
     useEffect(() => {
         const fetchTrailerData = async () => {
@@ -344,45 +228,6 @@ const Updatetrailors = () => {
                         <div className="box">
                             <form role="form" onSubmit={handleSubmit}>
                                 <div className="box-body">
-                                    {/* AI Smart Scan Section */}
-                                    <div className="row" style={{ padding: '10px', marginBottom: '20px', backgroundColor: '#f9f9f9', borderBottom: '1px solid #eee' }}>
-                                        <div className="col-md-6 col-xs-12">
-                                            <label style={{ color: '#3c8dbc', fontWeight: 'bold' }}>
-                                                <i className="fa fa-magic"></i> AI Smart Scan (OCR)
-                                            </label>
-                                            <div className="input-group">
-                                                <input
-                                                    type="file"
-                                                    className="form-control"
-                                                    onChange={(e) => setSelectedFile(e.target.files[0])}
-                                                    accept="image/*,.pdf"
-                                                />
-                                                <span className="input-group-btn">
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-primary"
-                                                        onClick={handleOcrUpload}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
-                                                        disabled={isOcrLoading}
-                                                    >
-                                                        {isOcrLoading ? (
-                                                            <>
-                                                                <i className="fa fa-spinner fa-spin"></i> Processing...
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <i className="fa fa-search"></i> Scan & Fill
-                                                            </>
-                                                        )}
-                                                    </button>
-                                                </span>
-                                            </div>
-                                            <small className="text-muted">
-                                                Upload Trailer Registration, Insurance, or Cab Card to auto-fill details.
-                                            </small>
-                                        </div>
-                                    </div>
-
                                     {/* Trailer Details Section */}
                                     <div className="col-md-12 col-xs-12 pull pull-left">
                                         <div className="form-group">

@@ -1,13 +1,14 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { BASE_URL } from '../../config'
 
 const TripAgentlist = () => {
   const [list, setList] = useState([])
 
   useEffect(() => {
     let{ id }= JSON.parse(localStorage.getItem('logindetail'))
-    axios.get(`https://isovia.ca/fms_api/api/tipsdriverfetchProductData/${id}`)
+    axios.get(`${BASE_URL}api/tipsdriverfetchProductData/${id}`)
       .then(res => setList(res.data))
       .catch(err => console.log(err))
   }, [])
@@ -102,14 +103,14 @@ console.log(list)
                                
                                 <Link
                                   target="_blank"
-                                  to={`https://isovia.ca/fms_api/pdf/invoice_log.php?id=${item.id}`}
+                                  to={`${BASE_URL}pdf/invoice_log.php?id=${item.id}`}
                                   className="btn btn-danger btn-xs"
                                 >
                                   Dispatch
                                 </Link>
                                 <Link
                                   target="_blank"
-                                  to={`https://isovia.ca/fms_api/pdf/invoice_orders.php?id=${item.id}`}
+                                  to={`${BASE_URL}pdf/invoice_orders.php?id=${item.id}`}
                                   className="btn btn-warning btn-xs"
                                 >
                                   Invoice

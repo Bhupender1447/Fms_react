@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./Websitelayout.css";
+import { acquireStylesheets, loadLayoutScript } from "./design-system/layoutStyles";
 
 const WebsiteLayout = ({ children }) => {
   const [loading, setLoading] = useState(true);
@@ -14,27 +15,13 @@ const WebsiteLayout = ({ children }) => {
       "/websitecss/responsive.css",
       "/websitecss/responsiv-481-767.css",
       "/websitecss/responsive-768-1020.css",
+      `${process.env.PUBLIC_URL}/css/isovia-brand.css`,
     ];
 
-    cssLinks.forEach((href) => {
-      if (!document.querySelector(`link[to="${href}"]`)) {
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href = href;
-        document.head.appendChild(link);
-      }
-    });
-
-    // ---- JS Loader ----
-    const loadScript = (src) =>
-      new Promise((resolve) => {
-        if (document.querySelector(`script[src="${src}"]`)) return resolve();
-        const script = document.createElement("script");
-        script.src = src;
-        script.async = true;
-        script.onload = resolve;
-        document.body.appendChild(script);
-      });
+    const releaseStyles = acquireStylesheets(cssLinks, 'public');
+    let active = true;
+    let loaderTimer;
+    const loadScript = loadLayoutScript;
 
     const jsScripts = [
       "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js",
@@ -44,9 +31,15 @@ const WebsiteLayout = ({ children }) => {
     ];
 
     (async () => {
-      for (let src of jsScripts) {
-        await loadScript(src);
+      try {
+        for (let src of jsScripts) {
+          if (!active) return;
+          await loadScript(src);
+        }
+      } catch (error) {
+        if (active) console.error('Public layout script could not load:', error);
       }
+      if (!active) return;
 
       // AOS Init
       if (window.AOS) {
@@ -63,7 +56,7 @@ const WebsiteLayout = ({ children }) => {
       }
 
       // ---- Hide Loader ----
-      setTimeout(() => setLoading(false), 500);
+      loaderTimer = setTimeout(() => { if (active) setLoading(false); }, 500);
     })();
 
     // ---- Tawk.to Chat ----
@@ -73,6 +66,12 @@ const WebsiteLayout = ({ children }) => {
     tawk.charset = "UTF-8";
     tawk.setAttribute("crossorigin", "*");
     document.body.appendChild(tawk);
+    return () => {
+      active = false;
+      clearTimeout(loaderTimer);
+      releaseStyles();
+      tawk.remove();
+    };
 
   }, []);
 

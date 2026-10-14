@@ -4,6 +4,7 @@ import { BASE_URL } from '../../config';
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { getOcrErrorMessage, getOcrResponseErrorMessage } from '../../services/ocrErrors';
 
 
 const Createtrucks = () => {
@@ -155,11 +156,11 @@ const Createtrucks = () => {
         });
 
       } else {
-        toast.error("OCR failed or no data found");
+        toast.error(getOcrResponseErrorMessage(response));
       }
     } catch (err) {
-      console.error("OCR Error:", err);
-      toast.error("Error processing OCR");
+      console.error("Truck OCR request failed:", err.response?.status || err.message);
+      toast.error(getOcrErrorMessage(err, "Error processing OCR"));
     } finally {
       setIsOcrLoading(false);
     }
@@ -185,7 +186,6 @@ const Createtrucks = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
     setIsSubmitting(true);
 
     const data = new FormData();

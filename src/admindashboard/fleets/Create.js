@@ -3,12 +3,10 @@
 import axios from 'axios';
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { BASE_URL } from '../../config';
+import Adminheader from '../Adminheader';
 
 const Createfleets = () => {
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   let [message, setmessage] = useState('')
   const [formData, setFormData] = useState({
     name: '',
@@ -63,9 +61,6 @@ const Createfleets = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
     const form = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
       if (key === 'selectedTrucks') {
@@ -83,13 +78,8 @@ const Createfleets = () => {
         }
       });
       setmessage(response.data.message);
-      toast.success("Fleet created successfully!");
-      navigate('/fleets');
     } catch (error) {
       console.error('Error submitting form', error);
-      toast.error(error?.response?.data?.message || "Error submitting form. Please try again.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
   return (
@@ -782,8 +772,8 @@ const Createfleets = () => {
             </div>
             {/* /.box-body */}
             <div className="box-footer">
-              <button type="button" onClick={handleSubmit} className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save Changes"}
+              <button type="button" onClick={handleSubmit} className="btn btn-primary">
+                Save Changes
               </button>
               <Link to="https://isovia.ca/fms/fleets/" className="btn btn-warning">
                 Back

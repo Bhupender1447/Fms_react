@@ -69,7 +69,7 @@
   }
 
   a.nav-link.active {
-    border-bottom: 1.5px solid #ea1854;
+    border-bottom: 1.5px solid var(--iso-primary);
     padding-bottom: 6px;
   }
 
@@ -258,7 +258,7 @@
   }
 
   .number-list-services-text.active {
-    border-bottom: 2px solid #ea1854;
+    border-bottom: 2px solid var(--iso-primary);
   }
 
   /* Service content */
@@ -314,7 +314,7 @@
   .counter-section h4.counter {
     font-size: 2rem;
     font-weight: 700;
-    color: #055160;
+    color: var(--iso-primary);
     margin-bottom: 8px;
   }
 
@@ -385,7 +385,7 @@
 }
 
   .view-all-btn a {
-    background-color: #ea1854;
+    background-color: var(--iso-primary);
     color: #fff;
     padding: 12px 28px;
     border-radius: 8px;

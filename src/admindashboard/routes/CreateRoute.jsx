@@ -1,0 +1,251 @@
+import React, { useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import ExcelStopUploader from './ExcelStopUploader';
+import RouteMap from './RouteMap';
+import { buildRouteApiPreview, createLocalRouteDraft, createMockPtvOptimizationClient } from './routePlanningService';
+import { calculatePlanningEstimate, createRouteStopPreviewKey, validateManualAssignments, validateRouteStops } from './routePlanningModel';
+import './routes.css';
+
+const newManualStop = () => ({
+	stopId: '', customer: '', address: '', city: '', region: '', postalCode: '', stopType: 'PICKUP',
+	appointmentStart: '', appointmentEnd: '', serviceMinutes: '', weight: '', pallets: '',
+	priority: 'NORMAL', instructions: '', equipment: '', latitude: '', longitude: '',
+});
+
+const newVehicle = () => ({ id: '', label: '', maxWeight: '', maxPallets: '', equipment: '', startAddress: '', endAddress: '', maxOperatingMinutes: '' });
+
+export default function CreateRoute() {
+	const navigate = useNavigate();
+	const location = useLocation();
+	const routeFormData = location.state?.routeFormData;
+	const [routeName, setRouteName] = useState(() => routeFormData?.routeName || '');
+	const [driverName, setDriverName] = useState(() => routeFormData?.driverName || '');
+	const [stops, setStops] = useState(() => routeFormData?.stops || []);
+	const [vehicles, setVehicles] = useState(() => (routeFormData?.vehicles || []).slice(0, 1));
+	const [manualStop, setManualStop] = useState(newManualStop);
+	const [depot, setDepot] = useState(() => routeFormData?.depot || { startAddress: '', endAddress: '' });
+	const [options, setOptions] = useState(() => routeFormData?.options || { objective: 'time', obeyTimeWindows: true, balanceWorkload: true, minimizeVehicles: false });
+	const [mapCreated, setMapCreated] = useState(false);
+	const [showEstimate, setShowEstimate] = useState(false);
+	const [estimateRequested, setEstimateRequested] = useState(false);
+	const [estimateInputs, setEstimateInputs] = useState({ distanceKm: '', averageSpeedKmh: '', fuelConsumptionLPer100Km: '', fuelPricePerL: '', driverCostPerHour: '' });
+	const [showRequestPreview, setShowRequestPreview] = useState(false);
+	const [mockLifecycle, setMockLifecycle] = useState(null);
+	const [mockRunning, setMockRunning] = useState(false);
+	const [saveMessage, setSaveMessage] = useState('');
+
+	const validation = useMemo(() => validateRouteStops(stops), [stops]);
+	const assignmentValidation = useMemo(() => {
+		const routeVehicles = vehicles.filter((vehicle) => vehicle.id.trim()).slice(0, 1);
+		if (!routeVehicles.length) return { errors: [], warnings: [], unassignedStopIds: [], valid: true };
+		const routeStops = stops.map((stop) => ({ ...stop, assignedVehicleId: routeVehicles[0].id }));
+		return validateManualAssignments(routeStops, routeVehicles);
+	}, [stops, vehicles]);
+	const validVehiclePool = vehicles.filter((vehicle) => vehicle.id.trim()).slice(0, 1);
+	const aggregateWeight = stops.reduce((total, stop) => total + (Number.isFinite(stop.weight) ? stop.weight : 0), 0);
+	const aggregateCapacity = validVehiclePool.reduce((total, vehicle) => total + (Number(vehicle.maxWeight) || 0), 0);
+	const canCreateDraft = validation.valid && assignmentValidation.valid && routeName.trim() && driverName.trim();
+	const requestPreview = showRequestPreview ? buildRouteApiPreview({ routeName, stops, vehicles: validVehiclePool, options, depot }) : null;
+	const planningEstimate = useMemo(() => calculatePlanningEstimate({ ...estimateInputs, stops }), [estimateInputs, stops]);
+	const currentRouteFormData = { routeName, driverName, stops, vehicles: validVehiclePool, depot, options };
+
+	const openRouteView = () => navigate('/routes/view', {
+		state: {
+			routePreview: { ...currentRouteFormData, routeName: routeName.trim() || 'Untitled route plan' },
+			routeFormData: currentRouteFormData,
+			drafts: location.state?.drafts || [],
+		},
+	});
+
+	const createMapPreview = () => {
+		setMapCreated(true);
+		requestAnimationFrame(() => document.getElementById('route-map-preview')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+	};
+
+	const updateVehicle = (index, field, value) => {
+		setVehicles((current) => current.map((vehicle, vehicleIndex) => (
+			vehicleIndex === index ? { ...vehicle, [field]: value } : vehicle
+		)));
+	};
+
+	const addManualStop = (event) => {
+		event.preventDefault();
+		const stop = {
+			...manualStop,
+			previewKey: createRouteStopPreviewKey(),
+			sourceRow: stops.length + 1,
+			serviceMinutes: manualStop.serviceMinutes === '' ? null : Number(manualStop.serviceMinutes),
+			weight: manualStop.weight === '' ? null : Number(manualStop.weight),
+			pallets: manualStop.pallets === '' ? null : Number(manualStop.pallets),
+			latitude: manualStop.latitude === '' ? null : Number(manualStop.latitude),
+			longitude: manualStop.longitude === '' ? null : Number(manualStop.longitude),
+			assignedVehicleId: '',
+			completionEvidence: null,
+		};
+		setStops((current) => [...current, stop]);
+		setManualStop(newManualStop());
+		setSaveMessage('');
+	};
+
+	const runMockLifecycle = async () => {
+		if (!requestPreview) return;
+		setMockRunning(true);
+		setMockLifecycle(null);
+		try {
+			const client = createMockPtvOptimizationClient();
+			const accepted = await client.createOptimization(requestPreview);
+			const running = await client.getOptimization(accepted.id);
+			const completed = await client.getOptimization(accepted.id);
+			setMockLifecycle({ accepted, running, completed });
+		} catch (error) {
+			setMockLifecycle({ error: error.message || 'Mock lifecycle failed.' });
+		} finally {
+			setMockRunning(false);
+		}
+	};
+
+	const removeStop = (targetStop) => setStops((current) => current.filter((stop) => stop !== targetStop));
+
+	const saveLocalDraft = () => {
+		if (!canCreateDraft) return;
+		const draft = createLocalRouteDraft({ routeName, driverName, stops, vehicles: validVehiclePool, options, depot });
+		const drafts = location.state?.drafts || [];
+		setSaveMessage('Local draft created in this browser flow only. It was not saved to IFM or sent to a driver.');
+		navigate('/routes/manage', { state: { drafts: [...drafts, draft] } });
+	};
+
+	return (
+		<main className="content-wrapper route-module">
+			<div className="route-page-header">
+				<div>
+					<p className="route-eyebrow">CARRIER · ROUTE PLANNING</p>
+					<h1>Create Route</h1>
+					<p>Plan one carrier route across multiple stops. Broker order creation and trip management remain separate workflows.</p>
+				</div>
+				<span className="route-state-pill route-state-draft"><i className="fa fa-flask" aria-hidden="true" /> Local preview</span>
+			</div>
+
+			<div className="route-safety-notice" role="status"><strong>Preview only</strong><span>Route data stays in page memory. No route API, PTV request, database write, driver assignment, or dispatch occurs.</span></div>
+
+			<section className="route-section" aria-labelledby="route-plan-heading">
+				<div className="route-section-heading"><div><h2 id="route-plan-heading">Plan details</h2><p>Name the route and set the operating objective.</p></div></div>
+				<div className="route-form-grid">
+					<label className="route-field"><span>Route name *</span><input className="form-control" required value={routeName} onChange={(event) => setRouteName(event.target.value)} placeholder="e.g. London north deliveries" /></label>
+					<label className="route-field"><span>Driver for this route *</span><input className="form-control" required value={driverName} onChange={(event) => setDriverName(event.target.value)} placeholder="Local preview driver name or ID" /></label>
+					<label className="route-field"><span>Optimization objective</span><select className="form-control" value={options.objective} onChange={(event) => setOptions((current) => ({ ...current, objective: event.target.value }))}><option value="time">Minimum driving time</option><option value="distance">Minimum distance</option><option value="cost">Minimum operating cost</option><option value="vehicles">Minimum number of trucks</option></select></label>
+					<label className="route-field"><span>Depot start</span><input className="form-control" value={depot.startAddress} onChange={(event) => setDepot((current) => ({ ...current, startAddress: event.target.value }))} placeholder="Depot address" /></label>
+					<label className="route-field"><span>Depot end</span><input className="form-control" value={depot.endAddress} onChange={(event) => setDepot((current) => ({ ...current, endAddress: event.target.value }))} placeholder="Optional return address" /></label>
+				</div>
+				<div className="route-toggle-row">
+					<label><input type="checkbox" checked={options.obeyTimeWindows} onChange={(event) => setOptions((current) => ({ ...current, obeyTimeWindows: event.target.checked }))} /> Respect appointment windows</label>
+					<label><input type="checkbox" checked={options.balanceWorkload} onChange={(event) => setOptions((current) => ({ ...current, balanceWorkload: event.target.checked }))} /> Balance driver workload</label>
+					<label><input type="checkbox" checked={options.minimizeVehicles} onChange={(event) => setOptions((current) => ({ ...current, minimizeVehicles: event.target.checked }))} /> Minimize trucks used</label>
+				</div>
+			</section>
+
+			<ExcelStopUploader onStopsChange={(nextStops) => { setStops(nextStops); setSaveMessage(''); }} />
+
+			<section className="route-section" aria-labelledby="manual-stop-heading">
+				<div className="route-section-heading"><div><h2 id="manual-stop-heading">Add a stop manually</h2><p>Manual stops use the same validation rules as spreadsheet rows.</p></div></div>
+				<form className="route-manual-stop-form" onSubmit={addManualStop}>
+					<label className="route-field"><span>Stop ID *</span><input className="form-control" required value={manualStop.stopId} onChange={(event) => setManualStop((current) => ({ ...current, stopId: event.target.value }))} /></label>
+					<label className="route-field"><span>Customer *</span><input className="form-control" required value={manualStop.customer} onChange={(event) => setManualStop((current) => ({ ...current, customer: event.target.value }))} /></label>
+					<label className="route-field"><span>Stop type *</span><select className="form-control" value={manualStop.stopType} onChange={(event) => setManualStop((current) => ({ ...current, stopType: event.target.value }))}><option>PICKUP</option><option>DELIVERY</option><option>SERVICE</option></select></label>
+					<label className="route-field route-field-wide"><span>Address *</span><input className="form-control" required value={manualStop.address} onChange={(event) => setManualStop((current) => ({ ...current, address: event.target.value }))} /></label>
+					<label className="route-field"><span>City *</span><input className="form-control" required value={manualStop.city} onChange={(event) => setManualStop((current) => ({ ...current, city: event.target.value }))} /></label>
+					<label className="route-field"><span>Province / State *</span><input className="form-control" required value={manualStop.region} onChange={(event) => setManualStop((current) => ({ ...current, region: event.target.value }))} /></label>
+					<label className="route-field"><span>Postal / ZIP *</span><input className="form-control" required value={manualStop.postalCode} onChange={(event) => setManualStop((current) => ({ ...current, postalCode: event.target.value }))} /></label>
+					<label className="route-field"><span>Weight</span><input className="form-control" type="number" min="0" step="any" value={manualStop.weight} onChange={(event) => setManualStop((current) => ({ ...current, weight: event.target.value }))} /></label>
+					<label className="route-field"><span>Pallets</span><input className="form-control" type="number" min="0" step="any" value={manualStop.pallets} onChange={(event) => setManualStop((current) => ({ ...current, pallets: event.target.value }))} /></label>
+					<label className="route-field"><span>Service time (minutes)</span><input className="form-control" type="number" min="0" step="1" value={manualStop.serviceMinutes} onChange={(event) => setManualStop((current) => ({ ...current, serviceMinutes: event.target.value }))} /></label>
+					<label className="route-field"><span>Latitude (optional)</span><input className="form-control" type="number" min="-90" max="90" step="any" value={manualStop.latitude} onChange={(event) => setManualStop((current) => ({ ...current, latitude: event.target.value }))} /></label>
+					<label className="route-field"><span>Longitude (optional)</span><input className="form-control" type="number" min="-180" max="180" step="any" value={manualStop.longitude} onChange={(event) => setManualStop((current) => ({ ...current, longitude: event.target.value }))} /></label>
+					<button className="btn btn-outline-primary route-manual-add" type="submit"><i className="fa fa-plus" aria-hidden="true" /> Add stop</button>
+				</form>
+			</section>
+
+			<section className="route-section" aria-labelledby="route-vehicles-heading">
+				<div className="route-section-heading"><div><h2 id="route-vehicles-heading">Route vehicle profile</h2><p>Optional local preview only. Every stop remains on this single route.</p></div><button className="btn btn-outline-primary btn-sm" type="button" disabled={validVehiclePool.length > 0} onClick={() => setVehicles([{ ...newVehicle(), id: 'LOCAL-1' }])}><i className="fa fa-plus" aria-hidden="true" /> Add vehicle</button></div>
+				{vehicles.length === 0 ? <p className="route-empty-inline">No local vehicle profiles added.</p> : <div className="table-responsive"><table className="table table-sm route-table">
+					<thead><tr><th>Vehicle ID</th><th>Label</th><th>Max weight</th><th>Max pallets</th><th>Equipment</th><th>Start</th><th>End</th><th>Remove</th></tr></thead>
+					<tbody>{vehicles.map((vehicle, index) => <tr key={`${vehicle.id}-${index}`}>
+						<td><input aria-label={`Vehicle ${index + 1} ID`} className="form-control form-control-sm" value={vehicle.id} onChange={(event) => updateVehicle(index, 'id', event.target.value)} /></td>
+						<td><input aria-label={`Vehicle ${index + 1} label`} className="form-control form-control-sm" value={vehicle.label} onChange={(event) => updateVehicle(index, 'label', event.target.value)} placeholder="Local preview vehicle" /></td>
+						<td><input aria-label={`Vehicle ${index + 1} max weight`} className="form-control form-control-sm" type="number" min="0" value={vehicle.maxWeight} onChange={(event) => updateVehicle(index, 'maxWeight', event.target.value)} /></td>
+						<td><input aria-label={`Vehicle ${index + 1} max pallets`} className="form-control form-control-sm" type="number" min="0" value={vehicle.maxPallets} onChange={(event) => updateVehicle(index, 'maxPallets', event.target.value)} /></td>
+						<td><input aria-label={`Vehicle ${index + 1} equipment`} className="form-control form-control-sm" value={vehicle.equipment} onChange={(event) => updateVehicle(index, 'equipment', event.target.value)} placeholder="e.g. Reefer" /></td>
+						<td><input aria-label={`Vehicle ${index + 1} start address`} className="form-control form-control-sm" value={vehicle.startAddress} onChange={(event) => updateVehicle(index, 'startAddress', event.target.value)} /></td>
+						<td><input aria-label={`Vehicle ${index + 1} end address`} className="form-control form-control-sm" value={vehicle.endAddress} onChange={(event) => updateVehicle(index, 'endAddress', event.target.value)} /></td>
+						<td><button className="btn btn-link text-danger btn-sm" type="button" aria-label={`Remove vehicle ${index + 1}`} onClick={() => setVehicles((current) => current.filter((_, itemIndex) => itemIndex !== index))}><i className="fa fa-trash" aria-hidden="true" /></button></td>
+					</tr>)}</tbody>
+				</table></div>}
+				{aggregateWeight > aggregateCapacity && validVehiclePool.length > 0 && <p className="route-inline-warning" role="status">Total stop weight exceeds the entered aggregate vehicle capacity. This is an advisory check only; no assignment or optimizer is running.</p>}
+			</section>
+
+			<section className="route-section" aria-labelledby="route-stop-review-heading">
+				<div className="route-section-heading"><div><h2 id="route-stop-review-heading">Review stops</h2><p>{stops.length} stops · 300 maximum</p></div></div>
+				{validation.errors.length > 0 && <div className="route-validation route-validation-error" role="alert"><strong>{validation.errors.length} validation errors</strong><ul>{validation.errors.slice(0, 8).map((error, index) => <li key={`${error.sourceRow}-${error.field}-${index}`}>{error.sourceRow ? `Row ${error.sourceRow}: ` : ''}{error.message}</li>)}</ul>{validation.errors.length > 8 && <span>Additional errors are available in the imported row data.</span>}</div>}
+				{validation.warnings.length > 0 && <div className="route-validation route-validation-warning" role="status"><strong>{validation.warnings.length} review warnings</strong><ul>{validation.warnings.slice(0, 5).map((warning, index) => <li key={`${warning.sourceRow}-${index}`}>Row {warning.sourceRow}: {warning.message}</li>)}</ul></div>}
+				{assignmentValidation.errors.length > 0 && <div className="route-validation route-validation-error" role="alert"><strong>{assignmentValidation.errors.length} vehicle assignment errors</strong><ul>{assignmentValidation.errors.map((error, index) => <li key={`${error.stopId || error.vehicleId}-${index}`}>{error.message}</li>)}</ul></div>}
+				{assignmentValidation.warnings.length > 0 && <div className="route-validation route-validation-warning" role="status"><strong>Assignment review</strong><ul>{assignmentValidation.warnings.map((warning, index) => <li key={`${warning.vehicleId || 'unassigned'}-${index}`}>{warning.message}</li>)}</ul></div>}
+				{stops.length === 0 ? <p className="route-empty-inline">Add a stop manually or import an Excel workbook.</p> : <div className="table-responsive"><table className="table table-sm route-table">
+					<thead><tr><th>Stop</th><th>Type</th><th>Customer / address</th><th>Window</th><th>Load</th><th>Review</th><th>Remove</th></tr></thead>
+					<tbody>{stops.map((stop, index) => {
+						const rowErrors = validation.errors.filter((error) => error.sourceRow === stop.sourceRow);
+						return <tr key={stop.previewKey || `${stop.stopId || 'stop'}-${index}`}>
+							<td><strong>{stop.stopId || `Stop ${index + 1}`}</strong><small>Row {stop.sourceRow}</small></td>
+							<td>{stop.stopType}</td>
+							<td>{stop.customer}<small>{[stop.address, stop.city, stop.region, stop.postalCode].filter(Boolean).join(', ')}</small></td>
+							<td>{stop.appointmentStart || 'No window'}<small>{stop.appointmentEnd || ''}</small></td>
+							<td>{stop.weight ?? '—'} weight · {stop.pallets ?? '—'} pallets</td>
+							<td>{rowErrors.length ? <span className="route-status route-status-error">{rowErrors.length} errors</span> : <span className="route-status route-status-ready">Ready for review</span>}</td>
+							<td><button type="button" className="btn btn-link text-danger btn-sm" aria-label={`Remove stop ${stop.stopId || index + 1}`} onClick={() => removeStop(stop)}><i className="fa fa-trash" aria-hidden="true" /></button></td>
+						</tr>;
+					})}</tbody>
+				</table></div>}
+			</section>
+
+			{mapCreated && <section id="route-map-preview" className="route-section" aria-labelledby="route-map-preview-heading">
+				<div className="route-section-heading"><div><h2 id="route-map-preview-heading">Coordinate map preview</h2><p>No geocoding or route calculation is triggered.</p></div><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setMapCreated(false)}>Hide map</button></div>
+				<RouteMap stops={stops} />
+			</section>}
+
+			{showEstimate && <section className="route-section" aria-labelledby="route-estimate-heading">
+				<div className="route-section-heading"><div><h2 id="route-estimate-heading">Planning estimate</h2><p>Enter assumptions; no distance service, provider rate, taxes, tolls, or maintenance costs are included.</p></div><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowEstimate(false)}>Hide estimate</button></div>
+				<div className="route-estimate-grid">
+					<label className="route-field"><span>Route distance (km) *</span><input className="form-control" type="number" min="0" step="any" value={estimateInputs.distanceKm} onChange={(event) => setEstimateInputs((current) => ({ ...current, distanceKm: event.target.value }))} /></label>
+					<label className="route-field"><span>Average speed (km/h) *</span><input className="form-control" type="number" min="0.1" step="any" value={estimateInputs.averageSpeedKmh} onChange={(event) => setEstimateInputs((current) => ({ ...current, averageSpeedKmh: event.target.value }))} /></label>
+					<label className="route-field"><span>Fuel consumption (L/100 km) *</span><input className="form-control" type="number" min="0" step="any" value={estimateInputs.fuelConsumptionLPer100Km} onChange={(event) => setEstimateInputs((current) => ({ ...current, fuelConsumptionLPer100Km: event.target.value }))} /></label>
+					<label className="route-field"><span>Fuel price (per L) *</span><input className="form-control" type="number" min="0" step="any" value={estimateInputs.fuelPricePerL} onChange={(event) => setEstimateInputs((current) => ({ ...current, fuelPricePerL: event.target.value }))} /></label>
+					<label className="route-field"><span>Driver cost (per hour) *</span><input className="form-control" type="number" min="0" step="any" value={estimateInputs.driverCostPerHour} onChange={(event) => setEstimateInputs((current) => ({ ...current, driverCostPerHour: event.target.value }))} /></label>
+				</div>
+				<p className="route-estimate-note">Service time uses stop durations you supplied; {stops.filter((stop) => !Number.isFinite(stop.serviceMinutes)).length} stop(s) have no service-time input. Monetary values use your entered currency units without conversion.</p>
+				<button type="button" className="btn btn-primary btn-sm" onClick={() => setEstimateRequested(true)}>Calculate local estimate</button>
+				{estimateRequested && (planningEstimate.valid ? <div className="route-estimate-result" role="status">
+					<strong>Local planning estimate · not a quote</strong><span>Driving time: {planningEstimate.drivingHours} h</span><span>Known service time: {planningEstimate.knownServiceMinutes} min</span><span>Estimated duration: {planningEstimate.estimatedHours} h</span><span>Estimated fuel: {planningEstimate.fuelLitres} L</span><span>Fuel cost: {planningEstimate.fuelCost.toFixed(2)} entered units</span><span>Driver cost: {planningEstimate.driverCost.toFixed(2)} entered units</span><b>Total: {planningEstimate.totalCost.toFixed(2)} entered units</b>
+				</div> : <div className="route-validation route-validation-error" role="alert"><strong>Complete valid assumptions</strong><ul>{planningEstimate.errors.map((error) => <li key={error}>{error}</li>)}</ul></div>)}
+			</section>}
+
+			<div className="route-action-bar">
+				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={createMapPreview}><i className="fa fa-map" aria-hidden="true" /> Create map</button>
+				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={() => setShowEstimate(true)}><i className="fa fa-calculator" aria-hidden="true" /> Create estimate</button>
+				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={openRouteView}><i className="fa fa-list-ol" aria-hidden="true" /> View route</button>
+				<button className="btn btn-outline-secondary" type="button" disabled={!validation.valid || validVehiclePool.length === 0} onClick={() => setShowRequestPreview((current) => !current)}><i className="fa fa-code" aria-hidden="true" /> {showRequestPreview ? 'Hide request preview' : 'Preview API request'}</button>
+				<button className="btn btn-primary" type="button" disabled={!canCreateDraft} onClick={saveLocalDraft}><i className="fa fa-save" aria-hidden="true" /> Create local draft</button>
+				<button className="btn btn-outline-secondary" type="button" disabled title="Enable only after server authorization and persistence are implemented."><i className="fa fa-ban" aria-hidden="true" /> Save to IFM</button>
+				<button className="btn btn-outline-secondary" type="button" disabled title="No route has been authorized or persisted."><i className="fa fa-ban" aria-hidden="true" /> Dispatch to Driver App</button>
+			</div>
+			{!validation.valid && <p className="route-action-hint">Resolve validation errors before creating a local draft.</p>}
+			{!driverName.trim() && <p className="route-action-hint">Enter the one driver who will complete this route before creating a local draft.</p>}
+			{saveMessage && <p role="status" className="route-inline-success">{saveMessage}</p>}
+			{requestPreview && <section className="route-section route-request-preview"><div className="route-section-heading"><div><h2>API contract preview</h2><p>Contract only; this request has not been submitted to the backend or PTV.</p></div></div>
+				<pre>{JSON.stringify(requestPreview, null, 2)}</pre>
+				{process.env.NODE_ENV === 'development' && <div className="route-mock-panel">
+					<div><strong>Development-only PTV lifecycle mock</strong><p>Exercises accepted, running, and terminal job states. It does not call PTV or generate optimized routes.</p></div>
+					<button className="btn btn-outline-primary btn-sm" type="button" disabled={mockRunning} onClick={runMockLifecycle}>{mockRunning ? 'Simulating lifecycle…' : 'Run lifecycle mock'}</button>
+					{mockLifecycle && <div className="route-mock-result" role="status">{mockLifecycle.error ? <span>{mockLifecycle.error}</span> : <><span>MOCK_ACCEPTED · 202</span><span>MOCK_RUNNING · {mockLifecycle.running.progress}%</span><span>MOCK_COMPLETED · no route result</span><span>Provider calls: 0 · assigned stops: 0</span></>}</div>}
+				</div>}
+			</section>}
+		</main>
+	);
+}

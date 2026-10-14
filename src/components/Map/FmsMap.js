@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Polyline, Marker } from '@react-google-maps/api';
 import MapService from '../../services/MapService';
-import { GOOGLE_MAPS_LIBRARIES } from '../../mapConfig';
+import { GOOGLE_MAPS_API_KEY, GOOGLE_MAPS_LIBRARIES } from '../../mapConfig';
 import './FmsMap.css';
 
 const containerStyle = {
@@ -20,16 +20,11 @@ const defaultCenter = {
  * Supports Google Maps and PTV via MapService abstraction.
  */
 const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "Map" }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  useEffect(() => {
-    const checkGoogle = setInterval(() => {
-      if (window.google && window.google.maps) {
-        setIsLoaded(true);
-        clearInterval(checkGoogle);
-      }
-    }, 100);
-    return () => clearInterval(checkGoogle);
-  }, []);
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: 'isovia-google-maps-script',
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY || 'missing-google-maps-api-key',
+    libraries: GOOGLE_MAPS_LIBRARIES,
+  });
 
   const [place1, setPlace1] = useState(initialOrigin || '');
   const [place2, setPlace2] = useState(initialDestination || '');
@@ -61,9 +56,8 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
       const destination = { lat: parseFloat(coords2.lat), lng: parseFloat(coords2.lng) };
 
       // 2. Decide vehicle profile based on provider
-      // If PTV is selected, pass type: 'truck' so MapService/Backend uses PTV
-      // If Google is selected, pass null for default car routing
-      const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : null;
+      // PTV applies the configured truck profile. Google uses traffic-aware car routing.
+      const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : { type: 'car' };
 
       const routeResult = await MapService.getRoute(origin, destination, [], vehicleProfile, routeChoice);
       
@@ -209,7 +203,15 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
 
         {/* Map View */}
         <div className="fms-map-content">
-          {isLoaded ? (
+          {!GOOGLE_MAPS_API_KEY ? (
+            <div className="d-flex align-items-center justify-content-center bg-light w-100 h-100 text-center p-4">
+              <span>Google Maps is not configured. Add REACT_APP_GOOGLE_MAPS_API_KEY to the React environment and restart the app.</span>
+            </div>
+          ) : loadError ? (
+            <div className="d-flex align-items-center justify-content-center bg-light w-100 h-100 text-center p-4">
+              <span>Google Maps could not load. Check the browser key, its referrer restrictions, and Maps JavaScript API access.</span>
+            </div>
+          ) : isLoaded ? (
             <GoogleMap
               mapContainerStyle={containerStyle}
               center={markers.length > 0 ? markers[0] : defaultCenter}

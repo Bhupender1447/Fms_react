@@ -72,13 +72,11 @@ const Dutylist = () => {
 
   const getAddressFromLatLng = async (lat, lng, tripId) => {
     try {
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyBM3VgKsX8mEGsVYpSic7VLNKwEmZ7IABc`
-      );
-      if (response.data.results.length > 0) {
+      const response = await axios.post(`${BASE_URL}api/maps/reverse-geocode`, { lat, lng });
+      if (response.data.status && response.data.address) {
         setLocations((prev) => ({
           ...prev,
-          [tripId]: response.data.results[0].formatted_address
+          [tripId]: response.data.address
         }));
       }
     } catch (error) {

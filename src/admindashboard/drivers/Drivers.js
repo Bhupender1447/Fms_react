@@ -394,8 +394,9 @@ const Drivers = () => {
                                 <Link
                                   to={`/drivers/hos/${item.id}`}
                                   className="btn btn-warning btn-xs"
+                                  title={`Open current HOS details for ${item.fname} ${item.lname}`}
                                 >
-                                  View HOS
+                                  Live HOS
                                 </Link>
                               </td>
                             </tr>

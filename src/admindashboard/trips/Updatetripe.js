@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { toast } from 'react-toastify';
 import { BASE_URL } from '../../config';
+import { getOcrErrorMessage, getOcrResponseErrorMessage } from '../../services/ocrErrors';
 
 const Updatetrip = () => {
   const [data, setdata] = useState([])
@@ -51,7 +52,6 @@ const Updatetrip = () => {
     }));
   };
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     company: "",
     customerorderno: "",
@@ -253,11 +253,11 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
         setOcrRaw(res.data.data);
         applyOCRToAllFields(res.data);
       } else {
-        toast.error("OCR failed or no data found");
+        toast.error(getOcrResponseErrorMessage(res));
       }
     } catch (e) {
-      console.error("OCR failed", e);
-      toast.error("Error processing OCR");
+      console.error("Trip OCR request failed:", e.response?.status || e.message);
+      toast.error(getOcrErrorMessage(e, "Error processing OCR"));
     } finally {
       setIsOcrLoading(false);
     }
@@ -392,9 +392,6 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
   let handleonSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
     const form = new FormData();
     form.append('userid', userdata.id);
     form.append('company', formData.company);
@@ -452,8 +449,6 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
     } catch (error) {
       console.error('Error:', error);
       throw error;
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -819,9 +814,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
             </div>
           </div>
           <div className="text-center">
-            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save"}
-            </button>
+            <button type="submit" className="btn btn-primary">Save</button>
             <a href="/trips/" className="btn btn-warning" style={{ marginLeft: '10px' }}>Back</a>
           </div>
         </section>

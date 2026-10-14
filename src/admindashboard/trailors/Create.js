@@ -1,58 +1,49 @@
 /* eslint-disable jsx-a11y/no-redundant-roles */
 import axios from 'axios';
 import { BASE_URL } from '../../config';
-import React, { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react'
+import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 
 const Create = () => {
-  const location = useLocation();
-  const initialOcr = location.state?.ocrData || {};
-
   const [formData, setFormData] = useState({
     // Direct mapped fields
-    plate_number: initialOcr.plate_number || '',
-    vin_number: initialOcr.vin_number || '',
-    trailer_type: initialOcr.trailer_type || '',
-    make: initialOcr.make || '',
-    model: initialOcr.model || '',
-    year: initialOcr.year || '',
-    registered_weight: initialOcr.registered_weight || '',
-    weightunits: initialOcr.weightunits || 'Kilograms',
-    owner_name: initialOcr.owner_name || '',
-    country: initialOcr.country || 'CA',
-    province: initialOcr.province || '',
-    permit_number: initialOcr.permit_number || '',
-    permit_issue_date: initialOcr.permit_issue_date || '',
-    permit_expiry_date: initialOcr.permit_expiry_date || '',
-    ownership_type: initialOcr.ownership_type || 'owned',
-    owner_address: initialOcr.owner_address || '',
-    status: initialOcr.status || 'active',
-    notes: initialOcr.notes || '',
-    inspection_expiry: initialOcr.inspection_expiry || '',
-    insurance_expiry: initialOcr.insurance_expiry || '',
-    assigned_truck_id: initialOcr.assigned_truck_id || '',
-    seal_number: initialOcr.seal_number || '',
+    plate_number: '',
+    vin_number: '',
+    trailer_type: '',
+    make: '',
+    model: '',
+    year: '',
+    registered_weight: '',
+    weightunits: 'Kilograms',
+    owner_name: '',
+    country: 'CA',
+    province: '',
+    permit_number: '',
+    permit_issue_date: '',
+    permit_expiry_date: '',
+    ownership_type: 'owned',
+    owner_address: '',
+    status: 'active',
+    notes: '',
+    inspection_expiry: '',
+    insurance_expiry: '',
+    assigned_truck_id: '',
+    seal_number: '',
 
     // Additional fields from original form
-    length: initialOcr.length || '',
-    lengthunits: initialOcr.lengthunits || 'Feet',
-    width: initialOcr.width || '',
-    widthunits: initialOcr.widthunits || 'Feet',
-    height: initialOcr.height || '',
-    heightunits: initialOcr.heightunits || 'Feet',
-    color: initialOcr.color || '',
-    gps: initialOcr.gps || '',
-    fleet: initialOcr.fleet || '',
-    third: initialOcr.third || 'NO',
+    length: '',
+    lengthunits: 'Feet',
+    width: '',
+    widthunits: 'Feet',
+    height: '',
+    heightunits: 'Feet',
+    color: '',
+    gps: '',
+    fleet: '',
+    third: 'NO',
   });
-
-  useEffect(() => {
-    if (location.state?.ocrData) {
-      toast.info("Trailer details pre-populated from OCR scan.");
-    }
-  }, [location.state]);
 
   const [files, setFiles] = useState({
     product_image: null,
@@ -82,7 +73,6 @@ const Create = () => {
   };
 
   const [isOcrLoading, setIsOcrLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFileChange2 = async () => {
     if (!selectedFile) {
@@ -179,8 +169,7 @@ const Create = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
-    setIsSubmitting(true);
+    e.preventDefault();
 
     const formDataToSend = new FormData();
 
@@ -254,8 +243,6 @@ const Create = () => {
     } catch (error) {
       console.error('Error occurred:', error.response?.data || error.message);
       toast.error('Error creating trailer. Please try again.');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -1020,9 +1007,10 @@ const Create = () => {
                   ))}
                 </div>
 
+                {/* Box Footer */}
                 <div className="box-footer">
-                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                    {isSubmitting ? "Saving..." : "Save Changes"}
+                  <button type="submit" className="btn btn-primary">
+                    Save Changes
                   </button>
                   <Link to="https://isovia.ca/fms/trailors/" className="btn btn-warning">
                     Back

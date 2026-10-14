@@ -1,0 +1,22 @@
+.ptv-partner-mark {
+  display: inline-flex;
+  min-width: 92px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #fff;
+  font-family: 'Space Grotesk', 'Arial', sans-serif;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -.07em;
+}
+
+.ptv-partner-mark::before {
+  width: 4px;
+  height: 27px;
+  border-radius: 2px;
+  background: var(--iso-accent);
+  box-shadow: 7px 0 rgba(113, 216, 234, .35);
+  content: '';
+}

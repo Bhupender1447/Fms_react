@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { BASE_URL } from "../../config";
+import { GOOGLE_MAPS_API_KEY } from "../../mapConfig";
 
 const LiveLocationMap = () => {
   const mapRef = useRef(null);
@@ -10,13 +11,16 @@ const LiveLocationMap = () => {
   const loadGoogleMapScript = (callback) => {
     if (window.google && window.google.maps) {
       callback();
+    } else if (!GOOGLE_MAPS_API_KEY) {
+      setStatus("Google Maps is not configured. Add REACT_APP_GOOGLE_MAPS_API_KEY to the React environment.");
     } else {
       const script = document.createElement("script");
       script.src =
-        `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
+        `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}&libraries=places`;
       script.async = true;
       script.defer = true;
       script.onload = callback;
+      script.onerror = () => setStatus("Google Maps failed to load. Check the browser key and Maps JavaScript API access.");
       document.head.appendChild(script);
     }
   };
@@ -42,19 +46,18 @@ const LiveLocationMap = () => {
   };
 
   const sendLocation = (lat, lng) => {
-    const { id } = JSON.parse(localStorage.getItem("logindetail"))
-    const driverId = id;
-
     fetch(`${BASE_URL}api/getliveLocation`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: `lat=${lat}&long=${lng}&driverId=${driverId}`,
+      body: `lat=${lat}&long=${lng}`,
     })
-      .then((res) => res.text())
-      .then((data) => {
-        setStatus(`Location sent: ${data}`);
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Location update failed");
+        setStatus("Location shared with dispatch.");
       })
       .catch(() => {
         setStatus("Failed to send location.");

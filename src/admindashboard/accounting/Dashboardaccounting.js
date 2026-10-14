@@ -3,10 +3,22 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BASE_URL } from '../../config';
+import { Link } from 'react-router-dom';
 import RevenueExpenses from './RevenueExpenses';
 import NetIncomeChart from './NetIncomeChart';
 import PayrollChart from './PayrollChart';
 import AccountsPayableReceivableChart from './AccountsPayableReceivable';
+
+const accountViews = [
+  { label: 'Accounts receivable', detail: 'Customer balances', icon: 'fa fa-arrow-circle-down', to: '/accountspayablereceivablelist', tone: 'teal' },
+  { label: 'Accounts payable', detail: 'Vendor and driver obligations', icon: 'fa fa-arrow-circle-up', to: '/accountspayablereceivablelist', tone: 'amber' },
+  { label: 'Revenue & expenses', detail: 'Operating activity', icon: 'fa fa-exchange', to: '/revenuerxpenseslist', tone: 'green' },
+  { label: 'Location income', detail: 'Income by delivery location', icon: 'fa fa-map-marker', to: '/netincometable', tone: 'blue' },
+  { label: 'Driver payroll', detail: 'Driver pay records', icon: 'fa fa-id-card-o', to: '/driverpaylist', tone: 'slate' },
+  { label: 'Agent payroll', detail: 'Agent pay records', icon: 'fa fa-users', to: '/agentpaylist', tone: 'rose' },
+  { label: 'Trip income', detail: 'Income by trip', icon: 'fa fa-road', to: '/gettripIncome', tone: 'green' },
+  { label: 'Expenses', detail: 'Expense records', icon: 'fa fa-file-text-o', to: '/getexpense', tone: 'amber' },
+];
 
 const Dashboardaccounting = () => {
   const [showAlertPopup, setShowAlertPopup] = useState(false);
@@ -91,7 +103,7 @@ const Dashboardaccounting = () => {
   };
 
   return (
-    <div className="content-wrapper">
+    <main className="content-wrapper accounting-page">
       {/* Alert Popup Modal */}
       {showAlertPopup && (
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -229,7 +241,25 @@ const Dashboardaccounting = () => {
       )}
 
       {/* Main Dashboard Content */}
-      <h1>INTERNATIONAL ACCOUNTING STANDARDS</h1>
+      <header className="accounting-heading">
+        <div>
+          <span className="accounting-eyebrow">Finance workspace</span>
+          <h1>Accounting overview</h1>
+          <p>Review operating activity and open any account ledger.</p>
+        </div>
+        <div className="accounting-heading-actions">
+          <a
+            className="btn btn-default"
+            href={`${process.env.PUBLIC_URL}/templates/isovia-account-update-workbook.xlsx`}
+            download
+          >
+            <i className="fa fa-download" aria-hidden="true" /> Update worksheet
+          </a>
+          <Link className="btn btn-primary" to="/revenuerxpenseslist">
+            <i className="fa fa-bar-chart" aria-hidden="true" /> Reports
+          </Link>
+        </div>
+      </header>
 
       {/* Quick Alert Summary (if alerts exist) */}
       {alertData && alertData.alert_count > 0 && (
@@ -251,14 +281,40 @@ const Dashboardaccounting = () => {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-        <RevenueExpenses />
-        <AccountsPayableReceivableChart />
-        <NetIncomeChart />
-      </div>
-      {/* <PayrollManagement /> */}
-      <PayrollChart />
-    </div>
+      <section aria-labelledby="account-list-title" className="accounting-account-section">
+        <div className="accounting-section-heading">
+          <h2 id="account-list-title">Accounts</h2>
+          <span>Open a ledger or report</span>
+        </div>
+        <div className="accounting-account-grid">
+          {accountViews.map((account) => (
+            <Link className={`accounting-account-link tone-${account.tone}`} key={account.label} to={account.to}>
+              <span className="accounting-account-icon" aria-hidden="true">
+                <i className={account.icon} />
+              </span>
+              <span className="accounting-account-copy">
+                <strong>{account.label}</strong>
+                <small>{account.detail}</small>
+              </span>
+              <i className="fa fa-angle-right accounting-account-arrow" aria-hidden="true" />
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section aria-labelledby="financial-activity-title" className="accounting-chart-section">
+        <div className="accounting-section-heading">
+          <h2 id="financial-activity-title">Financial activity</h2>
+          <span>Figures from current accounting feeds</span>
+        </div>
+        <div className="accounting-chart-grid">
+          <div className="accounting-panel accounting-panel-wide"><RevenueExpenses /></div>
+          <div className="accounting-panel"><AccountsPayableReceivableChart /></div>
+          <div className="accounting-panel"><NetIncomeChart /></div>
+          <div className="accounting-panel accounting-panel-wide"><PayrollChart /></div>
+        </div>
+      </section>
+    </main>
   );
 };
 

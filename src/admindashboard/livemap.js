@@ -1,269 +1,206 @@
-import React, { useState, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, Polyline, Marker } from '@react-google-maps/api';
-import MapService from '../services/MapService';
-import { GOOGLE_MAPS_LIBRARIES } from '../mapConfig';
+import React, { useEffect, useRef, useState } from 'react';
+import { BASE_URL } from '../config';
 
-const containerStyle = {
+const mapStyle = {
   width: '100%',
-  height: '600px'
+  height: 'min(72vh, 760px)',
+  minHeight: '420px',
 };
 
-const defaultCenter = {
-  lat: 43.710513,
-  lng: -79.828695
+const normalizeEntry = (entry, type) => {
+  const latitude = Number(entry.latitude ?? entry.lat);
+  const longitude = Number(entry.longitude ?? entry.lng ?? entry.lon);
+  if (
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude) ||
+    latitude < -90 || latitude > 90 ||
+    longitude < -180 || longitude > 180
+  ) {
+    return null;
+  }
+
+  const driverName = [entry.fname, entry.lname].filter(Boolean).join(' ');
+  const id = entry.driver_id || entry.truck_id || entry.id;
+  return {
+    id,
+    type,
+    label: entry.label || entry.plateno || entry.name || driverName || `${type} ${id || ''}`.trim(),
+    latitude,
+    longitude,
+    status: entry.status || 'Live',
+    lastSeen: entry.last_seen || (entry.date && entry.time ? `${entry.date} ${entry.time}` : ''),
+  };
 };
 
 const TripMap = () => {
-  // Your provided JSON trip data
-  const tripData = {
-    "accountName": "Isovia (IFM TMS)",
-    "tripStatus": "Planned",
-    "modifiedOn": "2025-02-10T18:20:46+00:00",
-    "tripDistance": 3172.828,
-    "tripDriveDuration": 3114.217,
-    "tripDuration": 3294.217,
-    "tripCost": 6400.55,
-    "stops": [
-      {
-        "location": {
-          "address": { "streetAddress": "26 Jersey Street", "city": "Boston", "state": "MA", "zip": "02215" },
-          "coords": { "lat": "42.346689", "lon": "-71.09886" },
-          "label": "Fenway Park"
-        }
-      },
-      {
-        "location": {
-          "address": { "streetAddress": "116 Federal Street", "city": "Pittsburgh", "state": "PA", "zip": "15212" },
-          "coords": { "lat": "40.448111", "lon": "-80.003865" },
-          "label": "PNC Park"
-        }
-      },
-      {
-        "location": {
-          "address": { "streetAddress": "4900 Marie P. DeBartolo Way", "city": "Santa Clara", "state": "CA", "zip": "95054" },
-          "coords": { "lat": "37.403658", "lon": "-121.96851" },
-          "label": "Levi's Stadium"
-        }
-      }
-    ]
-  };
+  const [fleet, setFleet] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [eldError, setEldError] = useState('');
+  const [leafletReady, setLeafletReady] = useState(Boolean(window.L));
+  const mapElementRef = useRef(null);
+  const mapRef = useRef(null);
+  const markerLayerRef = useRef(null);
+  const hasFittedFleetRef = useRef(false);
 
-  const [isLoaded, setIsLoaded] = useState(false);
   useEffect(() => {
-    const checkGoogle = setInterval(() => {
-      if (window.google && window.google.maps) {
-        setIsLoaded(true);
-        clearInterval(checkGoogle);
-      }
-    }, 100);
-    return () => clearInterval(checkGoogle);
+    if (window.L) {
+      setLeafletReady(true);
+      return undefined;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.async = true;
+    script.onload = () => setLeafletReady(true);
+    script.onerror = () => setError('Map library failed to load. Check the network connection and reload.');
+    document.head.appendChild(script);
+
+    return () => {
+      script.onload = null;
+    };
   }, []);
 
-  const [showModal, setShowModal] = useState(false);
-  const [markers, setMarkers] = useState([]);
-  const [routePath, setRoutePath] = useState([]);
-  const [provider, setProvider] = useState('google');
-  const [routeChoice, setRouteChoice] = useState('fast');
-  const [routeDetails, setRouteDetails] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+    if (!leafletReady || !mapElementRef.current || mapRef.current) return undefined;
+
+    const leaflet = window.L;
+    const map = leaflet.map(mapElementRef.current, { scrollWheelZoom: true }).setView([39.8283, -98.5795], 4);
+    leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    mapRef.current = map;
+    markerLayerRef.current = leaflet.layerGroup().addTo(map);
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      markerLayerRef.current = null;
+    };
+  }, [leafletReady]);
 
   useEffect(() => {
-    const fetchRoute = async () => {
-      setIsLoading(true);
-      try {
-        const stopsCoords = tripData.stops.map(stop => ({
-          lat: parseFloat(stop.location.coords.lat),
-          lng: parseFloat(stop.location.coords.lon),
-          label: stop.location.label
-        }));
-        
-        if (stopsCoords.length >= 2) {
-          const origin = stopsCoords[0];
-          const destination = stopsCoords[stopsCoords.length - 1];
-          const waypoints = stopsCoords.slice(1, stopsCoords.length - 1);
-          
-          const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : { type: 'car' };
-          const routeResult = await MapService.getRoute(origin, destination, waypoints, vehicleProfile, routeChoice);
-          
-          setMarkers(stopsCoords);
-          setRouteDetails({
-            distanceMiles: routeResult?.distanceMiles,
-            distanceKms: routeResult?.distanceKms,
-            stateMileage: routeResult?.stateMileage || []
-          });
+    let active = true;
 
-          const fullRoadPath = MapService.parseRoutePath(routeResult?.path);
-          if (fullRoadPath.length < 2) {
-            throw new Error("Road route geometry is unavailable or invalid.");
-          }
-          setRoutePath(fullRoadPath);
-        }
-      } catch (err) {
-        console.error("Error generating live route: ", err);
-        setRoutePath([]);
-        setRouteDetails(null);
+    const fetchFleet = async (showLoading = false) => {
+      if (showLoading && active) setLoading(true);
+      try {
+        const response = await fetch(`${BASE_URL}api/liveFleetLocations`, { credentials: 'include' });
+        if (!response.ok) throw new Error(`Fleet API returned ${response.status}`);
+        const data = await response.json();
+        if (!active) return;
+
+        const drivers = (Array.isArray(data.drivers) ? data.drivers : [])
+          .map((entry) => normalizeEntry(entry, 'driver'))
+          .filter(Boolean);
+        const trucks = (Array.isArray(data.trucks) ? data.trucks : [])
+          .map((entry) => normalizeEntry(entry, 'truck'))
+          .filter(Boolean);
+        setFleet([...drivers, ...trucks]);
+        setEldError(data.eld_error || '');
+        setError('');
+      } catch (fetchError) {
+        console.error('Live fleet locations could not be fetched:', fetchError);
+        if (active) setError('Unable to load live locations. Check the API connection and try again.');
       } finally {
-        setIsLoading(false);
+        if (showLoading && active) setLoading(false);
       }
     };
-    
-    if (showModal) {
-      fetchRoute();
-    }
-  }, [provider, routeChoice, showModal]);
 
-  const openModal = () => setShowModal(true);
-  const closeModal = () => setShowModal(false);
+    fetchFleet(true);
+    const interval = window.setInterval(() => fetchFleet(), 20000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapRef.current || !markerLayerRef.current || !window.L) return;
+
+    const leaflet = window.L;
+    const markerLayer = markerLayerRef.current;
+    markerLayer.clearLayers();
+    const bounds = [];
+
+    fleet.forEach((item) => {
+      const position = [item.latitude, item.longitude];
+      const marker = leaflet.circleMarker(position, {
+        radius: 9,
+        color: '#ffffff',
+        weight: 2,
+        fillColor: item.type === 'truck' ? '#e58a16' : '#176b87',
+        fillOpacity: 1,
+      });
+
+      const popup = document.createElement('div');
+      const title = document.createElement('strong');
+      title.textContent = item.label;
+      popup.appendChild(title);
+
+      const kind = document.createElement('div');
+      kind.textContent = item.type === 'truck' ? 'ELD truck' : 'Driver app';
+      popup.appendChild(kind);
+
+      const status = document.createElement('div');
+      status.textContent = `Status: ${item.status}`;
+      popup.appendChild(status);
+
+      if (item.lastSeen) {
+        const lastSeen = document.createElement('div');
+        lastSeen.textContent = `Last update: ${item.lastSeen}`;
+        popup.appendChild(lastSeen);
+      }
+
+      marker.bindPopup(popup).addTo(markerLayer);
+      bounds.push(position);
+    });
+
+    if (bounds.length && !hasFittedFleetRef.current) {
+      if (bounds.length === 1) {
+        mapRef.current.setView(bounds[0], 12);
+      } else {
+        mapRef.current.fitBounds(leaflet.latLngBounds(bounds), { padding: [32, 32], maxZoom: 12 });
+      }
+      hasFittedFleetRef.current = true;
+    }
+  }, [fleet, leafletReady]);
+
+  const driverCount = fleet.filter((item) => item.type === 'driver').length;
+  const truckCount = fleet.filter((item) => item.type === 'truck').length;
 
   return (
-    <div className="content-wrapper" style={{ minHeight: 440 }}>
-      <h2>Trip Details</h2>
-      <table
-        style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}
-        border="1"
-      >
-        <thead>
-          <tr>
-            <th>Account Name</th>
-            <th>Status</th>
-            <th>Modified On</th>
-            <th>Distance</th>
-            <th>Drive Duration</th>
-            <th>Total Duration</th>
-            <th>Cost</th>
-            <th># Stops</th>
-            <th>Map</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{tripData.accountName}</td>
-            <td>{tripData.tripStatus}</td>
-            <td>{new Date(tripData.modifiedOn).toLocaleString()}</td>
-            <td>{tripData.tripDistance}</td>
-            <td>{tripData.tripDriveDuration}</td>
-            <td>{tripData.tripDuration}</td>
-            <td>{tripData.tripCost}</td>
-            <td>{tripData.stops.length}</td>
-            <td>
-              <button onClick={openModal} className="btn btn-primary btn-sm">View Map</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <main className="content-wrapper p-3" style={{ minHeight: 500 }}>
+      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+          <h2 className="mb-1">Live Fleet Map</h2>
+          <span className="text-muted">Updated automatically every 20 seconds</span>
+        </div>
+        <div className="d-flex gap-3" aria-live="polite">
+          <span><strong>{truckCount}</strong> trucks</span>
+          <span><strong>{driverCount}</strong> drivers</span>
+        </div>
+      </div>
 
-      {/* Popup Modal */}
-      {showModal && (
-        <div style={modalOverlayStyle}>
-          <div style={modalContentStyle} className="position-relative">
-            
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <div className="d-flex align-items-center gap-2">
-                <label className="fw-bold m-0">Provider:</label>
-                <select className="form-select form-select-sm" style={{ width: 'auto' }} value={provider} onChange={(e) => setProvider(e.target.value)}>
-                  <option value="google">Google Maps (Car)</option>
-                  <option value="ptv">PTV Maps (Truck)</option>
-                </select>
-
-                {provider === 'ptv' && (
-                  <>
-                    <label className="fw-bold m-0 ms-2">Route Option:</label>
-                    <select className="form-select form-select-sm" style={{ width: 'auto' }} value={routeChoice} onChange={(e) => setRouteChoice(e.target.value)}>
-                      <option value="fast">Fastest</option>
-                      <option value="shortest">Shortest</option>
-                      <option value="economic">Economic</option>
-                    </select>
-                  </>
-                )}
-
-                {isLoading && <div className="spinner-border spinner-border-sm text-primary ms-2" role="status"></div>}
-              </div>
-              <button onClick={closeModal} className="btn btn-secondary btn-sm">
-                Close Map
-              </button>
-            </div>
-
-            {routeDetails && !isLoading && (
-              <div className="alert alert-info py-2 mb-2 d-flex justify-content-between align-items-center">
-                <div>
-                  <strong>Total Distance: </strong> 
-                  {routeDetails.distanceMiles ? `${routeDetails.distanceMiles} Miles` : 'N/A'} 
-                  <span className="mx-2">|</span> 
-                  {routeDetails.distanceKms ? `${routeDetails.distanceKms} Km` : 'N/A'}
-                </div>
-                {routeDetails.stateMileage && routeDetails.stateMileage.length > 0 && (
-                  <div>
-                    <strong>State/Legs:</strong> {routeDetails.stateMileage.length} routing legs detected
-                  </div>
-                )}
-              </div>
-            )}
-
-            {isLoaded ? (
-              <GoogleMap
-                mapContainerStyle={containerStyle}
-                center={markers.length > 0 ? markers[0] : defaultCenter}
-                zoom={4}
-                options={{
-                  streetViewControl: false,
-                  mapTypeControl: false,
-                  fullscreenControl: false
-                }}
-              >
-                {routePath.length > 1 && (
-                  <Polyline 
-                    key={routePath.length + provider + routeChoice}
-                    path={routePath} 
-                    options={{ 
-                      strokeColor: provider === 'ptv' ? '#28a745' : '#0055ff', 
-                      strokeWeight: 5,
-                      strokeOpacity: 0.8
-                    }} 
-                  />
-                )}
-                {markers.map((mark, index) => (
-                  <Marker 
-                    key={index} 
-                    position={mark} 
-                    label={{
-                      text: index === 0 ? "A" : index === markers.length - 1 ? "B" : index.toString(),
-                      color: "white"
-                    }} 
-                  />
-                ))}
-              </GoogleMap>
-            ) : (
-              <div className="d-flex justify-content-center align-items-center bg-light" style={containerStyle}>
-                Loading Map...
-              </div>
-            )}
-          </div>
+      {loading && <div className="alert alert-info">Loading live fleet locations...</div>}
+      {error && <div className="alert alert-danger" role="alert">{error}</div>}
+      {eldError && <div className="alert alert-warning" role="alert">ELD locations unavailable: {eldError}</div>}
+      {!loading && !error && fleet.length === 0 && (
+        <div className="alert alert-warning" role="status">
+          No driver or truck GPS locations have been received yet.
         </div>
       )}
-    </div>
+      {!leafletReady && !error && <div className="alert alert-info">Loading map...</div>}
+
+      <div ref={mapElementRef} style={mapStyle} aria-label="Live truck and driver locations" />
+      <div className="d-flex gap-4 mt-2" aria-label="Map legend">
+        <span><i style={{ display: 'inline-block', width: 11, height: 11, borderRadius: '50%', background: '#e58a16', marginRight: 6 }} />Trucks</span>
+        <span><i style={{ display: 'inline-block', width: 11, height: 11, borderRadius: '50%', background: '#176b87', marginRight: 6 }} />Drivers</span>
+      </div>
+    </main>
   );
-};
-
-const modalOverlayStyle = {
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  width: '100vw',
-  height: '100vh',
-  backgroundColor: 'rgba(0, 0, 0, 0.6)',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  zIndex: 1000,
-};
-
-const modalContentStyle = {
-  backgroundColor: '#fff',
-  padding: '20px',
-  borderRadius: '8px',
-  width: '90%',
-  maxWidth: '1000px',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
 };
 
 export default TripMap;

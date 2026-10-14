@@ -1,0 +1,35 @@
+.iso-form-workspace {
+  background: var(--iso-bg);
+  color: var(--iso-text);
+}
+.iso-form-workspace .box {
+  background: var(--iso-surface);
+  border: 1px solid var(--iso-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(113, 13, 45, .04);
+}
+.iso-form-workspace .content-header h1 { line-height: 1.35; }
+.iso-form-workspace .content-header h1 small { display: block; margin: 6px 0; color: var(--iso-muted); }
+.iso-form-workspace .form-group label { font-weight: 600; line-height: 1.5; }
+.iso-form-workspace .form-control {
+  min-height: 42px;
+  border-radius: 6px;
+  border-color: var(--iso-control-border);
+  color: var(--iso-text);
+  background: var(--iso-surface);
+}
+.iso-form-workspace textarea.form-control { min-height: 90px; resize: vertical; }
+.iso-form-workspace .help-block { color: var(--iso-muted); line-height: 1.6; }
+.iso-form-workspace :is(input, select, textarea, button, a):focus-visible {
+  outline: 3px solid var(--iso-primary);
+  outline-offset: 3px;
+}
+.iso-form-workspace .iso-alert { margin-bottom: 20px; }
+.iso-form-workspace [id^="trip-"] { scroll-margin-top: 100px; }
+@media (max-width: 767px) {
+  .iso-form-workspace .content { padding: 12px; }
+  .iso-form-workspace .input-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .iso-form-workspace .input-group .form-control { width: 100%; }
+  .iso-form-workspace .input-group-btn { width: 100%; }
+  .iso-form-workspace .input-group-btn button { width: 100%; min-height: 44px; border-radius: 6px; }
+}

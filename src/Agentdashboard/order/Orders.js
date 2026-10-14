@@ -1,11 +1,12 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { BASE_URL } from '../../config'
 
 const Orders = () => {
   const[list,setlist]=useState([])
   useEffect(()=>{
-    axios.get('https://isovia.ca/fms_api/api/orderlist')
+    axios.get(`${BASE_URL}api/orderlist`)
     .then(res=>setlist(res.data))
     .catch(err=>console.log(err))
   },[])

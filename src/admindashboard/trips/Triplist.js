@@ -1,23 +1,39 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { toast } from "react-toastify";
 import { BASE_URL } from "../../config";
+import { getLoadErrorMessage } from "../../services/loadErrors";
+import { Alert, Button, Input, PageHeader, Select } from "../../design-system/components";
+import WorkspaceSummary from "../../design-system/WorkspaceSummary";
 
 const Triplist = () => {
   const [list, setList] = useState([]);
   const [cancellingId, setCancellingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  const loadTrips = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const response = await axios.get(`${BASE_URL}api/tipsfetchProductData/1`, { withCredentials: true });
+      setList(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      setLoadError(getLoadErrorMessage(error, 'Trips'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    axios
-      .get(`${BASE_URL}api/tipsfetchProductData/1`)
-      .then((res) => setList(res.data))
-      .catch((err) => console.log(err));
-  }, []);
-  console.log(list);
+    loadTrips();
+  }, [loadTrips]);
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
   };
@@ -74,131 +90,103 @@ const Triplist = () => {
     setCurrentPage(0);
   };
 
+  const query = searchTerm.trim().toLowerCase();
+  const filteredTrips = list.filter((trip) => {
+    const matchesSearch = !query || [
+      trip.customer_orderno,
+      trip.company,
+      trip.pickup_address,
+      trip.delivery_address,
+      trip.status,
+      trip.id,
+      trip.tmsTriptId,
+      trip.driver_id,
+    ].some((value) => String(value || '').toLowerCase().includes(query));
+    const status = String(trip.status || 'ACTIVE').trim().toUpperCase();
+    const matchesStatus = statusFilter === 'all'
+      || (statusFilter === 'active' && ['ACTIVE', 'IN_PROGRESS'].includes(status))
+      || (statusFilter === 'paused' && status === 'PAUSED')
+      || (statusFilter === 'completed' && status === 'COMPLETED')
+      || (statusFilter === 'cancelled' && ['CANCELLED', 'CANCELED'].includes(status));
+    return matchesSearch && matchesStatus;
+  });
+
   const offset = currentPage * itemsPerPage;
-  const currentItems = list.slice(offset, offset + itemsPerPage);
-  const pageCount = Math.ceil(list.length / itemsPerPage);
+  const currentItems = filteredTrips.slice(offset, offset + itemsPerPage);
+  const pageCount = Math.ceil(filteredTrips.length / itemsPerPage);
+  const tripCounts = useMemo(() => list.reduce((counts, trip) => {
+    const status = String(trip.status || 'ACTIVE').trim().toUpperCase();
+    counts.total += 1;
+    if (['ACTIVE', 'IN_PROGRESS'].includes(status)) counts.active += 1;
+    else if (status === 'PAUSED') counts.paused += 1;
+    else if (status === 'COMPLETED') counts.completed += 1;
+    else if (['CANCELLED', 'CANCELED'].includes(status)) counts.cancelled += 1;
+    return counts;
+  }, { total: 0, active: 0, paused: 0, completed: 0, cancelled: 0 }), [list]);
 
   return (
-    <div className="content-wrapper">
-      <section className="content-header">
-        <h1>
-          Manage
-          <small>Trips</small>
-        </h1>
-        <ol className="breadcrumb">
-          <li>
-            <Link to="#">
-              <i className="fa fa-dashboard" /> Home
-            </Link>
-          </li>
-          <li className="active">Orders</li>
-        </ol>
-      </section>
-
+    <div className="content-wrapper iso-ui iso-workspace" data-iso-theme="light">
+      <PageHeader title="Manage Trips" actions={<div className="d-flex gap-2"><Button variant="secondary" onClick={loadTrips} disabled={loading}>Refresh</Button><Link to="/createtrips" className="iso-button iso-button--primary">Create trip</Link></div>}>Review dispatch status, routes, assignments, and trip documents.</PageHeader>
       <section className="content">
         <div className="row">
           <div className="col-md-12 col-xs-12">
             <div id="messages" />
-            <br /> <br />
+            <WorkspaceSummary items={[["All trips",tripCounts.total],["Active / in progress",tripCounts.active],["Paused",tripCounts.paused],["Completed",tripCounts.completed],["Cancelled",tripCounts.cancelled]]} unavailable={loading || Boolean(loadError)} />
+            {loadError && <Alert tone="danger" title="Trips unavailable" action={<Button variant="secondary" onClick={loadTrips}>Try again</Button>}>{loadError}</Alert>}
             <div className="box">
               <div className="box-header">
-                <h3 className="box-title">Manage trips</h3>
+                <h3 className="box-title">Trip board</h3><div className="text-muted small">{filteredTrips.length} matching · {tripCounts.active} active · {tripCounts.paused} paused</div>
               </div>
               <div className="box-body">
+                <div className="iso-workspace-filters">
+                  <Input label="Search trips" type="search" placeholder="Order, company, address or trip ID" value={searchTerm} onChange={(e)=>{setSearchTerm(e.target.value);setCurrentPage(0);}} />
+                  <Select label="Trip status" value={statusFilter} onChange={(e)=>{setStatusFilter(e.target.value);setCurrentPage(0);}}><option value="all">All statuses</option><option value="active">Active or in progress</option><option value="paused">Paused</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></Select>
+                  <Select label="Rows per page" value={itemsPerPage} onChange={handleItemsPerPageChange}><option value={10}>10</option><option value={25}>25</option><option value={50}>50</option><option value={100}>100</option></Select>
+                  <div className="iso-workspace-filter-actions"><Button variant="secondary" onClick={()=>{setSearchTerm('');setStatusFilter('all');setCurrentPage(0);}} disabled={!searchTerm && statusFilter==='all'}>Clear filters</Button></div>
+                </div>
                 <div
                   id="manageTable_wrapper"
                   className="dataTables_wrapper form-inline dt-bootstrap no-footer"
                 >
                   <div className="row">
-                    <div className="col-sm-6">
-                      <div
-                        className="dataTables_length"
-                        id="manageTable_length"
-                      >
-                        <label>
-                          Show{" "}
-                          <select
-                            name="manageTable_length"
-                            aria-controls="manageTable"
-                            className="form-control input-sm"
-                            value={itemsPerPage}
-                            onChange={handleItemsPerPageChange}
-                          >
-                            <option value={10}>10</option>
-                            <option value={25}>25</option>
-                            <option value={50}>50</option>
-                            <option value={100}>100</option>
-                          </select>{" "}
-                          entries
-                        </label>
-                      </div>
-                    </div>
-                    <div className="col-sm-6">
-                      <div
-                        id="manageTable_filter"
-                        className="dataTables_filter"
-                      >
-                        <label>
-                          Search:
-                          <input
-                            type="search"
-                            className="form-control input-sm"
-                            placeholder=""
-                            aria-controls="manageTable"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="row">
                     <div className="col-sm-12">
+                      <div className="table-responsive">
                       <table
                         id="manageTable"
                         className="table table-bordered table-striped dataTable no-footer"
                         role="grid"
                         aria-describedby="manageTable_info"
-                        style={{ width: 1241 }}
+                        style={{ width: '100%', minWidth: 1200 }}
                       >
                         <thead>
                           <tr role="row">
-                            <th style={{ width: "62.2px" }}>Invoice #</th>
-                            <th style={{ width: "79.2px" }}>Company</th>
-                            <th style={{ width: "200px" }}>Pickup</th>
-                            <th style={{ width: "200px" }}>Delivery</th>
-                            <th style={{ width: "80px" }}>Status</th>
-                            <th style={{ width: "120px" }}>Custom Paper</th>
+                            <th scope="col">Trip / order</th>
+                            <th scope="col">Customer</th>
+                            <th scope="col">Route</th>
+                            <th scope="col">Driver / schedule</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Documents</th>
                             <th style={{ width: 200 }}>Action</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {currentItems.map((item, index) => (
+                          {loading && <tr><td colSpan={7} className="text-center text-muted p-4"><i className="fa fa-spinner fa-spin" /> Loading trips…</td></tr>}
+                          {!loading && !loadError && currentItems.length === 0 && (
+                            <tr><td colSpan={7} className="text-center text-muted p-4">No trips match these filters. Adjust the search or clear filters.</td></tr>
+                          )}
+                          {!loading && !loadError && currentItems.map((item) => (
                             <tr
                               role="row"
-                              key={index}
-                              className={index % 2 === 0 ? "even" : "odd"}
+                              key={item.id}
                             >
-                              <td>{item.customer_orderno}</td>
-                              <td>{item.company}</td>
-                              <td>{item.pickup_address}</td>
-                              <td>{item.delivery_address}</td>
+                              <td><strong>{item.customer_orderno || item.loadno || `Trip ${item.id}`}</strong><div className="small text-muted">Trip ID {item.tmsTriptId || item.id}</div></td>
+                              <td>{item.company || '—'}<div className="small text-muted">Shipment {item.shipment_type || item.trailortype || '—'}</div></td>
+                              <td style={{ minWidth: 260 }}><div><i className="fa fa-circle text-success" /> {item.pickup_address || 'Pickup not set'}</div><div className="small text-muted mt-1"><i className="fa fa-map-marker text-danger" /> {item.delivery_address || 'Delivery not set'}</div></td>
+                              <td>{item.driver_name || item.driver || (item.driver_id && String(item.driver_id) !== '0' ? `Driver ${item.driver_id}` : 'Unassigned')}<div className="small text-muted">{item.pickup_date ? `Pickup ${String(item.pickup_date).slice(0, 10)}` : 'No pickup date'}{item.deliver_date && ` · Delivery ${String(item.deliver_date).slice(0, 10)}`}</div></td>
                               <td>
-                                <span style={{
-                                  display: 'inline-block',
-                                  padding: '2px 8px',
-                                  borderRadius: 10,
-                                  fontSize: 11,
-                                  fontWeight: 600,
-                                  background:
-                                    item.status === 'COMPLETED' ? '#28a745' :
-                                      item.status === 'IN_PROGRESS' ? '#007bff' :
-                                        item.status === 'PAUSED' ? '#ffc107' :
-                                          item.status === 'CANCELLED' ? '#dc3545' : '#6c757d',
-                                  color: '#fff',
-                                }}>
-                                  {item.status || 'ACTIVE'}
-                                </span>
+                                <span className={`label ${String(item.status || 'ACTIVE').toUpperCase() === 'COMPLETED' ? 'label-success' : ['CANCELLED', 'CANCELED'].includes(String(item.status || '').toUpperCase()) ? 'label-danger' : String(item.status || 'ACTIVE').toUpperCase() === 'PAUSED' ? 'label-warning' : 'label-primary'}`}>{item.status || 'ACTIVE'}</span>
                               </td>
-                              <td>{item.custom_paper_name || item.custom_paper || 'N/A'}</td>
+                              <td>{item.custom_paper_name || item.custom_paper ? <span className="label label-info">{item.custom_paper_name || item.custom_paper}</span> : <span className="text-muted">No document attached</span>}</td>
                               <td style={{ opacity: item.status === 'CANCELLED' ? 0.5 : 1 }}>
                                 <Link
                                   type="button"
@@ -270,6 +258,7 @@ const Triplist = () => {
                           ))}
                         </tbody>
                       </table>
+                      </div>
                     </div>
                   </div>
                   <div className="row">
@@ -280,14 +269,13 @@ const Triplist = () => {
                         role="status"
                         aria-live="polite"
                       >
-                        Showing {offset + 1} to{" "}
-                        {Math.min(offset + itemsPerPage, list.length)} of{" "}
-                        {list.length} entries
+                        Showing {filteredTrips.length ? offset + 1 : 0} to{" "}
+                        {Math.min(offset + itemsPerPage, filteredTrips.length)} of{" "}
+                        {filteredTrips.length} entries
                       </div>
                     </div>
                     <div className="col-sm-7">
-                      <ReactPaginate
-                        previousLabel={"Previous"}
+                      <ReactPaginate forcePage={pageCount > 0 ? currentPage : undefined} renderOnZeroPageCount={null}                         previousLabel={"Previous"}
                         nextLabel={"Next"}
                         breakLabel={"..."}
                         breakClassName={"break-me"}

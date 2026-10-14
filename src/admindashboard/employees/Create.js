@@ -3,12 +3,9 @@
 import axios from "axios";
 import { BASE_URL } from "../../config";
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
 
 const Createemployees = () => {
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     product_image: "",
     fname: "",
@@ -52,8 +49,6 @@ const Createemployees = () => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
-    setIsSubmitting(true);
 
     const formDataToSend = new FormData();
     for (let key in formData) {
@@ -67,13 +62,8 @@ const Createemployees = () => {
       );
 
       console.log(response.data); // Log response data
-      toast.success("Employee created successfully!");
-      navigate('/employees');
     } catch (error) {
       console.error("Error:", error);
-      toast.error(error?.response?.data?.message || "Error creating employee. Please try again.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -932,9 +922,8 @@ const Createemployees = () => {
                 type="submit"
                 className="btn btn-primary"
                 onClick={handleSubmit}
-                disabled={isSubmitting}
               >
-                {isSubmitting ? "Saving..." : "Save Changes"}
+                Save Changes
               </button>
               <Link
                 to="https://isovia.ca/fms/customers/"
