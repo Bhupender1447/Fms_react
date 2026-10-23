@@ -49,6 +49,48 @@ export default function CreateRoute() {
 	const planningEstimate = useMemo(() => calculatePlanningEstimate({ ...estimateInputs, stops }), [estimateInputs, stops]);
 	const currentRouteFormData = { routeName, driverName, stops, vehicles: validVehiclePool, depot, options };
 
+	const calculateDefaultRouteDistance = (stopList) => {
+		const coords = (stopList || [])
+			.filter((s) => s.latitude && s.longitude && Number.isFinite(Number(s.latitude)) && Number.isFinite(Number(s.longitude)))
+			.map((s) => ({ lat: Number(s.latitude), lng: Number(s.longitude) }));
+		
+		if (coords.length >= 2) {
+			let totalKm = 0;
+			for (let i = 0; i < coords.length - 1; i++) {
+				const dLat = (coords[i+1].lat - coords[i].lat) * Math.PI / 180;
+				const dLng = (coords[i+1].lng - coords[i].lng) * Math.PI / 180;
+				const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+					Math.cos(coords[i].lat * Math.PI / 180) * Math.cos(coords[i+1].lat * Math.PI / 180) *
+					Math.sin(dLng/2) * Math.sin(dLng/2);
+				const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+				totalKm += 6371 * c;
+			}
+			return String(Math.round(totalKm * 1.3));
+		}
+		return String(Math.max(60, (stopList || []).length * 45));
+	};
+
+	const openEstimate = () => {
+		setShowEstimate(true);
+		setEstimateInputs((current) => {
+			let dist = current.distanceKm;
+			if (!dist || Number(dist) <= 0) {
+				dist = calculateDefaultRouteDistance(stops);
+			}
+			return {
+				distanceKm: dist,
+				averageSpeedKmh: current.averageSpeedKmh || '75',
+				fuelConsumptionLPer100Km: current.fuelConsumptionLPer100Km || '32',
+				fuelPricePerL: current.fuelPricePerL || '1.65',
+				driverCostPerHour: current.driverCostPerHour || '28',
+			};
+		});
+		setEstimateRequested(true);
+		requestAnimationFrame(() => {
+			document.getElementById('route-estimate-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		});
+	};
+
 	const openRouteView = () => navigate('/routes/view', {
 		state: {
 			routePreview: { ...currentRouteFormData, routeName: routeName.trim() || 'Untitled route plan' },
@@ -206,12 +248,12 @@ export default function CreateRoute() {
 			</section>
 
 			{mapCreated && <section id="route-map-preview" className="route-section" aria-labelledby="route-map-preview-heading">
-				<div className="route-section-heading"><div><h2 id="route-map-preview-heading">Coordinate map preview</h2><p>No geocoding or route calculation is triggered.</p></div><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setMapCreated(false)}>Hide map</button></div>
-				<RouteMap stops={stops} />
+				<div className="route-section-heading"><div><h2 id="route-map-preview-heading">Coordinate map preview</h2><p>Stop locations and sequence preview.</p></div><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setMapCreated(false)}>Hide map</button></div>
+				<RouteMap stops={stops} onStopsGeocoded={(geocoded) => setStops(geocoded)} />
 			</section>}
 
 			{showEstimate && <section className="route-section" aria-labelledby="route-estimate-heading">
-				<div className="route-section-heading"><div><h2 id="route-estimate-heading">Planning estimate</h2><p>Enter assumptions; no distance service, provider rate, taxes, tolls, or maintenance costs are included.</p></div><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowEstimate(false)}>Hide estimate</button></div>
+				<div className="route-section-heading"><div><h2 id="route-estimate-heading">Planning estimate</h2><p>Enter assumptions or use auto-calculated estimates from stops.</p></div><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowEstimate(false)}>Hide estimate</button></div>
 				<div className="route-estimate-grid">
 					<label className="route-field"><span>Route distance (km) *</span><input className="form-control" type="number" min="0" step="any" value={estimateInputs.distanceKm} onChange={(event) => setEstimateInputs((current) => ({ ...current, distanceKm: event.target.value }))} /></label>
 					<label className="route-field"><span>Average speed (km/h) *</span><input className="form-control" type="number" min="0.1" step="any" value={estimateInputs.averageSpeedKmh} onChange={(event) => setEstimateInputs((current) => ({ ...current, averageSpeedKmh: event.target.value }))} /></label>
@@ -220,7 +262,10 @@ export default function CreateRoute() {
 					<label className="route-field"><span>Driver cost (per hour) *</span><input className="form-control" type="number" min="0" step="any" value={estimateInputs.driverCostPerHour} onChange={(event) => setEstimateInputs((current) => ({ ...current, driverCostPerHour: event.target.value }))} /></label>
 				</div>
 				<p className="route-estimate-note">Service time uses stop durations you supplied; {stops.filter((stop) => !Number.isFinite(stop.serviceMinutes)).length} stop(s) have no service-time input. Monetary values use your entered currency units without conversion.</p>
-				<button type="button" className="btn btn-primary btn-sm" onClick={() => setEstimateRequested(true)}>Calculate local estimate</button>
+				<div className="d-flex align-items-center gap-2">
+					<button type="button" className="btn btn-primary btn-sm" onClick={() => setEstimateRequested(true)}>Calculate local estimate</button>
+					<button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => { const dist = calculateDefaultRouteDistance(stops); setEstimateInputs((cur) => ({ ...cur, distanceKm: dist })); setEstimateRequested(true); }}><i className="fa fa-refresh" aria-hidden="true" /> Refresh distance from stops</button>
+				</div>
 				{estimateRequested && (planningEstimate.valid ? <div className="route-estimate-result" role="status">
 					<strong>Local planning estimate · not a quote</strong><span>Driving time: {planningEstimate.drivingHours} h</span><span>Known service time: {planningEstimate.knownServiceMinutes} min</span><span>Estimated duration: {planningEstimate.estimatedHours} h</span><span>Estimated fuel: {planningEstimate.fuelLitres} L</span><span>Fuel cost: {planningEstimate.fuelCost.toFixed(2)} entered units</span><span>Driver cost: {planningEstimate.driverCost.toFixed(2)} entered units</span><b>Total: {planningEstimate.totalCost.toFixed(2)} entered units</b>
 				</div> : <div className="route-validation route-validation-error" role="alert"><strong>Complete valid assumptions</strong><ul>{planningEstimate.errors.map((error) => <li key={error}>{error}</li>)}</ul></div>)}
@@ -228,7 +273,7 @@ export default function CreateRoute() {
 
 			<div className="route-action-bar">
 				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={createMapPreview}><i className="fa fa-map" aria-hidden="true" /> Create map</button>
-				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={() => setShowEstimate(true)}><i className="fa fa-calculator" aria-hidden="true" /> Create estimate</button>
+				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={openEstimate}><i className="fa fa-calculator" aria-hidden="true" /> Create estimate</button>
 				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={openRouteView}><i className="fa fa-list-ol" aria-hidden="true" /> View route</button>
 				<button className="btn btn-outline-secondary" type="button" disabled={!validation.valid || validVehiclePool.length === 0} onClick={() => setShowRequestPreview((current) => !current)}><i className="fa fa-code" aria-hidden="true" /> {showRequestPreview ? 'Hide request preview' : 'Preview API request'}</button>
 				<button className="btn btn-primary" type="button" disabled={!canCreateDraft} onClick={saveLocalDraft}><i className="fa fa-save" aria-hidden="true" /> Create local draft</button>
@@ -240,7 +285,7 @@ export default function CreateRoute() {
 			{saveMessage && <p role="status" className="route-inline-success">{saveMessage}</p>}
 			{requestPreview && <section className="route-section route-request-preview"><div className="route-section-heading"><div><h2>API contract preview</h2><p>Contract only; this request has not been submitted to the backend or PTV.</p></div></div>
 				<pre>{JSON.stringify(requestPreview, null, 2)}</pre>
-				{process.env.NODE_ENV === 'development' && <div className="route-mock-panel">
+				{(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && <div className="route-mock-panel">
 					<div><strong>Development-only PTV lifecycle mock</strong><p>Exercises accepted, running, and terminal job states. It does not call PTV or generate optimized routes.</p></div>
 					<button className="btn btn-outline-primary btn-sm" type="button" disabled={mockRunning} onClick={runMockLifecycle}>{mockRunning ? 'Simulating lifecycle…' : 'Run lifecycle mock'}</button>
 					{mockLifecycle && <div className="route-mock-result" role="status">{mockLifecycle.error ? <span>{mockLifecycle.error}</span> : <><span>MOCK_ACCEPTED · 202</span><span>MOCK_RUNNING · {mockLifecycle.running.progress}%</span><span>MOCK_COMPLETED · no route result</span><span>Provider calls: 0 · assigned stops: 0</span></>}</div>}

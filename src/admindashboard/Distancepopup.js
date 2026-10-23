@@ -157,23 +157,103 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
     setExpenses(newExpenses);
   };
 
+  const safeGeocode = useCallback(async (address) => {
+    if (!address || !String(address).trim()) return null;
+    try {
+      return await MapService.geocode(address);
+    } catch (err) {
+      if (window.google?.maps?.Geocoder) {
+        return new Promise((resolve, reject) => {
+          const geocoder = new window.google.maps.Geocoder();
+          geocoder.geocode({ address: String(address).trim() }, (results, status) => {
+            if (status === 'OK' && results?.[0]?.geometry?.location) {
+              const loc = results[0].geometry.location;
+              resolve({
+                lat: loc.lat(),
+                lng: loc.lng(),
+                address: results[0].formatted_address || address
+              });
+            } else {
+              reject(new Error(`Could not find coordinates for: ${address}`));
+            }
+          });
+        });
+      }
+      throw err;
+    }
+  }, []);
+
+  const getGoogleDirectionsFallback = useCallback((origin, destination, waypoints) => {
+    return new Promise((resolve, reject) => {
+      if (!window.google?.maps?.DirectionsService) {
+        return reject(new Error('Google Maps routing service is currently unavailable'));
+      }
+      const ds = new window.google.maps.DirectionsService();
+      ds.route({
+        origin,
+        destination,
+        waypoints: (waypoints || []).map(w => ({ location: w, stopover: true })),
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      }, (result, status) => {
+        if (status === 'OK' && result?.routes?.[0]) {
+          const route = result.routes[0];
+          let totalDistanceMeters = 0;
+          let totalDurationSeconds = 0;
+          const path = [];
+          route.legs.forEach(leg => {
+            totalDistanceMeters += leg.distance?.value || 0;
+            totalDurationSeconds += leg.duration?.value || 0;
+            leg.steps.forEach(step => {
+              step.path.forEach(pt => {
+                path.push({ lat: pt.lat(), lng: pt.lng() });
+              });
+            });
+          });
+          const distanceMiles = (totalDistanceMeters / 1609.344).toFixed(1);
+          const distanceKms = (totalDistanceMeters / 1000).toFixed(1);
+          const hrs = Math.floor(totalDurationSeconds / 3600);
+          const mins = Math.round((totalDurationSeconds % 3600) / 60);
+          const durationText = hrs > 0 ? `${hrs} hrs ${mins} mins` : `${mins} mins`;
+          resolve({
+            distance: distanceMiles,
+            distanceMiles,
+            distanceKms,
+            distanceUnit: 'mi',
+            duration: totalDurationSeconds,
+            durationText,
+            path,
+            tolls: { tollAvailable: false },
+            legs: route.legs.map((leg, idx) => ({
+              name: `Leg ${idx + 1}`,
+              distanceMiles: (leg.distance?.value / 1609.344).toFixed(1),
+              durationText: leg.duration?.text || ''
+            }))
+          });
+        } else {
+          reject(new Error(`Google Maps route calculation failed: ${status}`));
+        }
+      });
+    });
+  }, []);
+
   const calculateDistance = useCallback(async (stopsToRoute = place3) => {
     if (!place1 || !place2) return;
+    const actualStops = Array.isArray(stopsToRoute) ? stopsToRoute : (Array.isArray(place3) ? place3 : []);
     setError(null);
     setRouteInfo(null);
     setRouteAlternatives([]);
     setIsLoading(true);
 
     try {
-      // 1. Geocode all locations using MapService
-      const coords1 = await MapService.geocode(place1);
-      const coords2 = await MapService.geocode(place2);
+      // 1. Geocode all locations using safeGeocode (MapService with Google Geocoder fallback)
+      const coords1 = await safeGeocode(place1);
+      const coords2 = await safeGeocode(place2);
       
       const coords3 = [];
-      for (let stop of stopsToRoute) {
-        if (stop.location) {
-           const c = await MapService.geocode(stop.location);
-           coords3.push(c);
+      for (let stop of actualStops) {
+        if (stop && stop.location) {
+           const c = await safeGeocode(stop.location);
+           if (c) coords3.push(c);
         }
       }
 
@@ -182,8 +262,19 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
       const origin = { lat: parseFloat(coords1.lat), lng: parseFloat(coords1.lng) };
       const destination = { lat: parseFloat(coords2.lat), lng: parseFloat(coords2.lng) };
 
+      let routeResult;
       const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : { type: 'car' };
-      const routeResult = await MapService.getRoute(origin, destination, waypoints, vehicleProfile, routeChoice, includeTolls);
+      try {
+        routeResult = await MapService.getRoute(origin, destination, waypoints, vehicleProfile, routeChoice, includeTolls);
+      } catch (backendRouteError) {
+        console.warn("Backend route API failed, trying browser Google Maps directions:", backendRouteError);
+        if (provider === 'google' || !provider) {
+          routeResult = await getGoogleDirectionsFallback(origin, destination, waypoints);
+        } else {
+          throw backendRouteError;
+        }
+      }
+
       const routeOptions = [routeResult, ...(routeResult.alternatives || [])].map((route, index) => ({
         index,
         path: MapService.parseRoutePath(route.path),
@@ -206,7 +297,6 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
       let extractedToll = 0;
       let hasTolls = false;
       
-      // Attempt to extract toll from various common PTV / Trimble formats
       if (routeResult.tolls?.amount !== undefined) { extractedToll = routeResult.tolls.amount; hasTolls = true; }
       else if (routeResult.tolls?.costs?.prices) {
         const usdPrice = routeResult.tolls.costs.prices.find(p => p.currency === 'USD');
@@ -218,9 +308,6 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
       else if (routeResult.tolls?.cost !== undefined) { extractedToll = routeResult.tolls.cost; hasTolls = true; }
       else if (typeof routeResult.tolls === 'number') { extractedToll = routeResult.tolls; hasTolls = true; }
       else if (routeResult.toll?.costs?.length > 0) { extractedToll = routeResult.toll.costs[0].amount || 0; hasTolls = true; }
-
-      // Log routeResult to console so user can inspect if tolls are missing
-      console.log("Map Routing Response:", routeResult);
 
       setRouteInfo({
         distance: routeResult.distance,
@@ -255,7 +342,7 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [place1, place2, place3, provider, routeChoice, includeTolls]);
+  }, [place1, place2, place3, provider, routeChoice, includeTolls, safeGeocode, getGoogleDirectionsFallback]);
 
   const selectRoute = (route) => {
     setSelectedRouteIndex(route.index);
@@ -287,43 +374,74 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
     setOptimizingStops(true);
     setError(null);
     try {
-      const addresses = [place1, ...validStops.map((stop) => stop.location), place2];
-      const points = await Promise.all(addresses.map((address) => MapService.geocode(address)));
-      let stopOrder;
+      let stopOrder = null;
       let optimizer = 'Google Route Optimization';
-      try {
-        stopOrder = await MapService.optimizeStops(points[0], points[points.length - 1], points.slice(1, -1));
-        if (stopOrder.length !== validStops.length) throw new Error('Google returned an incomplete sequence');
-      } catch (optimizationUnavailable) {
-        if (points.length > 10) throw new Error(optimizationUnavailable.message || 'Google Route Optimization is unavailable and matrix fallback supports up to 8 stops.');
-        optimizer = 'traffic matrix fallback';
-        const matrix = await MapService.getRouteMatrix(points, points);
-        const durations = new Map();
-        (Array.isArray(matrix) ? matrix : []).forEach((element) => {
-          if ((element.status?.code === undefined || element.status.code === 0) && element.condition !== 'ROUTE_NOT_FOUND') {
-            const seconds = Number.parseInt(String(element.duration || '').replace('s', ''), 10);
-            if (Number.isFinite(seconds)) durations.set(`${element.originIndex}-${element.destinationIndex}`, seconds);
-          }
-        });
-        stopOrder = [];
-        const remaining = new Set(validStops.map((_, index) => index + 1));
-        let current = 0;
-        while (remaining.size) {
-          let next = null;
-          let shortestDuration = Number.MAX_SAFE_INTEGER;
-          for (const index of remaining) {
-            const duration = durations.get(`${current}-${index}`) ?? Number.MAX_SAFE_INTEGER;
-            if (duration < shortestDuration) {
-              shortestDuration = duration;
-              next = index;
-            }
-          }
-          if (durations.get(`${current}-${next}`) === undefined) throw new Error('Google could not compare the route times for these stops.');
-          stopOrder.push(next - 1);
-          remaining.delete(next);
-          current = next;
+
+      // 1. First try client-side Google Maps DirectionsService waypoint optimization
+      if (window.google?.maps?.DirectionsService) {
+        try {
+          stopOrder = await new Promise((resolve, reject) => {
+            const ds = new window.google.maps.DirectionsService();
+            ds.route({
+              origin: place1,
+              destination: place2,
+              waypoints: validStops.map((s) => ({ location: s.location, stopover: true })),
+              optimizeWaypoints: true,
+              travelMode: window.google.maps.TravelMode.DRIVING,
+            }, (result, status) => {
+              if (status === 'OK' && result?.routes?.[0]?.waypoint_order && result.routes[0].waypoint_order.length === validStops.length) {
+                resolve(result.routes[0].waypoint_order);
+              } else {
+                reject(new Error(`Google waypoint optimization status: ${status}`));
+              }
+            });
+          });
+          optimizer = 'Google Maps Directions Optimizer';
+        } catch (clientOptError) {
+          console.warn('Browser waypoint optimization unavailable, falling back:', clientOptError);
         }
       }
+
+      // 2. If client-side didn't produce the order, try backend
+      if (!stopOrder || stopOrder.length !== validStops.length) {
+        const addresses = [place1, ...validStops.map((stop) => stop.location), place2];
+        const points = await Promise.all(addresses.map((address) => safeGeocode(address)));
+        try {
+          stopOrder = await MapService.optimizeStops(points[0], points[points.length - 1], points.slice(1, -1));
+          if (stopOrder.length !== validStops.length) throw new Error('Google returned an incomplete sequence');
+          optimizer = 'Google Route Optimization API';
+        } catch (optimizationUnavailable) {
+          if (points.length > 10) throw new Error(optimizationUnavailable.message || 'Matrix fallback supports up to 8 stops.');
+          optimizer = 'traffic matrix fallback';
+          const matrix = await MapService.getRouteMatrix(points, points);
+          const durations = new Map();
+          (Array.isArray(matrix) ? matrix : []).forEach((element) => {
+            if ((element.status?.code === undefined || element.status.code === 0) && element.condition !== 'ROUTE_NOT_FOUND') {
+              const seconds = Number.parseInt(String(element.duration || '').replace('s', ''), 10);
+              if (Number.isFinite(seconds)) durations.set(`${element.originIndex}-${element.destinationIndex}`, seconds);
+            }
+          });
+          stopOrder = [];
+          const remaining = new Set(validStops.map((_, index) => index + 1));
+          let current = 0;
+          while (remaining.size) {
+            let next = null;
+            let shortestDuration = Number.MAX_SAFE_INTEGER;
+            for (const index of remaining) {
+              const duration = durations.get(`${current}-${index}`) ?? Number.MAX_SAFE_INTEGER;
+              if (duration < shortestDuration) {
+                shortestDuration = duration;
+                next = index;
+              }
+            }
+            if (durations.get(`${current}-${next}`) === undefined) throw new Error('Could not compare route times for these stops.');
+            stopOrder.push(next - 1);
+            remaining.delete(next);
+            current = next;
+          }
+        }
+      }
+
       const ordered = stopOrder.map((index) => validStops[index]).filter(Boolean);
       if (ordered.length !== validStops.length) throw new Error('Could not map optimized stops back to the entered locations.');
       const reorderedStops = place3.map((stop) => String(stop.location || '').trim() ? ordered.shift() : stop);
@@ -537,7 +655,7 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
             </label>
           </div>
 
-          <button onClick={calculateDistance} className="btn btn-primary w-100 mt-4 py-2 fw-bold" disabled={isLoading}>
+          <button type="button" onClick={() => calculateDistance()} className="btn btn-primary w-100 mt-4 py-2 fw-bold" disabled={isLoading}>
             {isLoading ? "Calculating Route..." : "Calculate Route"}
           </button>
 
