@@ -41,14 +41,14 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
     setPlace2(initialDestination || '');
   }, [initialOrigin, initialDestination]);
 
-  const calculateRoute = async () => {
+  const calculateRoute = async (activeProvider = provider, activeChoice = routeChoice) => {
     if (!place1 || !place2) return;
     setError(null);
     setRouteInfo(null);
     setIsLoading(true);
 
     try {
-      // 1. Geocode locations
+      // 1. Geocode locations (with automatic fallback)
       const coords1 = await MapService.geocode(place1);
       const coords2 = await MapService.geocode(place2);
 
@@ -56,15 +56,15 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
       const destination = { lat: parseFloat(coords2.lat), lng: parseFloat(coords2.lng) };
 
       // 2. Decide vehicle profile based on provider
-      // PTV applies the configured truck profile. Google uses traffic-aware car routing.
-      const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : { type: 'car' };
+      // PTV applies commercial truck profile. Google uses standard car routing.
+      const isTruck = activeProvider === 'ptv';
+      const vehicleProfile = isTruck ? { type: 'truck' } : { type: 'car' };
 
-      const routeResult = await MapService.getRoute(origin, destination, [], vehicleProfile, routeChoice);
+      const routeResult = await MapService.getRoute(origin, destination, [], vehicleProfile, activeChoice);
       
       let extractedToll = 0;
       let hasTolls = false;
       
-      // Attempt to extract toll from various common PTV / Trimble formats
       if (routeResult.tolls?.amount !== undefined) { extractedToll = routeResult.tolls.amount; hasTolls = true; }
       else if (routeResult.tolls?.costs?.prices) {
         const usdPrice = routeResult.tolls.costs.prices.find(p => p.currency === 'USD');
@@ -77,19 +77,21 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
       else if (typeof routeResult.tolls === 'number') { extractedToll = routeResult.tolls; hasTolls = true; }
       else if (routeResult.toll?.costs?.length > 0) { extractedToll = routeResult.toll.costs[0].amount || 0; hasTolls = true; }
 
-      // Log routeResult to console so user can inspect if tolls are missing
       console.log("Map Routing Response:", routeResult);
 
       setRouteInfo({
         distance: routeResult.distance,
         distanceMiles: routeResult.distanceMiles,
         distanceKms: routeResult.distanceKms,
-        stateMileage: routeResult.stateMileage || [],
+        stateMileage: routeResult.stateMileage || routeResult.legs || [],
         distanceUnit: routeResult.distanceUnit,
         durationText: routeResult.durationText,
-        durationHours: (routeResult.duration / 3600).toFixed(2),
+        durationHours: (Number(routeResult.duration || 0) / 3600).toFixed(2),
         cost: extractedToll,
-        tollAvailable: hasTolls || routeResult.tolls?.tollAvailable !== false
+        tollAvailable: hasTolls || routeResult.tolls?.tollAvailable !== false,
+        activeProvider,
+        activeChoice,
+        isTruckProfile: isTruck
       });
 
       // 3. Render Route path
@@ -114,22 +116,32 @@ const FmsMap = ({ initialOrigin, initialDestination, height = '600px', title = "
     <div className="fms-map-container" style={{ height }}>
       <div className="fms-map-header">
         <h4 style={{ margin: 0 }}>{title}</h4>
-        <div className="fms-map-provider-switch">
+        <div className="fms-map-provider-switch" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <label style={{ margin: 0, fontWeight: 500 }}>Provider:</label>
-          <select value={provider} onChange={(e) => setProvider(e.target.value)}>
-            <option value="google">Google Maps (Car Routing)</option>
+          <select 
+            value={provider} 
+            onChange={(e) => {
+              const newProvider = e.target.value;
+              setProvider(newProvider);
+              calculateRoute(newProvider, routeChoice);
+            }}
+          >
             <option value="ptv">PTV Maps (Truck Routing)</option>
+            <option value="google">Google Maps (Car Routing)</option>
           </select>
-          {provider === 'ptv' && (
-            <>
-              <label style={{ margin: '0 0 0 10px', fontWeight: 500 }}>Route Option:</label>
-              <select value={routeChoice} onChange={(e) => setRouteChoice(e.target.value)}>
-                <option value="fast">Fastest</option>
-                <option value="shortest">Shortest</option>
-                <option value="economic">Economic</option>
-              </select>
-            </>
-          )}
+          <label style={{ margin: '0 0 0 5px', fontWeight: 500 }}>Route Option:</label>
+          <select 
+            value={routeChoice} 
+            onChange={(e) => {
+              const newChoice = e.target.value;
+              setRouteChoice(newChoice);
+              calculateRoute(provider, newChoice);
+            }}
+          >
+            <option value="fast">Fastest</option>
+            <option value="shortest">Shortest</option>
+            <option value="economic">Economic</option>
+          </select>
         </div>
       </div>
       

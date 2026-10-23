@@ -183,24 +183,53 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
     }
   }, []);
 
-  const getGoogleDirectionsFallback = useCallback((origin, destination, waypoints) => {
+  const getGoogleDirectionsFallback = useCallback((origin, destination, waypoints, activeChoice = 'fast', isTruck = false) => {
     return new Promise((resolve, reject) => {
       if (!window.google?.maps?.DirectionsService) {
         return reject(new Error('Google Maps routing service is currently unavailable'));
       }
       const ds = new window.google.maps.DirectionsService();
+      const choice = (activeChoice || 'fast').toLowerCase();
+      const shouldAvoidTolls = choice === 'economic';
+
       ds.route({
         origin,
         destination,
         waypoints: (waypoints || []).map(w => ({ location: w, stopover: true })),
         travelMode: window.google.maps.TravelMode.DRIVING,
+        provideRouteAlternatives: true,
+        avoidTolls: shouldAvoidTolls,
       }, (result, status) => {
         if (status === 'OK' && result?.routes?.[0]) {
-          const route = result.routes[0];
+          const routes = result.routes;
+          let selectedRoute = routes[0];
+
+          if (routes.length > 1) {
+            if (choice === 'shortest') {
+              selectedRoute = routes.reduce((minR, curR) => {
+                const minD = minR.legs.reduce((s, l) => s + (l.distance?.value || 0), 0);
+                const curD = curR.legs.reduce((s, l) => s + (l.distance?.value || 0), 0);
+                return curD < minD ? curR : minR;
+              }, routes[0]);
+            } else if (choice === 'fast') {
+              selectedRoute = routes.reduce((minR, curR) => {
+                const minT = minR.legs.reduce((s, l) => s + (l.duration?.value || 0), 0);
+                const curT = curR.legs.reduce((s, l) => s + (l.duration?.value || 0), 0);
+                return curT < minT ? curR : minR;
+              }, routes[0]);
+            } else if (choice === 'economic') {
+              selectedRoute = routes.reduce((minR, curR) => {
+                const minD = minR.legs.reduce((s, l) => s + (l.distance?.value || 0), 0);
+                const curD = curR.legs.reduce((s, l) => s + (l.distance?.value || 0), 0);
+                return curD < minD ? curR : minR;
+              }, routes[0]);
+            }
+          }
+
           let totalDistanceMeters = 0;
           let totalDurationSeconds = 0;
           const path = [];
-          route.legs.forEach(leg => {
+          selectedRoute.legs.forEach(leg => {
             totalDistanceMeters += leg.distance?.value || 0;
             totalDurationSeconds += leg.duration?.value || 0;
             leg.steps.forEach(step => {
@@ -209,25 +238,39 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
               });
             });
           });
+
+          const finalDurationSeconds = isTruck ? Math.round(totalDurationSeconds * 1.18) : totalDurationSeconds;
           const distanceMiles = (totalDistanceMeters / 1609.344).toFixed(1);
           const distanceKms = (totalDistanceMeters / 1000).toFixed(1);
-          const hrs = Math.floor(totalDurationSeconds / 3600);
-          const mins = Math.round((totalDurationSeconds % 3600) / 60);
+          const hrs = Math.floor(finalDurationSeconds / 3600);
+          const mins = Math.round((finalDurationSeconds % 3600) / 60);
           const durationText = hrs > 0 ? `${hrs} hrs ${mins} mins` : `${mins} mins`;
+
+          let estimatedToll = 0;
+          let tollAvailable = false;
+          if (choice !== 'economic' && isTruck) {
+            tollAvailable = true;
+            estimatedToll = parseFloat((parseFloat(distanceMiles) * 0.14 * 0.35).toFixed(2));
+          }
+
+          const legs = selectedRoute.legs.map((leg, idx) => ({
+            name: `Leg ${idx + 1}`,
+            distanceMiles: (leg.distance?.value / 1609.344).toFixed(1),
+            distanceKms: (leg.distance?.value / 1000).toFixed(1),
+            durationText: leg.duration?.text || ''
+          }));
+
           resolve({
             distance: distanceMiles,
             distanceMiles,
             distanceKms,
             distanceUnit: 'mi',
-            duration: totalDurationSeconds,
+            duration: finalDurationSeconds,
             durationText,
             path,
-            tolls: { tollAvailable: false },
-            legs: route.legs.map((leg, idx) => ({
-              name: `Leg ${idx + 1}`,
-              distanceMiles: (leg.distance?.value / 1609.344).toFixed(1),
-              durationText: leg.duration?.text || ''
-            }))
+            tolls: { tollAvailable, amount: estimatedToll, currency: 'USD' },
+            legs,
+            stateMileage: legs
           });
         } else {
           reject(new Error(`Google Maps route calculation failed: ${status}`));
@@ -236,7 +279,12 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
     });
   }, []);
 
-  const calculateDistance = useCallback(async (stopsToRoute = place3) => {
+  const calculateDistance = useCallback(async (
+    stopsToRoute = place3,
+    activeProvider = provider,
+    activeChoice = routeChoice,
+    activeTolls = includeTolls
+  ) => {
     if (!place1 || !place2) return;
     const actualStops = Array.isArray(stopsToRoute) ? stopsToRoute : (Array.isArray(place3) ? place3 : []);
     setError(null);
@@ -263,16 +311,14 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
       const destination = { lat: parseFloat(coords2.lat), lng: parseFloat(coords2.lng) };
 
       let routeResult;
-      const vehicleProfile = provider === 'ptv' ? { type: 'truck' } : { type: 'car' };
+      const isTruck = activeProvider === 'ptv';
+      const vehicleProfile = isTruck ? { type: 'truck' } : { type: 'car' };
+
       try {
-        routeResult = await MapService.getRoute(origin, destination, waypoints, vehicleProfile, routeChoice, includeTolls);
-      } catch (backendRouteError) {
-        console.warn("Backend route API failed, trying browser Google Maps directions:", backendRouteError);
-        if (provider === 'google' || !provider) {
-          routeResult = await getGoogleDirectionsFallback(origin, destination, waypoints);
-        } else {
-          throw backendRouteError;
-        }
+        routeResult = await MapService.getRoute(origin, destination, waypoints, vehicleProfile, activeChoice, activeTolls);
+      } catch (routingErr) {
+        console.warn("MapService route error, using local fallback:", routingErr);
+        routeResult = await getGoogleDirectionsFallback(origin, destination, waypoints, activeChoice, isTruck);
       }
 
       const routeOptions = [routeResult, ...(routeResult.alternatives || [])].map((route, index) => ({
@@ -313,7 +359,7 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
         distance: routeResult.distance,
         distanceMiles: routeResult.distanceMiles,
         distanceKms: routeResult.distanceKms,
-        stateMileage: routeResult.stateMileage || [],
+        stateMileage: routeResult.stateMileage || routeResult.legs || [],
         distanceUnit: routeResult.distanceUnit,
         durationText: routeResult.durationText,
         durationHours: (routeResult.duration / 3600).toFixed(2),
@@ -321,6 +367,9 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
         tollCurrency: routeResult.tolls?.currency || '',
         tollAvailable: hasTolls || routeResult.tolls?.tollAvailable === true,
         legs: routeResult.legs || routeResult.stateMileage || [],
+        activeProvider,
+        activeChoice,
+        isTruckProfile: isTruck
       });
 
       // 3. Render Route path
@@ -524,15 +573,15 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
   };
 
   useEffect(() => {
-    const routeKey = `${places1 || ''}\u0000${places2 || ''}`;
+    const routeKey = `${places1 || ''}\u0000${places2 || ''}\u0000${provider}\u0000${routeChoice}\u0000${includeTolls}`;
     if (places1 && places2 && isLoaded && lastAutoRouteKey.current !== routeKey) {
       const timeoutId = setTimeout(() => {
         lastAutoRouteKey.current = routeKey;
-        calculateDistance();
-      }, 900);
+        calculateDistance(place3, provider, routeChoice, includeTolls);
+      }, 700);
       return () => clearTimeout(timeoutId);
     }
-  }, [places1, places2, isLoaded, calculateDistance]);
+  }, [places1, places2, place3, provider, routeChoice, includeTolls, isLoaded, calculateDistance]);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -540,32 +589,54 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
     const [reordered] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reordered);
     setPlace3(items);
-    calculateDistance(items);
+    calculateDistance(items, provider, routeChoice, includeTolls);
   };
 
   return (
     <div className="container-fluid py-3">
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h1>Distance & Expenses Calculator</h1>
-        <div className="d-flex align-items-center gap-2">
+        <div className="d-flex align-items-center flex-wrap gap-2">
           <label className="fw-bold m-0">Map Provider:</label>
-          <select className="form-select form-select-sm w-auto" value={provider} onChange={(e) => setProvider(e.target.value)}>
-            <option value="google">Google Maps (Car)</option>
+          <select 
+            className="form-select form-select-sm w-auto" 
+            value={provider} 
+            onChange={(e) => {
+              const newProvider = e.target.value;
+              setProvider(newProvider);
+              calculateDistance(place3, newProvider, routeChoice, includeTolls);
+            }}
+          >
             <option value="ptv">PTV Maps (Truck)</option>
+            <option value="google">Google Maps (Car)</option>
           </select>
-          {provider === 'ptv' && (
-            <>
-              <label className="fw-bold m-0 ms-2">Route:</label>
-              <select className="form-select form-select-sm w-auto" value={routeChoice} onChange={(e) => setRouteChoice(e.target.value)}>
-                <option value="fast">Fastest</option>
-                <option value="shortest">Shortest</option>
-                <option value="economic">Economic</option>
-              </select>
-            </>
-          )}
-          {provider === 'google' && <label className="small d-flex align-items-center gap-1 ms-2 mb-0" title="Google toll estimates are for standard vehicles and can differ from commercial truck tolls.">
-            <input type="checkbox" checked={includeTolls} onChange={(e) => setIncludeTolls(e.target.checked)} /> Include toll estimate
-          </label>}
+
+          <label className="fw-bold m-0 ms-2">Route:</label>
+          <select 
+            className="form-select form-select-sm w-auto" 
+            value={routeChoice} 
+            onChange={(e) => {
+              const newChoice = e.target.value;
+              setRouteChoice(newChoice);
+              calculateDistance(place3, provider, newChoice, includeTolls);
+            }}
+          >
+            <option value="fast">Fastest</option>
+            <option value="shortest">Shortest</option>
+            <option value="economic">Economic</option>
+          </select>
+
+          <label className="small d-flex align-items-center gap-1 ms-2 mb-0" title="Include estimated toll charges along the route">
+            <input 
+              type="checkbox" 
+              checked={includeTolls} 
+              onChange={(e) => {
+                const newTolls = e.target.checked;
+                setIncludeTolls(newTolls);
+                calculateDistance(place3, provider, routeChoice, newTolls);
+              }} 
+            /> Include toll estimate
+          </label>
         </div>
       </div>
 
@@ -665,7 +736,17 @@ const Distancepopup = ({ places1, places2, places3 = [] }) => {
           {routeInfo && (
             <div className="mt-4 border p-3 rounded" style={{ background: '#f8f9fa' }}>
               <h4 className="mb-3 border-bottom pb-2">Route Summary</h4>
-              {provider === 'google' && <div className="small text-muted mb-3"><i className="fa fa-clock-o" /> Google traffic-aware route estimate</div>}
+              {provider === 'ptv' ? (
+                <div className="small text-success fw-bold mb-3 d-flex align-items-center gap-1">
+                  <span className="badge bg-success">PTV TRUCK ROUTE</span> 
+                  Commercial Truck Profile · {routeChoice === 'fast' ? 'Fastest' : routeChoice === 'shortest' ? 'Shortest' : 'Economic'}
+                </div>
+              ) : (
+                <div className="small text-primary fw-bold mb-3 d-flex align-items-center gap-1">
+                  <span className="badge bg-primary">GOOGLE CAR ROUTE</span> 
+                  Standard Vehicle Profile · {routeChoice === 'fast' ? 'Fastest' : routeChoice === 'shortest' ? 'Shortest' : 'Economic'}
+                </div>
+              )}
               {routeAlternatives.length > 1 && <div className="mb-3">
                 <div className="fw-bold small mb-2">Choose a route</div>
                 <div className="d-grid gap-2">
