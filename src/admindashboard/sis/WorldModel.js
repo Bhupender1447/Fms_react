@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BASE_URL } from '../../config';
 import './WorldModel.css';
-import { readSnapshotResponse } from './snapshotResponse';
+import { readAccountResponse, readSnapshotResponse } from './snapshotResponse';
 import { Alert, Badge, Button, Card, EmptyState, Input, PageHeader, Select } from '../../design-system/components';
 
 const PAGE_SIZE = 50;
@@ -70,6 +70,11 @@ function AttributeList({ attributes, prefix = '' }) {
 }
 
 export default function WorldModel() {
+  const [accounts, setAccounts] = useState([]);
+  const [accountId, setAccountId] = useState('');
+  const [accountsLoading, setAccountsLoading] = useState(true);
+  const [accountError, setAccountError] = useState('');
+  const [accountReload, setAccountReload] = useState(0);
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -80,21 +85,55 @@ export default function WorldModel() {
   const [offset, setOffset] = useState(0);
   const requestRef = useRef(null);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    requestRef.current?.abort();
+    setAccountsLoading(true);
+    setAccountError('');
+    setAccounts([]);
+    setAccountId('');
+    setSnapshot(null);
+    async function loadAccounts() {
+      try {
+        const response = await fetch(`${BASE_URL}api/sis/accounts`, {
+          credentials: 'include', signal: controller.signal, headers: { Accept: 'application/json' },
+        });
+        const choices = await readAccountResponse(response);
+        if (controller.signal.aborted) return;
+        setAccounts(choices);
+        // Only a single unambiguous, server-authorized choice is preselected.
+        if (choices.length === 1) setAccountId(choices[0].account_id);
+      } catch (loadError) {
+        if (!controller.signal.aborted) setAccountError(loadError.message || 'Authorized accounts are unavailable.');
+      } finally {
+        if (!controller.signal.aborted) setAccountsLoading(false);
+      }
+    }
+    loadAccounts();
+    return () => controller.abort();
+  }, [accountReload]);
+
   const loadSnapshot = useCallback(async () => {
     requestRef.current?.abort();
+    if (!accountId) {
+      setSnapshot(null);
+      setError('');
+      setLoading(false);
+      return;
+    }
     const controller = new AbortController();
     requestRef.current = controller;
     setLoading(true);
     setSnapshot(null);
     setError('');
     try {
-      const query = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
+      const query = new URLSearchParams({ account_id: accountId, limit: String(PAGE_SIZE), offset: String(offset) });
       const response = await fetch(`${BASE_URL}api/sis/world-model?${query.toString()}`, {
         credentials: 'include',
         signal: controller.signal,
         headers: { Accept: 'application/json' },
       });
-      const nextSnapshot = await readSnapshotResponse(response);
+      const nextSnapshot = await readSnapshotResponse(response, accountId);
       if (!controller.signal.aborted) setSnapshot(nextSnapshot);
     } catch (loadError) {
       if (controller.signal.aborted) return;
@@ -103,7 +142,7 @@ export default function WorldModel() {
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
-  }, [offset]);
+  }, [accountId, offset]);
 
   useEffect(() => {
     loadSnapshot();
@@ -143,12 +182,29 @@ export default function WorldModel() {
   return (
     <main className="iso-ui sis-world-page" data-iso-theme="dark" aria-busy={loading}>
       <PageHeader eyebrow="SIS FOUNDATION / UNDER DEVELOPMENT" title="World Model" actions={
-        <Button onClick={loadSnapshot} disabled={loading}>{loading ? 'Refreshing' : 'Refresh snapshot'}</Button>
+        <Button onClick={loadSnapshot} disabled={loading || accountsLoading || !accountId}>{loading ? 'Refreshing' : 'Refresh snapshot'}</Button>
       }>A traceable operational snapshot projected from IFM orders, trips, stops, drivers, and trucks.</PageHeader>
 
       <Alert tone="warning" title="Freshness is not assessed." className="sis-world-notice">
         Source timestamps may be absent. This view does not certify live or regulatory data.
       </Alert>
+      <Card className="sis-world-account">
+        <Select label="Authorized account" value={accountId} disabled={accountsLoading || accounts.length === 0} onChange={(event) => {
+          requestRef.current?.abort();
+          setSnapshot(null);
+          setError('');
+          setOffset(0);
+          setAccountId(event.target.value);
+        }}>
+          <option value="">{accountsLoading ? 'Checking authorized accounts...' : 'Select an account'}</option>
+          {accounts.map((account) => <option key={account.account_id} value={account.account_id}>{account.name}</option>)}
+        </Select>
+        <p>Account choices come from your active memberships and read permissions. Each snapshot request rechecks access.</p>
+      </Card>
+      {accountError && <Alert tone="danger" title="Account access unavailable" className="sis-world-notice" action={<Button variant="secondary" onClick={() => setAccountReload((value) => value + 1)}>Retry account access</Button>}>{accountError}</Alert>}
+      {!accountsLoading && !accountError && accounts.length === 0 && <Alert tone="warning" title="No authorized accounts" className="sis-world-notice">A verified account, active membership and order/trip read permissions are required. Legacy unassigned records are excluded.</Alert>}
+      {!accountsLoading && accounts.length > 1 && !accountId && <Alert title="Select an authorized account" className="sis-world-notice">Choose which account to inspect. Records from different accounts are not combined.</Alert>}
+      {snapshot?.source_status === 'partial' && <Alert tone="warning" title="Partial account coverage" className="sis-world-notice">Only authorized orders and trips are included. Stops, drivers, trucks and linked master-record references are withheld pending verified ownership. Their absence does not mean zero records or missing assignments.</Alert>}
       {error && <Alert tone="danger" title="Snapshot unavailable" className="sis-world-notice" action={<Button variant="secondary" onClick={loadSnapshot}>Retry</Button>}>
         <p>{error}</p><p>Check the API connection and administrator access, then retry.</p>
       </Alert>}
@@ -162,11 +218,12 @@ export default function WorldModel() {
 
       {snapshot && !loading && <Card className="sis-world-panel sis-world-quality">
         <h2>Page coverage and review</h2>
-        <p>These counts describe this page only, including historical trips. Missing assignments do not automatically mean dispatch violations.</p>
+        <p>These counts describe this page only, including historical trips. References may be withheld while ownership is unverified; absence does not prove a missing assignment or dispatch violation.</p>
         <dl>
           <div><dt>Source timestamps supplied</dt><dd>{timestampCount} of {entities.length}</dd></div>
-          <div><dt>Trips without a driver reference</dt><dd>{missingDriverCount} of {trips.length}</dd></div>
-          <div><dt>Trips without a truck reference</dt><dd>{missingTruckCount} of {trips.length}</dd></div>
+          <div><dt>Trips without a visible driver reference</dt><dd>{missingDriverCount} of {trips.length}</dd></div>
+          <div><dt>Trips without a visible truck reference</dt><dd>{missingTruckCount} of {trips.length}</dd></div>
+          <div><dt>Authorized account</dt><dd>{snapshot.account_id}</dd></div>
           <div><dt>Relationship endpoints outside this page</dt><dd>{unresolvedLinks}</dd></div>
           <div><dt>Snapshot scope</dt><dd>{displayValue(snapshot.scope, 'Not supplied')}</dd></div>
           <div><dt>Projection schema</dt><dd>{displayValue(snapshot.schema_version, 'Not supplied')}</dd></div>
@@ -193,7 +250,7 @@ export default function WorldModel() {
         {snapshot && !loading && <p className="sis-world-result-count" role="status">Showing {filteredEntities.length} of {entities.length} entities on this page. Filters do not search the entire database.</p>}
 
         {loading && !snapshot ? <EmptyState loading title="Loading the current snapshot..." /> : null}
-        {!loading && !error && filteredEntities.length === 0 ? <EmptyState title="No entities match this page and filter." /> : null}
+        {!loading && snapshot && !error && filteredEntities.length === 0 ? <EmptyState title="No entities match this page and filter." /> : null}
 
         {filteredEntities.length > 0 && (
           <div className="sis-world-table-wrap">

@@ -79,6 +79,7 @@ const Sidebar = () => {
 
           {/* SIS World Model */}
           <li className="nav-item"><Link className="nav-link" to="/sis/world-model"><i className="fa fa-cubes" /> <span>World Model</span></Link></li>
+          <li className="nav-item"><Link className="nav-link" to="/sis/safety"><i className="fa fa-shield" aria-hidden="true" /> <span>SIS Safety</span></Link></li>
 
           {/* Live Update Map */}
           <li className="nav-item"><Link className="nav-link" to="/tripsmap"><i className="fa fa-map-marker" /> <span>Live Update Map</span></Link></li>

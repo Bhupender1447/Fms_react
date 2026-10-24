@@ -1,11 +1,32 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-jest.mock('./RouteMap', () => ({ __esModule: true, default: () => null }));
 import CreateRoute from './CreateRoute';
 import ManageRoutes from './ManageRoutes';
 import RouteDetails from './RouteDetails';
 import RouteOverview from './RouteOverview';
+jest.mock('./RouteMap', () => ({ __esModule: true, default: () => null }));
+
+test('manager finds plans by name and restores results after clearing filters', () => {
+	const drafts = [{ id: 'PLAN-1', routeName: 'North deliveries', status: 'DRAFT_NOT_OPTIMIZED', stops: [] }];
+	render(<MemoryRouter initialEntries={[{ pathname: '/routes/manage', state: { drafts } }]}><ManageRoutes /></MemoryRouter>);
+	fireEvent.change(screen.getByLabelText('Search'), { target: { value: ' North ' } });
+	expect(screen.getByText('North deliveries')).toBeInTheDocument();
+	fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'South' } });
+	expect(screen.getByRole('heading', { name: 'No matching route plans' })).toBeInTheDocument();
+	fireEvent.click(screen.getByRole('button', { name: 'Show all routes' }));
+	expect(screen.getByText('North deliveries')).toBeInTheDocument();
+});
+
+test('create route explains readiness and provides section navigation', () => {
+	render(<MemoryRouter><CreateRoute /></MemoryRouter>);
+	expect(screen.getByRole('navigation', { name: 'Route planning steps' })).toBeInTheDocument();
+	expect(screen.getByRole('region', { name: 'Draft readiness' })).toHaveTextContent('Name your route');
+	expect(screen.getByRole('button', { name: /Create local draft/ })).toBeDisabled();
+	fireEvent.change(screen.getByLabelText('Route name *'), { target: { value: 'North deliveries' } });
+	const checklist = screen.getByRole('region', { name: 'Draft readiness' });
+	expect(within(checklist).getByRole('link', { name: /Name your route Complete/ })).toBeInTheDocument();
+});
 
 function renderRouteFlow() {
 	return render(
@@ -36,7 +57,9 @@ test('creates a session route draft and keeps operational mutations disabled', (
 	fireEvent.change(screen.getByLabelText('Vehicle 1 max pallets'), { target: { value: '24' } });
 	fireEvent.click(screen.getByRole('button', { name: /Preview API request/ }));
 	expect(screen.getByText(/CONTRACT_PREVIEW_ONLY/)).toBeInTheDocument();
-	fireEvent.click(screen.getByRole('button', { name: 'Run lifecycle mock' }));
+	expect(screen.queryByRole('button', { name: 'Run lifecycle mock' })).not.toBeInTheDocument();
+	expect(screen.getByRole('button', { name: 'Save to IFM' })).toBeDisabled();
+	expect(screen.getByRole('button', { name: 'Dispatch to Driver App' })).toBeDisabled();
 	expect(screen.getByText(/has not been submitted to the backend or PTV/)).toBeInTheDocument();
 
 	fireEvent.click(screen.getByRole('button', { name: /Create local draft/ }));
@@ -51,7 +74,7 @@ test('creates a session route draft and keeps operational mutations disabled', (
 });
 
 test('creates a coordinate map and estimate, then applies a reordered route to the create form', () => {
-	const { container } = renderRouteFlow();
+	renderRouteFlow();
 	fireEvent.change(screen.getByLabelText('Route name *'), { target: { value: 'Sequence review' } });
 	fireEvent.change(screen.getByLabelText('Driver for this route *'), { target: { value: 'Driver Preview' } });
 
@@ -83,7 +106,11 @@ test('creates a coordinate map and estimate, then applies a reordered route to t
 
 	fireEvent.click(screen.getByRole('button', { name: 'View route' }));
 	fireEvent.click(screen.getByRole('button', { name: 'Move stop 2 up' }));
-	expect(Array.from(container.querySelectorAll('.route-sequence-item strong')).map((item) => item.textContent)).toEqual(['STOP-2 · PICKUP', 'STOP-1 · PICKUP']);
+	const sequence = within(screen.getByRole('list', { name: 'Reorder route stops' })).getAllByRole('listitem');
+	expect(within(sequence[0]).getByText(/^STOP-2.*PICKUP$/)).toBeInTheDocument();
+	expect(within(sequence[1]).getByText(/^STOP-1.*PICKUP$/)).toBeInTheDocument();
 	fireEvent.click(screen.getByRole('button', { name: 'Use this order' }));
-	expect(Array.from(container.querySelectorAll('.route-table tbody tr strong')).map((item) => item.textContent)).toEqual(['STOP-2', 'STOP-1']);
+	const rows = within(screen.getByRole('region', { name: 'Review stops' })).getAllByRole('row');
+	expect(within(rows[1]).getByText('STOP-2')).toBeInTheDocument();
+	expect(within(rows[2]).getByText('STOP-1')).toBeInTheDocument();
 });

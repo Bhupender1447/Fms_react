@@ -2,12 +2,15 @@
 import axios from "axios";
 import { Alert } from "../../design-system/components";
 import "../../design-system/forms.css";
-import React, { useEffect, useState } from "react";
+import EntryFormGuide from "../EntryFormGuide";
+import React, { useEffect, useRef, useState } from "react";
 import Distancepopup from "../Distancepopup";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { BASE_URL } from "../../config";
 import { getOcrErrorMessage, getOcrResponseErrorMessage } from "../../services/ocrErrors";
+import OcrDocumentIntake from "../../components/OcrDocumentIntake";
+import OcrExtractionReview, { flattenOcrFields } from "../../components/OcrExtractionReview";
 
 const normalizeName = (value) => String(value || "")
   .toLowerCase()
@@ -41,17 +44,76 @@ const Createtrips = () => {
   const [, setOcrRaw] = useState(null);
   const [ocrFile, setOcrFile] = useState(null); // OCR State
   const [isOcrLoading, setIsOcrLoading] = useState(false);
+  const [ocrScanError, setOcrScanError] = useState("");
+  const [ocrResult, setOcrResult] = useState(null);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [isEditingOcr, setIsEditingOcr] = useState(false);
+  const [ocrBrokerCandidates, setOcrBrokerCandidates] = useState([]);
+  const [selectedOcrBrokerId, setSelectedOcrBrokerId] = useState("");
+  const [savedRecordId, setSavedRecordId] = useState("");
+  const [manualFields, setManualFields] = useState(() => new Set());
+  const ocrBaselineRef = useRef(null);
+  const reviewHeadingRef = useRef(null);
   const [ocrCustomerNotice, setOcrCustomerNotice] = useState("");
   const [ocrBrokerInfo, setOcrBrokerInfo] = useState(null);
   const [pendingCompanyMatch, setPendingCompanyMatch] = useState(null);
 
+  const handleOcrFileSelected = (file) => {
+    if ((manualFields.size > 0 || isEditingOcr) && !window.confirm("Replace the source document? Your manual edits will be retained where possible.")) {
+      return false;
+    }
+    if (ocrResult && ocrBaselineRef.current) {
+      const baseline = ocrBaselineRef.current;
+      setFormData((previous) => {
+        const restored = { ...baseline.formData };
+        manualFields.forEach((field) => { restored[field] = previous[field]; });
+        return restored;
+      });
+      setStops(manualFields.has("stops") ? stops : baseline.stops);
+      setShipments(manualFields.has("shipments") ? shipments : baseline.shipments);
+      ocrBaselineRef.current = null;
+    }
+    setOcrFile(file);
+    setOcrResult(null);
+    setOcrScanError("");
+    setOcrBrokerInfo(null);
+    setOcrBrokerCandidates([]);
+    setSelectedOcrBrokerId("");
+    setPendingCompanyMatch(null);
+    return true;
+  };
+
+  const handleOcrFileRemoved = () => {
+    if (manualFields.size > 0 && !window.confirm("Remove the source document? Your manual edits will be retained.")) return;
+    if (ocrResult && ocrBaselineRef.current) {
+      const baseline = ocrBaselineRef.current;
+      setFormData((previous) => {
+        const restored = { ...baseline.formData };
+        manualFields.forEach((field) => { restored[field] = previous[field]; });
+        return restored;
+      });
+      setStops(manualFields.has("stops") ? stops : baseline.stops);
+      setShipments(manualFields.has("shipments") ? shipments : baseline.shipments);
+      ocrBaselineRef.current = null;
+    }
+    setOcrFile(null);
+    setOcrResult(null);
+    setOcrScanError("");
+    setOcrBrokerInfo(null);
+    setOcrBrokerCandidates([]);
+    setSelectedOcrBrokerId("");
+    setPendingCompanyMatch(null);
+  };
+
   const handleOcrUpload = async () => {
     if (!ocrFile) {
-      toast.error("Please select a file to upload");
+      setOcrScanError("Choose a document before scanning.");
       return;
     }
     
+    setOcrScanError("");
     setIsOcrLoading(true);
+    if (!ocrBaselineRef.current) ocrBaselineRef.current = { formData, stops, shipments };
     
     const ocrData = new FormData();
     ocrData.append("file", ocrFile);
@@ -66,18 +128,23 @@ const Createtrips = () => {
   "broker_address": "Broker or bill-to mailing address shown on the document",
   "broker_phone": "Broker phone number shown on the document",
   "broker_email": "Broker email address shown on the document",
+  "broker_mc_number": "Broker MC number shown on the document",
   "customerorderno": "Customer purchase order or customer order number",
   "salesman": "Salesperson name, only if explicitly shown",
   "pickup_address": "Full pickup or shipper address",
   "pickup_from": "Pickup company or location name",
   "delivery_address": "Full delivery or consignee address",
   "delivery": "Delivery company or location name",
-  "stops": [{ "stoptype": "Pickup or Delivery", "name": "Stop company or location name", "address": "Full stop address", "date": "Stop date in YYYY-MM-DD format", "time": "Stop time if shown" }],
+  "stops": [{ "stoptype": "Pickup or Delivery exactly as stated", "name": "Stop company or location name", "address": "Full stop address", "date": "Stop date in YYYY-MM-DD format", "time": "Stop time if shown", "timezone": "Timezone if shown", "appointment_window": "Appointment window if shown", "contact_name": "Contact if shown", "contact_phone": "Phone if shown", "reference": "Stop reference if shown", "instructions": "Stop instructions if shown" }],
   "pickupdate": "Pickup date in exactly YYYY-MM-DD format",
   "deliverydate": "Delivery date in exactly YYYY-MM-DD format",
   "rate": "Rate or cost as a pure number (no currency symbols)",
   "currency": "Currency explicitly shown for the rate or total; return CAD or USD when identifiable",
   "gross_amount": "Total gross amount as a pure number",
+  "accessorials": "Accessorial charges and amounts when explicitly itemized",
+  "payment_terms": "Payment terms if shown",
+  "seal_numbers": "Seal numbers if shown",
+  "temperature": "Temperature requirements if shown",
   "trailortype": "Trailer type if mentioned",
   "commodity": "Commodity description",
   "weight": "Weight as a pure number",
@@ -95,13 +162,16 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
       if (response.data.success) {
         setOcrRaw(response.data.data);
+        setOcrResult(response.data);
+        setShowManualEntry(false);
+        setIsEditingOcr(false);
         applyOCRToAllFields(response.data);
       } else {
-        toast.error(getOcrResponseErrorMessage(response));
+        setOcrScanError(getOcrResponseErrorMessage(response));
       }
     } catch (err) {
       console.error("Trip OCR request failed:", err.response?.status || err.message);
-      toast.error(getOcrErrorMessage(err, "Error processing OCR file"));
+      setOcrScanError(getOcrErrorMessage(err, "Error processing OCR file"));
     } finally {
       setIsOcrLoading(false);
     }
@@ -134,6 +204,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
   // Add new shipment
   const addNewShipment = () => {
+    setManualFields((previous) => new Set(previous).add("shipments"));
     setShipments((prev) => [
       ...prev,
       {
@@ -155,6 +226,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
   // Remove shipment
   const removeShipment = (index) => {
     if (shipments.length > 1) {
+      setManualFields((previous) => new Set(previous).add("shipments"));
       setShipments((prev) => prev.filter((_, i) => i !== index));
       if (activeShipmentIndex >= index) {
         setActiveShipmentIndex((prev) => Math.max(0, prev - 1));
@@ -166,11 +238,11 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
   // Handle array fields in shipments (commodity, weight, etc.)
   const handleShipmentArrayChange = (index, field, arrayIndex, value) => {
+    setManualFields((previous) => new Set(previous).add("shipments"));
     setShipments((prev) => {
       const updated = [...prev];
-      if (!updated[index][field]) {
-        updated[index][field] = [];
-      }
+      updated[index] = { ...updated[index] };
+      updated[index][field] = [...(prev[index][field] || [])];
       updated[index][field][arrayIndex] = value;
       return updated;
     });
@@ -178,8 +250,14 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
   // Add row to specific shipment
   const handleAddRowToShipment = (shipmentIndex) => {
+    setManualFields((previous) => new Set(previous).add("shipments"));
     setShipments((prev) => {
       const updated = [...prev];
+      updated[shipmentIndex] = { ...updated[shipmentIndex] };
+      updated[shipmentIndex].commodity = [...updated[shipmentIndex].commodity];
+      updated[shipmentIndex].weight = [...updated[shipmentIndex].weight];
+      updated[shipmentIndex].unit = [...updated[shipmentIndex].unit];
+      updated[shipmentIndex].package = [...updated[shipmentIndex].package];
       const currentRows = updated[shipmentIndex].commodity.length;
 
       updated[shipmentIndex].commodity[currentRows] = "";
@@ -193,8 +271,10 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
   // Remove row from specific shipment
   const handleRemoveRowFromShipment = (shipmentIndex, rowIndex) => {
+    setManualFields((previous) => new Set(previous).add("shipments"));
     setShipments((prev) => {
       const updated = [...prev];
+      updated[shipmentIndex] = { ...updated[shipmentIndex] };
       updated[shipmentIndex].commodity = updated[
         shipmentIndex
       ].commodity.filter((_, i) => i !== rowIndex);
@@ -250,8 +330,9 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
   };
 
   const handleStopChange = (index, field, value) => {
+    setManualFields((previous) => new Set(previous).add("stops"));
     const updatedStops = [...stops];
-    updatedStops[index][field] = value;
+    updatedStops[index] = { ...updatedStops[index], [field]: value };
     setStops(updatedStops);
   };
   const [formData, setFormData] = useState({
@@ -340,6 +421,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    setManualFields((previous) => new Set(previous).add(name));
 
     if (name === "delivery") {
       // Find the selected location based on the value (id)
@@ -431,6 +513,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       address: getMatch(["broker_address", "customer_address", "bill_to_address"]),
       phone: getMatch(["broker_phone", "customer_phone", "bill_to_phone"]),
       email: getMatch(["broker_email", "customer_email", "bill_to_email"]),
+      mcNumber: getMatch(["broker_mc_number", "mc_number", "mc"]),
     };
     const visibleBrokerOcrFields = Object.fromEntries(
       Object.entries(brokerOcrFields)
@@ -465,11 +548,22 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       .filter((candidate) => candidate.score >= 0.42)
       .sort((left, right) => right.score - left.score)
       .slice(0, 5);
-    const matchedBroker = findKnownName(data.customers || [], brokerVal, "customer");
+    const brokerCandidates = (data.customers || [])
+      .map((customer) => ({
+        id: customer.id,
+        name: getCustomerName(customer),
+        record: customer,
+        score: companyNameSimilarity(brokerVal, getCustomerName(customer)),
+      }))
+      .filter((candidate) => candidate.score >= 0.62)
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 5);
+    setOcrBrokerCandidates(brokerCandidates);
+    setSelectedOcrBrokerId("");
     const matchedSalesman = findKnownName(data.customers || [], salesmanVal, "customer");
     const customerNotes = [];
     if (companyVal && companyCandidates.length === 0) customerNotes.push(`Company “${companyVal}” was read but no similar company was found. Select the correct company manually.`);
-    if (brokerVal && !matchedBroker) customerNotes.push(`Customer/broker “${brokerVal}” was read but could not be matched to a broker account.`);
+    if (brokerVal && brokerCandidates.length === 0) customerNotes.push(`Customer/broker “${brokerVal}” was read but could not be matched to a broker account.`);
     if (salesmanVal && !matchedSalesman) customerNotes.push(`Salesperson “${salesmanVal}” was read but could not be matched to a user record.`);
     setOcrCustomerNotice(customerNotes.join(" "));
     if (companyVal && companyCandidates.length > 0) {
@@ -486,20 +580,27 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
     const asStopText = (value) => typeof value === "string" || typeof value === "number" ? String(value).trim() : "";
     const ocrStops = extractedStops.map((stop) => {
       if (typeof stop === "string") {
-        return { stoptype: "Delivery", name: "", location: stop.trim(), date: "", time: "" };
+        return { stoptype: "Type not identified", name: "", location: stop.trim(), address: stop.trim(), date: "", time: "" };
       }
       if (!stop || typeof stop !== "object") return null;
       const name = asStopText(stop.name || stop.location_name || stop.company || stop.label);
       const address = asStopText(stop.address || stop.full_address || stop.location || stop.address1);
       const rawType = asStopText(stop.stoptype || stop.stop_type || stop.type).toLowerCase();
       return {
-        stoptype: /pickup|origin|shipper|load/.test(rawType) ? "Pickup" : "Delivery",
+        stoptype: /pickup|origin|shipper|load/.test(rawType) ? "Pickup" : /delivery|destination|consignee/.test(rawType) ? "Delivery" : "Type not identified",
         name,
         location: address || name,
+        address,
         date: asStopText(stop.date || stop.stop_date || stop.arrival_date),
         time: asStopText(stop.time || stop.stop_time || stop.arrival_time),
+        timezone: asStopText(stop.timezone || stop.time_zone),
+        appointmentWindow: asStopText(stop.appointment_window || stop.appointmentWindow),
+        contactName: asStopText(stop.contact_name || stop.contact),
+        contactPhone: asStopText(stop.contact_phone || stop.phone),
+        reference: asStopText(stop.reference || stop.reference_number || stop.refno),
+        instructions: asStopText(stop.instructions || stop.notes),
       };
-    }).filter((stop) => stop && stop.location);
+    }).filter((stop) => stop);
 
     let mappedStops = ocrStops;
     if (mappedStops.length === 0) {
@@ -510,15 +611,17 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       mappedStops = [
         (pickupStopAddress || pickupStopName) && {
           stoptype: "Pickup", name: asStopText(pickupStopName),
-          location: asStopText(pickupStopAddress || pickupStopName), date: "", time: "",
+          location: asStopText(pickupStopAddress || pickupStopName), address: asStopText(pickupStopAddress),
+          date: "", time: "", timezone: "", appointmentWindow: "", contactName: "", contactPhone: "", reference: "", instructions: "",
         },
         (deliveryStopAddress || deliveryStopName) && {
           stoptype: "Delivery", name: asStopText(deliveryStopName),
-          location: asStopText(deliveryStopAddress || deliveryStopName), date: "", time: "",
+          location: asStopText(deliveryStopAddress || deliveryStopName), address: asStopText(deliveryStopAddress),
+          date: "", time: "", timezone: "", appointmentWindow: "", contactName: "", contactPhone: "", reference: "", instructions: "",
         },
       ].filter(Boolean);
     }
-    if (mappedStops.length > 0) {
+    if (mappedStops.length > 0 && !manualFields.has("stops") && (!showManualEntry || stops.length === 0)) {
       setStops(mappedStops);
       localMatchCount += mappedStops.length;
     }
@@ -535,28 +638,24 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       };
 
       // 1. Map Load Number & Salesman (Allow overwrite for loadno)
-      if (customerOrderVal) {
+      if (customerOrderVal && !manualFields.has("customerorderno") && isFieldEmpty(updated.customerorderno)) {
         updated.customerorderno = String(customerOrderVal).trim();
         localMatchCount++;
       }
-      if (matchedBroker) {
-        updated.customer_id = String(matchedBroker.id);
-        localMatchCount++;
-      }
-      if (matchedSalesman) {
+      if (matchedSalesman && !manualFields.has("salesman") && isFieldEmpty(updated.salesman)) {
         updated.salesman = String(matchedSalesman.id);
         localMatchCount++;
       }
 
       const loadVal = getMatch(['rec_load_number', 'gpt_number_load', 'loadno', 'load_number', 'load']);
-      if (loadVal) {
+      if (loadVal && !manualFields.has("loadno") && isFieldEmpty(updated.loadno)) {
         updated.loadno = String(loadVal);
         localMatchCount++;
       }
 
       // Explicitly map Trailer Type for the Dropdown (requires ID)
       const trailerVal = getMatch(['trailortype', 'trailer']);
-      if (trailerVal && isFieldEmpty(updated.trailortype)) {
+      if (trailerVal && !manualFields.has("trailortype") && isFieldEmpty(updated.trailortype)) {
         const trailer = data.trailors?.find(t => t.trailortype?.toLowerCase().includes(String(trailerVal).toLowerCase()));
         if (trailer) {
           updated.trailortype = trailer.id;
@@ -568,57 +667,57 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
       // 2. Map Addresses & Locations
       const pickupAddr = getMatch(['rec_pickup_address', 'gpt_address_0', 'addresses', 'pickup_addr', 'shipper_address', 'origin_address', 'address', 'pickup_address']);
-      if (pickupAddr && isFieldEmpty(updated.pickup_address)) {
+      if (pickupAddr && !manualFields.has("pickup_address") && isFieldEmpty(updated.pickup_address)) {
         updated.pickup_address = String(pickupAddr);
         localMatchCount++;
       }
 
       const pickupLoc = getMatch(['shipper', 'ship_from', 'pickup_loc', 'origin', 'pickup_from']);
-      if (pickupLoc && isFieldEmpty(updated.pickup_from)) {
+      if (pickupLoc && !manualFields.has("pickup_from") && isFieldEmpty(updated.pickup_from)) {
         const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(pickupLoc).toLowerCase()));
         if (loc) { updated.pickup_from = loc.id; localMatchCount++; }
       }
 
       const deliveryAddr = getMatch(['rec_delivery_address', 'gpt_address_1', 'addresses', 'delivery_addr', 'consignee_address', 'destination_address', 'delivery_address']);
-      if (deliveryAddr && isFieldEmpty(updated.delivery_address)) {
+      if (deliveryAddr && !manualFields.has("delivery_address") && isFieldEmpty(updated.delivery_address)) {
         updated.delivery_address = String(deliveryAddr);
         localMatchCount++;
       }
 
       const deliveryLoc = getMatch(['consignee', 'ship_to', 'delivery_loc', 'destination', 'delivery']);
-      if (deliveryLoc && isFieldEmpty(updated.delivery)) {
+      if (deliveryLoc && !manualFields.has("delivery") && isFieldEmpty(updated.delivery)) {
         const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(deliveryLoc).toLowerCase()));
         if (loc) { updated.delivery = loc.id; localMatchCount++; }
       }
 
       // 3. Map Dates
       const pickupDate = getMatch(['rec_pickup_date', 'gpt_date_pickup', 'pickup_date', 'pickupdate']);
-      if (pickupDate && isFieldEmpty(updated.pickupdate)) {
+      if (pickupDate && !manualFields.has("pickupdate") && isFieldEmpty(updated.pickupdate)) {
         updated.pickupdate = String(pickupDate);
         localMatchCount++;
       }
 
       const deliveryDate = getMatch(['rec_delivery_date', 'gpt_date_delivery', 'delivery_date', 'deliverydate']);
-      if (deliveryDate && isFieldEmpty(updated.deliverydate)) {
+      if (deliveryDate && !manualFields.has("deliverydate") && isFieldEmpty(updated.deliverydate)) {
         updated.deliverydate = String(deliveryDate);
         localMatchCount++;
       }
 
       // Explicitly map Rate and Gross Amount (since they are not in the default formData keys)
       const rateVal = getMatch(['rate', 'cost']);
-      if (rateVal && isFieldEmpty(updated.rate)) {
+      if (rateVal && !manualFields.has("rate") && isFieldEmpty(updated.rate)) {
         updated.rate = String(rateVal).replace(/[^\d.]/g, "");
         localMatchCount++;
       }
 
       const grossVal = getMatch(['gross_amount', 'total_amount', 'grossamount']);
-      if (grossVal && isFieldEmpty(updated.gross_amount)) {
+      if (grossVal && !manualFields.has("gross_amount") && isFieldEmpty(updated.gross_amount)) {
         updated.gross_amount = String(grossVal).replace(/[^\d.]/g, "");
         localMatchCount++;
       }
 
       const currencyVal = getMatch(["currency", "currency_code", "charge_currency"]);
-      if (currencyVal) {
+      if (currencyVal && !manualFields.has("currency")) {
         const normalizedCurrency = String(currencyVal).toUpperCase();
         if (/\bUSD\b|US\s*\$|U\.S\.\s*DOLLAR/.test(normalizedCurrency)) updated.currency = "USD";
         else if (/\bCAD\b|CA\s*\$|CANADIAN\s*DOLLAR/.test(normalizedCurrency)) updated.currency = "CAD";
@@ -651,7 +750,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       // 4. Final catch-all & Logic for Arrays/Numbers
       Object.keys(updated).forEach(field => {
         const isDefault = ["No", "Regular", "LTL", "Hazmat", "13", "0"].includes(String(updated[field]));
-        if (!isFieldEmpty(updated[field]) && !isDefault && field !== 'loadno') return;
+        if (manualFields.has(field) || (!isFieldEmpty(updated[field]) && !isDefault && field !== 'loadno')) return;
 
         const val = getMatch([field]);
         if (val) {
@@ -675,22 +774,27 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
     const unitVal = getMatch(['unit']);
     const trailerVal = getMatch(['trailortype', 'trailer']);
     
-    if (commodityVal || weightVal || unitVal || trailerVal) {
+    if ((commodityVal || weightVal || unitVal || trailerVal) && !manualFields.has("shipments")) {
       setShipments(prevShipments => {
-        const updatedShipments = [...prevShipments];
-        if (commodityVal) {
+        const updatedShipments = prevShipments.map((shipment, index) => index === 0 ? {
+          ...shipment,
+          commodity: [...(shipment.commodity || [])],
+          weight: [...(shipment.weight || [])],
+          unit: [...(shipment.unit || [])],
+        } : shipment);
+        if (commodityVal && (!showManualEntry || !updatedShipments[0].commodity?.some((value) => String(value).trim()))) {
             updatedShipments[0].commodity = [String(commodityVal)];
             localMatchCount++;
         }
-        if (weightVal) {
+        if (weightVal && (!showManualEntry || !updatedShipments[0].weight?.some((value) => String(value).trim()))) {
             updatedShipments[0].weight = [String(weightVal)];
             localMatchCount++;
         }
-        if (unitVal) {
+        if (unitVal && (!showManualEntry || !updatedShipments[0].unit?.some((value) => String(value).trim()))) {
             updatedShipments[0].unit = [String(unitVal)];
             localMatchCount++;
         }
-        if (trailerVal) {
+        if (trailerVal && (!showManualEntry || !updatedShipments[0].trailortype)) {
             updatedShipments[0].trailortype = String(trailerVal);
             localMatchCount++;
         }
@@ -713,11 +817,34 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
       (candidate) => String(candidate.company.id) === pendingCompanyMatch.selectedId
     );
     if (!selected) return;
+    setManualFields((previous) => new Set(previous).add("company"));
     setFormData((prev) => ({ ...prev, company: selected.company.company_name }));
     setPendingCompanyMatch(null);
     setOcrCustomerNotice((prev) => prev.replace(/Company “[^”]+” was read but no similar company was found\. Select the correct company manually\.?\s*/g, ""));
     toast.success(`Company confirmed: ${selected.company.company_name}`);
   };
+
+  const confirmOcrBroker = () => {
+    if (!selectedOcrBrokerId) return;
+    setManualFields((previous) => new Set(previous).add("customer_id"));
+    setFormData((previous) => ({ ...previous, customer_id: String(selectedOcrBrokerId) }));
+  };
+
+  useEffect(() => {
+    if (ocrResult && !isEditingOcr) {
+      window.requestAnimationFrame?.(() => reviewHeadingRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" }));
+    }
+  }, [ocrResult, isEditingOcr]);
+
+  useEffect(() => {
+    if ((!ocrResult && !ocrFile && manualFields.size === 0 && !isOcrLoading) || savedRecordId) return undefined;
+    const warnBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [ocrResult, ocrFile, manualFields, savedRecordId, isOcrLoading]);
 
 
   const calculateAmounts = (name, value) => {
@@ -752,6 +879,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
   };
   const handleInputChange2 = (e, index, field) => {
     const { value } = e.target;
+    setManualFields((previous) => new Set(previous).add(field));
 
     setFormData((prevState) => {
       const updatedFormData = { ...prevState };
@@ -818,7 +946,12 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
   const handleonSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || (ocrResult && savedRecordId)) return;
+    if (!formData.company || !formData.customer_id || !formData.pickup_from || !formData.delivery) {
+      setSaveError("Company, broker/customer, pickup, and delivery are required before saving.");
+      toast.error("Complete the required company, customer, pickup, and delivery fields.");
+      return;
+    }
     setSaveError("");
     setIsSubmitting(true);
 
@@ -851,13 +984,14 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
         form
       );
       setmessage(response.data.message);
+      setSavedRecordId(response.data.id);
+      setpopup(false);
       toast.success("Successfully created", {
         position: "top-right",
         autoClose: 3000,
         theme: "colored",
       });
-
-      navigate(-1);
+      if (!ocrResult) navigate(-1);
     } catch (error) {
       setSaveError("The trip could not be saved. Your entries are preserved. Check your connection before retrying.");
       toast.error("Trip creation failed");
@@ -868,7 +1002,16 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
 
   const handleSaveAndAssign = async (e) => {
     e.preventDefault();
+    if (savedRecordId) {
+      navigate(`/trips/assign/${savedRecordId}`);
+      return;
+    }
     if (isSubmitting) return;
+    if (!formData.company || !formData.customer_id || !formData.pickup_from || !formData.delivery) {
+      setSaveError("Company, broker/customer, pickup, and delivery are required before saving.");
+      toast.error("Complete the required company, customer, pickup, and delivery fields.");
+      return;
+    }
     setSaveError("");
     setIsSubmitting(true);
 
@@ -935,6 +1078,9 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
   const selectedBrokerRecord = (data.customers || []).find(
     (customer) => String(customer.id) === String(formData.customer_id)
   );
+  const selectedTrailerRecord = (data.trailors || []).find(
+    (trailer) => String(trailer.id) === String(formData.trailortype)
+  );
   const companyDetails = (company) => Object.entries(company || {}).filter(
     ([key, value]) => !["id", "company_name"].includes(key.toLowerCase()) &&
       value !== null && value !== undefined && String(value).trim() !== "" &&
@@ -942,6 +1088,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
   );
   const brokerDetails = (broker) => [
     ["Legal name", broker?.legal],
+    ["Contact", broker?.contact || broker?.contact_name || broker?.contactperson || broker?.contact_person],
     ["Address", broker?.address1],
     ["Address line 2", broker?.address2],
     ["Phone", broker?.phone],
@@ -951,44 +1098,96 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
     ["Website", broker?.website],
     ["Pickup email", broker?.pickupmail],
     ["Delivery email", broker?.deliverymail],
+    ["MC number", broker?.mc_number || broker?.mc || broker?.mcnumber],
   ].filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== "");
+  const tripSourceFields = {
+    "Trip reference": ["customerorderno"], "Load ID": ["loadno"], "Company / carrier": ["company"],
+    "Shipment type": ["shipmenttype"], "Load type": ["loadtype"], Salesperson: ["salesman"],
+    "Pickup date": ["pickupdate"], "Delivery date": ["deliverydate"],
+    Rate: ["rate"], Currency: ["currency"], "Gross amount": ["gross_amount"],
+    HST: ["hst", "hstamount"], CST: ["cst", "cstamount"], "Net amount": ["net_amount"],
+    "Pickup instructions": ["pickup_desc"], "Delivery instructions": ["delivery_desc"],
+  };
+  const hasExtractedCurrency = flattenOcrFields(
+    ocrResult?.gpt_response?.structured_json || ocrResult?.data || {}
+  ).some((field) => field.label.toLowerCase().endsWith("currency") && String(field.value).trim());
+  const tripReviewGroups = [
+    { title: "Trip Overview", fields: [
+      { label: "Trip reference", value: formData.customerorderno || data.triprno },
+      { label: "Load ID", value: formData.loadno },
+      { label: "Company / carrier", value: formData.company },
+      { label: "Shipment type", value: formData.shipmenttype },
+      { label: "Load type", value: formData.loadtype },
+      { label: "Salesperson", value: formData.salesman },
+      { label: "Pickup date", value: formData.pickupdate },
+      { label: "Delivery date", value: formData.deliverydate },
+    ] },
+    { title: "Cargo & Equipment", fields: [
+      { label: "Commodity", value: shipments.flatMap((shipment) => shipment.commodity || []) },
+      { label: "Weight", value: shipments.flatMap((shipment) => shipment.weight || []) },
+      { label: "Weight unit", value: shipments.flatMap((shipment) => shipment.unit || []) },
+      { label: "Quantity / packages", value: shipments.flatMap((shipment) => shipment.package || []) },
+      { label: "Equipment type", value: shipments.map((shipment) => shipment.trailortype || formData.trailortype) },
+      { label: "Hazmat", value: shipments.map((shipment) => shipment.hazmat).filter(Boolean) },
+      { label: "Manifest", value: shipments.map((shipment) => shipment.manifest).filter(Boolean) },
+    ] },
+    { title: "Rates & Charges", fields: [
+      { label: "Rate", value: formData.rate },
+      { label: "Currency", value: manualFields.has("currency") || hasExtractedCurrency ? formData.currency : "" },
+      { label: "Gross amount", value: formData.gross_amount },
+      { label: "HST", value: formData.hstamount },
+      { label: "CST", value: formData.cstamount },
+      { label: "Net amount", value: formData.net_amount },
+    ] },
+    { title: "Documents, Notes & Special Instructions", fields: [
+      { label: "Pickup instructions", value: formData.pickup_desc },
+      { label: "Delivery instructions", value: formData.delivery_desc },
+      { label: "Additional charge", value: shipments.map((shipment) => shipment.addlcharge).filter(Boolean) },
+      { label: "Hazmat / handling notes", value: formData.frieghton },
+    ] },
+    { title: "Carrier Trip Assignment", fields: [
+      { label: "Carrier / company", value: formData.company },
+      { label: "Driver", value: "" },
+      { label: "Truck", value: "" },
+      { label: "Trailer assignment", value: "" },
+      { label: "Equipment type", value: formData.trailortype },
+      { label: "Dispatch status", value: "" },
+    ] },
+  ].map((group) => ({
+    ...group,
+    fields: group.fields.map((field) => ({
+      ...field,
+      source: group.title === "Carrier Trip Assignment"
+        ? field.label === "Carrier / company"
+          ? (selectedCompanyRecord ? "IFM Record" : "Unverified")
+          : field.label === "Equipment type"
+            ? (selectedTrailerRecord ? "IFM Record" : "Unverified")
+            : "Manual"
+        : (tripSourceFields[field.label] || []).some((key) => manualFields.has(key)) ||
+          (group.title === "Cargo & Equipment" && manualFields.has("shipments"))
+          ? "Manual" : ocrResult ? "Unverified" : "Manual",
+    })),
+  }));
+  const tripReviewStops = stops.map((stop) => ({
+    type: stop.stoptype,
+    name: stop.name,
+    address: stop.address,
+    location: stop.location,
+    date: stop.date || stop.stop_date,
+    time: stop.time || stop.stop_time,
+    timezone: stop.timezone,
+    appointmentWindow: stop.appointmentWindow,
+    contactName: stop.contactName,
+    contactPhone: stop.contactPhone,
+    reference: stop.reference || stop.refno,
+    instructions: stop.instructions || stop.notes,
+    source: manualFields.has("stops") ? "Manual" : "Unverified",
+    needsReview: !stop.address || stop.stoptype === "Type not identified",
+  }));
 
   return (
-    <div className="content-wrapper trip-create-page iso-ui iso-form-workspace" data-iso-theme="light">
+    <div className="content-wrapper trip-create-page iso-ui iso-form-workspace iso-entry-page" data-iso-theme="light">
       <section className="content-header">
-        <div className="form-group">
-          <label htmlFor="product_image">Upload Document (OCR Auto-fill)</label>
-          <div className="input-group">
-            <input
-              type="file"
-              id="product_image"
-              aria-describedby="trip-ocr-help"
-              name="product_image"
-              accept=".png,.jpg,.jpeg,.pdf"
-              className="form-control"
-              onChange={(e) => setOcrFile(e.target.files[0])}
-            />
-            <span className="input-group-btn">
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={handleOcrUpload}
-                disabled={isOcrLoading}
-              >
-                {isOcrLoading ? (
-                  <>
-                    <i className="fa fa-spinner fa-spin" style={{ marginRight: "5px" }}></i>
-                    Processing...
-                  </>
-                ) : (
-                  "Scan & Auto-fill"
-                )}
-              </button>
-            </span>
-          </div>
-          <p className="help-block" id="trip-ocr-help">Upload a PDF or image, then review customer matches, stop sequence and pricing before saving.</p>
-        </div>
-
         <h1>Create trip <small>Enter shipment and route details</small></h1>
         <ol className="breadcrumb">
           <li>
@@ -1000,16 +1199,62 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
         </ol>
       </section>
       <section className="content">
-        <nav className="trip-form-navigation" aria-label="Trip form sections">
-          <span className="trip-form-navigation-label">Jump to</span>
-          <a href="#trip-customer-details">Customer</a>
-          <a href="#trip-route-details">Pickup &amp; delivery</a>
-          <a href="#trip-shipment-details">Cargo</a>
-          <a href="#trip-revenue-details">Pricing</a>
-          <button type="button" className="btn btn-primary btn-sm" onClick={() => setpopup(true)}>Review &amp; save</button>
-        </nav>
+        <OcrDocumentIntake
+          id="trip-ocr-document"
+          file={ocrFile}
+          scanning={isOcrLoading}
+          scanError={ocrScanError}
+          onFileSelected={handleOcrFileSelected}
+          onRemoveFile={handleOcrFileRemoved}
+          onScan={handleOcrUpload}
+          onEnterManually={() => { setShowManualEntry(true); setIsEditingOcr(false); }}
+        />
+        {ocrResult && !isEditingOcr && (
+          <OcrExtractionReview
+            id="trip-review"
+            title="Trip Review"
+            sourceFile={ocrFile}
+            groups={tripReviewGroups}
+            stops={tripReviewStops}
+            extraFields={flattenOcrFields(ocrResult?.gpt_response?.structured_json || ocrResult?.data || {})}
+            broker={{
+              title: "Broker Information",
+              status: selectedBrokerRecord ? "Matched" : ocrBrokerCandidates.length > 1 ? "Multiple Matches / Confirm" : ocrBrokerCandidates.length === 1 ? "Match Requires Confirmation" : "No Match",
+              ocrFields: Object.entries(ocrBrokerInfo || {}).map(([key, value]) => ({
+                label: key === "mcNumber" ? "MC Number" : key.replace(/([A-Z])/g, " $1").replace(/^./, (letter) => letter.toUpperCase()),
+                value,
+                source: "PDF Extracted",
+              })),
+              candidates: ocrBrokerCandidates.map(({ id, name }) => ({ id, name })),
+              selectedId: selectedOcrBrokerId,
+              onSelect: setSelectedOcrBrokerId,
+              onConfirm: confirmOcrBroker,
+              record: selectedBrokerRecord,
+              recordFields: brokerDetails(selectedBrokerRecord).map(([label, value]) => ({ label, value, source: "IFM Record" })),
+              notice: selectedBrokerRecord
+                ? "The selected IFM broker/customer profile is shown separately. OCR will not modify this record."
+                : "Select and confirm an existing IFM record when appropriate. No broker profile is created or changed by scanning.",
+            }}
+            persistenceNotice="The current create API stores stop type and location/address, but does not persist OCR stop appointments, contacts, references, time zones, or instructions."
+            savedRecordId={savedRecordId || undefined}
+            savedLink={savedRecordId ? `/trips/assign/${savedRecordId}` : undefined}
+            savedLinkLabel="Assign trip"
+            onEdit={() => { setIsEditingOcr(true); setShowManualEntry(true); }}
+            onReviewAndSave={() => setpopup(true)}
+            isSaving={isSubmitting}
+            headingRef={reviewHeadingRef}
+          />
+        )}
+        {isEditingOcr && (
+          <div className="ocr-review__actionbar">
+            <button type="button" className="btn btn-primary" onClick={() => { setIsEditingOcr(false); setShowManualEntry(false); }}>
+              Apply Changes / Back to Review
+            </button>
+          </div>
+        )}
+        {showManualEntry && <EntryFormGuide kind="trip" values={formData} onReview={() => setpopup(true)} />}
         {/* Small boxes (Stat box) */}
-        <div className="row">
+        <div className="row" hidden={!showManualEntry} style={!showManualEntry ? { display: "none" } : undefined}>
           <div className="col-md-12 col-xs-12">
             <div id="messages" />
             <div className="box">
@@ -2678,7 +2923,7 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
           {/* /.box-body */}
         </div>
         {/* /.box */}
-        <div className="text-center">
+        <div className="text-center entry-footer-actions" hidden={!showManualEntry} style={!showManualEntry ? { display: "none" } : undefined}>
           <button
             type="button"
             className="btn btn-primary"
@@ -2686,7 +2931,10 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
           >
             Review &amp; Save Trip
           </button>
-          <button type="button" onClick={() => navigate(-1)} className="btn btn-outline-secondary">
+          <button type="button" onClick={() => {
+            if ((ocrResult || ocrFile || isOcrLoading || manualFields.size > 0) && !savedRecordId && !window.confirm("Leave this trip? Unsaved information will be lost.")) return;
+            navigate(-1);
+          }} className="btn btn-outline-secondary">
             Back
           </button>
         </div>
@@ -2731,11 +2979,12 @@ Return ONLY valid JSON and do not include markdown formatting or extra text.`;
                 />
               </div>
               <div className="modal-footer">
+                {saveError && <Alert tone="danger" title="Trip save failed">{saveError}</Alert>}
                 <button
                   type="button"
                   className="btn btn-primary"
                   onClick={handleonSubmit}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || Boolean(ocrResult && savedRecordId)}
                 >
                   {isSubmitting ? "Saving..." : "Save Trip"}
                 </button>

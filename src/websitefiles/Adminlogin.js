@@ -66,7 +66,7 @@ const Adminlogin = () => {
   }, []);
   const [Email, setEmail] = useState('');
   const [Password, setPassword] = useState('');
-  const [, seterror] = useState('');
+  const [error, seterror] = useState('');
 
   let navigate = useNavigate();
   const handleonSubmit = (e) => {
@@ -100,7 +100,7 @@ const Adminlogin = () => {
           seterror(loginres.message);
         }
       })
-      .catch(err => seterror(err.message));
+      .catch(err => seterror(err.response?.data?.message || err.message));
   };
 
   return (
@@ -108,6 +108,7 @@ const Adminlogin = () => {
       <h1 className="login-title">Login</h1>
       <div className="login-card text-center">
         <h3>Sign in to start your session</h3>
+        {error && <p role="alert" className="text-danger">{error}</p>}
         <form onSubmit={handleonSubmit}>
           <input type="email" placeholder="Email" required="" value={Email}
             onChange={(e) => setEmail(e.target.value)} />

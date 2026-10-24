@@ -24,11 +24,14 @@ export default function ManageRoutes() {
 	const drafts = location.state?.drafts || [];
 	const [query, setQuery] = useState('');
 	const [statusFilter, setStatusFilter] = useState('ALL');
+	const [sortOrder, setSortOrder] = useState('newest');
 	const rows = useMemo(() => drafts.flatMap(rowsFromDraft), [drafts]);
 	const filteredRows = rows.filter((route) => {
-		const text = `${route.routeNumber} ${route.vehicle?.id || ''} ${route.vehicle?.label || ''} ${route.driver?.name || ''}`.toLowerCase();
-		return text.includes(query.toLowerCase()) && (statusFilter === 'ALL' || route.status === statusFilter);
+		const text = `${route.routeNumber} ${route.draft.routeName || ''} ${route.vehicle?.id || ''} ${route.vehicle?.label || ''} ${route.driver?.name || ''}`.toLowerCase();
+		return text.includes(query.trim().toLowerCase()) && (statusFilter === 'ALL' || route.status === statusFilter);
 	});
+	if (sortOrder === 'name') filteredRows.sort((a, b) => (a.draft.routeName || '').localeCompare(b.draft.routeName || ''));
+	else filteredRows.reverse();
 	const draftStopCount = drafts.reduce((total, draft) => total + (draft.stops?.length || 0), 0);
 	const unassignedCount = drafts.reduce((total, draft) => total + (draft.unassignedStops?.length || 0), 0);
 
@@ -50,20 +53,20 @@ export default function ManageRoutes() {
 				<div className="route-filter-row">
 					<label className="route-field"><span>Search</span><input className="form-control" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Route, truck, or driver" /></label>
 					<label className="route-field"><span>Status</span><select className="form-control" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="ALL">All statuses</option><option value="DRAFT_NOT_OPTIMIZED">Draft</option><option value="DRAFT">Draft route</option></select></label>
+					<label className="route-field"><span>Sort by</span><select className="form-control" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}><option value="newest">Newest added</option><option value="name">Route name A–Z</option></select></label>
+					{(query || statusFilter !== 'ALL') && <button type="button" className="btn btn-outline-secondary" onClick={() => { setQuery(''); setStatusFilter('ALL'); }}>Clear filters</button>}
 				</div>
 				{filteredRows.length === 0 ? (
-					<div className="route-empty-state"><h3>No route plans in this session</h3><p>Create a local planning draft to review one route and its ordered stops. Nothing will be written to IFM.</p><button type="button" className="btn btn-outline-primary" onClick={() => navigate('/routes/create', { state: { drafts } })}>Create route</button></div>
+					<div className="route-empty-state"><i className="fa fa-map-signs" aria-hidden="true" /><h3>{rows.length ? 'No matching route plans' : 'Plan your first route'}</h3><p>{rows.length ? 'Try a different route name, vehicle, driver, or status.' : 'Name your route, add stops manually or from Excel, then review your draft.'}</p>{rows.length ? <button type="button" className="btn btn-outline-primary" onClick={() => { setQuery(''); setStatusFilter('ALL'); }}>Show all routes</button> : <button type="button" className="btn btn-primary" onClick={() => navigate('/routes/create', { state: { drafts } })}>Create route</button>}</div>
 				) : (
 					<div className="table-responsive"><table className="table table-hover route-table">
-						<thead><tr><th>Route</th><th>Vehicle profile</th><th>Local driver label</th><th>Stops</th><th>Stop progress</th><th>Distance</th><th>ETA</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead>
+						<thead><tr><th scope="col">Route plan</th><th scope="col">Vehicle / driver</th><th scope="col">Stops</th><th scope="col">Stop progress</th><th scope="col">Location</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
 						<tbody>{filteredRows.map((route) => (
 							<tr key={route.id}>
 								<td><strong>{route.routeNumber}</strong><small>{route.draft.routeName}</small></td>
-								<td>{route.vehicle?.id || 'Unassigned'}<small>{route.vehicle?.label || 'Local profile only'}</small></td>
-								<td>{route.driver?.name || 'Not selected'}</td>
+								<td>{route.vehicle?.id || 'No vehicle selected'}<small>{route.driver?.name || 'No driver selected'}</small></td>
 								<td>{route.stops.length}<small>{route.draft.unassignedStops?.length || 0} stops unassigned</small></td>
 								<td><RouteProgress stops={route.stops} /></td>
-								<td>Unavailable</td><td>Unavailable</td>
 								<td><span className="route-status route-status-unavailable">LOCATION UNAVAILABLE</span></td>
 								<td><span className="route-status route-status-draft">{route.status.replaceAll('_', ' ')}</span></td>
 								<td className="route-actions">

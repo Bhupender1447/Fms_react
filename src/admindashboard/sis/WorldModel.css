@@ -1,6 +1,9 @@
 
 .sis-world-page { padding: 28px; margin-left: 230px; min-height: calc(100vh - 100px); }
 .sis-world-notice { margin-bottom: 18px; }
+.sis-world-account { display: flex; align-items: flex-end; gap: 24px; margin-bottom: 18px; }
+.sis-world-account .iso-field { min-width: 240px; }
+.sis-world-account p { margin: 0; color: var(--iso-muted); font-size: 13px; max-width: 500px; }
 .sis-world-quality { padding: 20px; }
 .sis-world-quality h2 { margin-top: 0; font-size: 20px; }
 .sis-world-quality p { color: var(--iso-muted); }
@@ -40,5 +43,5 @@
 .sis-world-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (min-width: 768px) { .sidebar-collapse .sis-world-page { margin-left: 50px; } }
 @media (max-width: 1100px) { .sis-world-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }.sis-world-toolbar { flex-direction: column; align-items: stretch; } }
-@media (max-width: 767px) { .sis-world-page { margin-left: 0; padding: 20px 14px; } }
+@media (max-width: 767px) { .sis-world-page { margin-left: 0; padding: 20px 14px; } .sis-world-account { flex-direction: column; align-items: stretch; } .sis-world-account .iso-field { min-width: 0; } }
 @media (max-width: 580px) { .sis-world-summary { grid-template-columns: 1fr; }.sis-world-filters { flex-direction: column; align-items: stretch; }.sis-world-pagination { flex-direction: column; align-items: stretch; }.sis-world-pagination > div { justify-content: space-between; } }

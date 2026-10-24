@@ -2,12 +2,15 @@
 import axios from "axios";
 import { Alert } from "../../design-system/components";
 import "../../design-system/forms.css";
-import { useEffect, useState } from "react";
+import EntryFormGuide from "../EntryFormGuide";
+import { useEffect, useRef, useState } from "react";
 import Distancepopup from "../Distancepopup";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { BASE_URL } from "../../config";
 import AddressAutocomplete from "../../components/Map/AddressAutocomplete";
+import OcrDocumentIntake from "../../components/OcrDocumentIntake";
+import OcrExtractionReview, { flattenOcrFields } from "../../components/OcrExtractionReview";
 
 const Createorder = () => {
   const navigate = useNavigate();
@@ -67,6 +70,16 @@ const Createorder = () => {
   // OCR Logic
   const [ocrFile, setOcrFile] = useState(null);
   const [isOcrLoading, setIsOcrLoading] = useState(false);
+  const [ocrScanError, setOcrScanError] = useState("");
+  const [ocrResult, setOcrResult] = useState(null);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [isEditingOcr, setIsEditingOcr] = useState(false);
+  const [ocrCustomerName, setOcrCustomerName] = useState("");
+  const [ocrCustomerCandidates, setOcrCustomerCandidates] = useState([]);
+  const [selectedOcrCustomerId, setSelectedOcrCustomerId] = useState("");
+  const [manualFields, setManualFields] = useState(() => new Set());
+  const ocrBaselineRef = useRef(null);
+  const reviewHeadingRef = useRef(null);
 
   const flattenObject = (obj, prefix = "", res = {}) => {
     for (let key in obj) {
@@ -82,22 +95,95 @@ const Createorder = () => {
     return res;
   };
 
-  const handleOcrFileChange = (e) => {
-    setOcrFile(e.target.files[0]);
+  const handleOcrFileChange = (file) => {
+    if ((manualFields.size > 0 || isEditingOcr) && !window.confirm("Replace the source document? Your manual edits will be retained where possible.")) {
+      return false;
+    }
+    if (ocrResult && ocrBaselineRef.current) {
+      const baseline = ocrBaselineRef.current;
+      setFormData((previous) => {
+        const restored = { ...baseline.formData };
+        manualFields.forEach((field) => { restored[field] = previous[field]; });
+        return restored;
+      });
+      setStops(manualFields.has("stops") ? stops : baseline.stops);
+      ocrBaselineRef.current = null;
+    }
+    setOcrFile(file);
+    setOcrResult(null);
+    setOcrScanError("");
+    setOcrCustomerName("");
+    setOcrCustomerCandidates([]);
+    setSelectedOcrCustomerId("");
+    return true;
+  };
+
+  const handleOcrFileRemoved = () => {
+    if (manualFields.size > 0 && !window.confirm("Remove the source document? Your manual edits will be retained.")) return;
+    if (ocrResult && ocrBaselineRef.current) {
+      const baseline = ocrBaselineRef.current;
+      setFormData((previous) => {
+        const restored = { ...baseline.formData };
+        manualFields.forEach((field) => { restored[field] = previous[field]; });
+        return restored;
+      });
+      setStops(manualFields.has("stops") ? stops : baseline.stops);
+      ocrBaselineRef.current = null;
+    }
+    setOcrFile(null);
+    setOcrResult(null);
+    setOcrScanError("");
+    setOcrCustomerName("");
+    setOcrCustomerCandidates([]);
+    setSelectedOcrCustomerId("");
+  };
+
+  const normalizeOcrStops = (response) => {
+    const structured = response?.gpt_response?.structured_json || {};
+    const raw = response?.data || {};
+    const extracted = Array.isArray(structured.stops) ? structured.stops : Array.isArray(raw.stops) ? raw.stops : [];
+    const text = (value) => value === null || value === undefined ? "" : String(value).trim();
+    if (extracted.length) {
+      return extracted.filter((stop) => stop !== null && stop !== undefined).map((stop) => {
+        if (typeof stop === "string") {
+          return { stoptype: "Type not identified", name: "", location: stop.trim(), address: stop.trim(), needsReview: true };
+        }
+        if (typeof stop !== "object") return null;
+        const rawType = text(stop.stoptype || stop.stop_type || stop.type);
+        return {
+          stoptype: /pickup|origin|shipper|load/i.test(rawType) ? "Pickup" : /delivery|destination|consignee/i.test(rawType) ? "Delivery" : "Type not identified",
+          name: text(stop.name || stop.location_name || stop.company || stop.label),
+          location: text(stop.address || stop.full_address || stop.location || stop.address1),
+          address: text(stop.address || stop.full_address || stop.location || stop.address1),
+          date: text(stop.date || stop.stop_date || stop.arrival_date),
+          time: text(stop.time || stop.stop_time || stop.arrival_time),
+          timezone: text(stop.timezone || stop.time_zone),
+          appointmentWindow: text(stop.appointment_window || stop.appointmentWindow),
+          contactName: text(stop.contact_name || stop.contact),
+          contactPhone: text(stop.contact_phone || stop.phone),
+          reference: text(stop.reference || stop.reference_number || stop.refno),
+          instructions: text(stop.instructions || stop.notes),
+          needsReview: !rawType,
+        };
+      }).filter(Boolean);
+    }
+    return [];
   };
 
   const handleOcrUpload = async () => {
     if (!ocrFile) {
-      toast.error("Please select a file to upload");
+      setOcrScanError("Choose a document before scanning.");
       return;
     }
     
+    setOcrScanError("");
     setIsOcrLoading(true);
+    if (!ocrBaselineRef.current) ocrBaselineRef.current = { formData, stops };
     
     const ocrData = new FormData();
     ocrData.append("file", ocrFile);
     ocrData.append("module_type", "order");
-    ocrData.append("prompt", `Extract the order information into a strict JSON format exactly matching these keys: {"loadno":"Load number","salesman":"Salesman/driver name","customer_id":"Customer name","pickup_from":"Pickup company","pickup_address":"Pickup address","delivery":"Delivery company","delivery_address":"Delivery address","pickupdate":"Pickup date (YYYY-MM-DD)","deliverydate":"Delivery date (YYYY-MM-DD)","rate":"Rate (number only)","gross_amount":"Gross amount (number only)","trailortype":"Trailer type","commodity":"Commodity","weight":"Weight (number only)","unit":"Weight unit (LBS/KGS)"}. Return ONLY JSON.`);
+    ocrData.append("prompt", `Extract only information visible on the document into strict JSON. Use empty strings or empty arrays for missing values; do not infer amounts, dates, addresses, or identities. Include: company, loadno, salesman, customer_id, pickup_from, pickup_address, delivery, delivery_address, pickupdate (YYYY-MM-DD), pickuptime, deliverydate (YYYY-MM-DD), deliverytime, rate, currency, gross_amount, accessorials, payment_terms, trailortype, commodity, weight, unit, package, seal_numbers, temprature, pickup_refno, delivery_refno, pickup_desc, delivery_desc, and stops. stops must be an array in exact document sequence; each stop has stoptype, name, address, date, time, timezone, appointment_window, contact_name, contact_phone, reference, and instructions. Return ONLY valid JSON.`);
 
     try {
       const response = await axios.post(
@@ -107,6 +193,43 @@ const Createorder = () => {
       );
 
       if (response.data && response.data.success) {
+        setOcrResult(response.data);
+        setShowManualEntry(false);
+        setIsEditingOcr(false);
+        const extractedStops = normalizeOcrStops(response.data);
+        if (extractedStops.length && !manualFields.has("stops")) setStops(extractedStops);
+        else if (!manualFields.has("stops")) {
+          const extracted = response.data.gpt_response?.structured_json || response.data.data || {};
+          const getExtracted = (key, fallback = "") => {
+            const value = extracted[key];
+            return value === null || value === undefined || value === "" ? fallback || formData[key] || "" : value;
+          };
+          const pickupLocation = (data.locations || []).find((location) => String(location.id) === String(formData.pickup_from));
+          const deliveryLocation = (data.locations || []).find((location) => String(location.id) === String(formData.delivery));
+          const fallbackStops = [
+            (getExtracted("pickup_address", formData.pickup_address) || getExtracted("pickup_from") || pickupLocation) && {
+              stoptype: "Pickup",
+              name: getExtracted("pickup_from", pickupLocation?.name),
+              location: getExtracted("pickup_address", pickupLocation?.address1),
+              address: getExtracted("pickup_address", pickupLocation?.address1),
+              date: getExtracted("pickupdate", ""),
+              time: getExtracted("pickuptime", ""),
+              reference: getExtracted("pickup_refno", ""),
+              instructions: getExtracted("pickup_desc", ""),
+            },
+            (getExtracted("delivery_address", formData.delivery_address) || getExtracted("delivery") || deliveryLocation) && {
+              stoptype: "Delivery",
+              name: getExtracted("delivery", deliveryLocation?.name),
+              location: getExtracted("delivery_address", deliveryLocation?.address1),
+              address: getExtracted("delivery_address", deliveryLocation?.address1),
+              date: getExtracted("deliverydate", ""),
+              time: getExtracted("deliverytime", ""),
+              reference: getExtracted("delivery_refno", ""),
+              instructions: getExtracted("delivery_desc", ""),
+            },
+          ].filter(Boolean);
+          setStops(fallbackStops);
+        }
         let matchCount = 0;
         const gptData = response.data.gpt_response?.structured_json || {};
         const ocrDataRaw = response.data.data || {};
@@ -130,6 +253,26 @@ const Createorder = () => {
           combinedSource[`gpt_${k}`] = String(v);
         });
 
+        const extractedCustomer = gptData.customer_id || gptData.customer || gptData.client ||
+          ocrDataRaw.customer_id || ocrDataRaw.customer || ocrDataRaw.client || "";
+        if (extractedCustomer) {
+          const normalize = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+          const normalizedValue = normalize(extractedCustomer);
+          const candidates = (data.customers || []).filter((customer) => {
+            const name = customer.name || customer.legal || customer.company_name || customer.customer_name;
+            const normalizedName = normalize(name);
+            return normalizedValue && normalizedName &&
+              (normalizedName.includes(normalizedValue) || normalizedValue.includes(normalizedName));
+          });
+          setOcrCustomerName(String(extractedCustomer).trim());
+          setOcrCustomerCandidates(candidates);
+          setSelectedOcrCustomerId(candidates.length === 1 ? String(candidates[0].id) : "");
+        } else {
+          setOcrCustomerName("");
+          setOcrCustomerCandidates([]);
+          setSelectedOcrCustomerId("");
+        }
+
         setFormData((prev) => {
           const updated = { ...prev };
           const sourceKeys = Object.keys(combinedSource);
@@ -151,28 +294,22 @@ const Createorder = () => {
             return key ? combinedSource[key] : null;
           };
 
-          // 1. Map Explicit IDs (Customer, Pickup/Delivery Locations)
-          const customerVal = getMatch(['customer_id', 'customer', 'client']);
-          if (customerVal && isFieldEmpty(updated.customer_id)) {
-            const cust = data.customers?.find(c => c.name?.toLowerCase().includes(String(customerVal).toLowerCase()));
-            if (cust) { updated.customer_id = cust.id; matchCount++; }
-          }
-
+          // 1. Map existing pickup/delivery locations; customer matches require confirmation.
           const pickupLoc = getMatch(['pickup_from', 'shipper', 'origin']);
-          if (pickupLoc && isFieldEmpty(updated.pickup_from)) {
+          if (pickupLoc && !manualFields.has("pickup_from") && isFieldEmpty(updated.pickup_from)) {
             const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(pickupLoc).toLowerCase()));
             if (loc) { updated.pickup_from = loc.id; matchCount++; }
           }
 
           const deliveryLoc = getMatch(['delivery', 'consignee', 'destination']);
-          if (deliveryLoc && isFieldEmpty(updated.delivery)) {
+          if (deliveryLoc && !manualFields.has("delivery") && isFieldEmpty(updated.delivery)) {
             const loc = data.locations?.find(l => l.name?.toLowerCase().includes(String(deliveryLoc).toLowerCase()));
             if (loc) { updated.delivery = loc.id; matchCount++; }
           }
 
           // Format specific units
           const unitVal = getMatch(['unit']);
-          if (unitVal && isFieldEmpty(updated.unit)) {
+          if (unitVal && !manualFields.has("unit") && isFieldEmpty(updated.unit)) {
             let uStr = String(unitVal).toUpperCase();
             if (uStr.includes("LBS") || uStr.includes("POUND")) uStr = "Pounds";
             else if (uStr.includes("KGS") || uStr.includes("KILOS")) uStr = "KGs";
@@ -184,7 +321,8 @@ const Createorder = () => {
           // 4. Final catch-all & Logic for Arrays/Numbers
           Object.keys(updated).forEach(field => {
             const isDefault = ["No", "Regular", "LTL", "Hazmat", "13", "0"].includes(String(updated[field]));
-            if (!isFieldEmpty(updated[field]) && !isDefault && field !== 'loadno') return;
+            if (manualFields.has(field) || (!isFieldEmpty(updated[field]) && !isDefault && field !== 'loadno')) return;
+            if (field === "customer_id") return;
 
             const val = getMatch([field]);
             if (val) {
@@ -209,11 +347,11 @@ const Createorder = () => {
         });
 
       } else {
-        toast.error("OCR failed or no data found");
+        setOcrScanError("The document could not be read. Retry the scan or enter the details manually.");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Error processing OCR");
+      setOcrScanError("The document could not be scanned. Check your connection and retry, or enter the details manually.");
     } finally {
       setIsOcrLoading(false);
     }
@@ -222,6 +360,7 @@ const Createorder = () => {
 
   const [stops, setStops] = useState([]);
   const addStop = () => {
+    setManualFields((previous) => new Set(previous).add("stops"));
     const newStop = {
       stoptype: "Delivery", // Default value
       location: "", // Default value
@@ -230,12 +369,14 @@ const Createorder = () => {
   };
 
   const handleStopChange = (index, field, value) => {
+    setManualFields((previous) => new Set(previous).add("stops"));
     const updatedStops = [...stops];
-    updatedStops[index][field] = value;
+    updatedStops[index] = { ...updatedStops[index], [field]: value };
     setStops(updatedStops);
   };
 
   const handleRemoveRow = (index) => {
+    setManualFields((previous) => new Set(previous).add("commodity").add("weight").add("unit").add("package"));
     setFormData((prev) => {
       const newData = { ...prev };
       newData.commodity = prev.commodity.filter((_, i) => i !== index);
@@ -247,6 +388,7 @@ const Createorder = () => {
   };
 
   const handleAddRow = () => {
+    setManualFields((previous) => new Set(previous).add("commodity").add("weight").add("unit").add("package"));
     setFormData((prev) => ({
       ...prev,
       commodity: [...prev.commodity, ""],
@@ -259,6 +401,7 @@ const Createorder = () => {
   const [popup, setpopup] = useState(false);
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    setManualFields((previous) => new Set(previous).add(name));
 
     if (name === "delivery") {
       // Find the selected location based on the value (id)
@@ -324,14 +467,11 @@ const Createorder = () => {
   };
   const handleInputChange2 = (e, index, field) => {
     const { value } = e.target;
+    setManualFields((previous) => new Set(previous).add(field));
 
     setFormData((prevState) => {
       const updatedFormData = { ...prevState };
-
-      // Ensure the array exists in the state
-      if (!updatedFormData[field]) {
-        updatedFormData[field] = [];
-      }
+      updatedFormData[field] = [...(prevState[field] || [])];
 
       // Update the value at the specified index
       updatedFormData[field][index] = value;
@@ -352,12 +492,35 @@ const Createorder = () => {
     // eslint-disable-next-line
   }, []);
 
+  useEffect(() => {
+    if (ocrResult && !isEditingOcr) {
+      window.requestAnimationFrame?.(() => reviewHeadingRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" }));
+    }
+  }, [ocrResult, isEditingOcr]);
+
+  useEffect(() => {
+    if ((!ocrResult && !ocrFile && manualFields.size === 0 && !isOcrLoading) || getdataid) return undefined;
+    const warnBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [ocrResult, ocrFile, manualFields, getdataid, isOcrLoading]);
+
   let handleonSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || (ocrResult && getdataid)) return;
 
     if (!formData.company || !formData.customer_id || !formData.pickup_from || !formData.delivery) {
-      toast.error("Please fill in required fields: Company, Customer, Pickup, and Delivery.");
+      const message = "Please fill in required fields: Company, Customer, Pickup, and Delivery.";
+      setSaveError(message);
+      toast.error(message);
+      return;
+    }
+    if (ocrCustomerName && !customerRecord) {
+      setSaveError("Confirm the OCR customer against an existing IFM record or choose the correct customer manually before saving.");
+      toast.error("Confirm the customer record before saving.");
       return;
     }
 
@@ -417,10 +580,9 @@ const Createorder = () => {
         form
       );
       setmessage(response.data.message);
-      setmessage(response.data.message);
-      setFormData(initialState);
 
       setgetdataid(response.data.id);
+      setpopup(false);
       toast.success("Successfully created", {
         position: "top-right",
         autoClose: 3000,
@@ -431,8 +593,11 @@ const Createorder = () => {
         progress: undefined,
         theme: "colored",
       });
+      if (!ocrResult) {
+        setFormData(initialState);
+        navigate(-1);
+      }
 
-      navigate(-1);
     } catch (error) {
       setSaveError("The order could not be saved. Your entries are preserved. Check your connection before retrying.");
       toast.error("The order could not be saved. Check your connection and try again.", {
@@ -453,9 +618,84 @@ const Createorder = () => {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
 
+  const customerRecord = (data.customers || []).find((customer) => String(customer.id) === String(formData.customer_id));
+  const customerDisplayName = (customer) => customer?.name || customer?.legal || customer?.company_name || customer?.customer_name || "";
+  const orderSourceFields = {
+    "Order reference": ["customerorderno"], "Load ID": ["loadno"], Company: ["company"],
+    "Shipment type": ["shipmenttype"], "Load type": ["loadtype"], Service: ["trailortype"],
+    Salesperson: ["salesman"], Commodity: ["commodity"], Weight: ["weight"],
+    "Weight unit": ["unit"], "Quantity / packages": ["package"], "Equipment type": ["trailortype"],
+    Hazmat: ["hazmat"], "Temperature requirements": ["temprature"], "Seal / reference": ["refer"],
+    Rate: ["rate"], "Rate value": ["ratevalue"], "Gross amount": ["gross_amount"],
+    HST: ["hst", "hstamount"], CST: ["cst", "cstamount"], "Net amount": ["net_amount"],
+    "Pickup instructions": ["pickup_desc", "pickupnote"], "Delivery instructions": ["delivery_desc"],
+    "Special instructions": ["pip"], CTPAT: ["ctpat"],
+  };
+  const orderReviewGroups = [
+    { title: "Order Overview", fields: [
+      { label: "Order reference", value: formData.customerorderno },
+      { label: "Load ID", value: formData.loadno },
+      { label: "Company", value: formData.company },
+      { label: "Shipment type", value: formData.shipmenttype },
+      { label: "Load type", value: formData.loadtype },
+      { label: "Service", value: formData.trailortype },
+      { label: "Salesperson", value: formData.salesman },
+    ] },
+    { title: "Cargo & Equipment", fields: [
+      { label: "Commodity", value: formData.commodity },
+      { label: "Weight", value: formData.weight },
+      { label: "Weight unit", value: formData.unit },
+      { label: "Quantity / packages", value: formData.package },
+      { label: "Equipment type", value: formData.trailortype },
+      { label: "Hazmat", value: formData.hazmat },
+      { label: "Temperature requirements", value: formData.temprature },
+      { label: "Seal / reference", value: formData.refer },
+    ] },
+    { title: "Rates & Charges", fields: [
+      { label: "Rate", value: formData.rate },
+      { label: "Rate value", value: formData.ratevalue },
+      { label: "Gross amount", value: formData.gross_amount },
+      { label: "HST", value: formData.hstamount },
+      { label: "CST", value: formData.cstamount },
+      { label: "Net amount", value: formData.net_amount },
+    ] },
+    { title: "Documents, Notes & Special Instructions", fields: [
+      { label: "Pickup instructions", value: formData.pickup_desc || formData.pickupnote },
+      { label: "Delivery instructions", value: formData.delivery_desc },
+      { label: "Special instructions", value: formData.pip },
+      { label: "CTPAT", value: formData.ctpat },
+    ] },
+  ].map((group) => ({
+    ...group,
+    fields: group.fields.map((field) => ({
+      ...field,
+      source: (orderSourceFields[field.label] || []).some((key) => manualFields.has(key))
+        ? "Manual" : ocrResult ? "Unverified" : "Manual",
+    })),
+  }));
+  const orderReviewStops = stops.map((stop) => ({
+    type: stop.stoptype,
+    name: stop.name,
+    address: stop.address || stop.location,
+    date: stop.date || stop.stop_date,
+    time: stop.time || stop.stop_time,
+    timezone: stop.timezone,
+    appointmentWindow: stop.appointmentWindow,
+    contactName: stop.contactName,
+    contactPhone: stop.contactPhone,
+    reference: stop.reference || stop.refno,
+    instructions: stop.instructions || stop.notes,
+    source: manualFields.has("stops") ? "Manual" : "Unverified",
+    needsReview: !(stop.address || stop.location) || stop.stoptype === "Type not identified",
+  }));
+  const confirmOrderCustomer = () => {
+    if (!selectedOcrCustomerId) return;
+    setManualFields((previous) => new Set(previous).add("customer_id"));
+    setFormData((previous) => ({ ...previous, customer_id: selectedOcrCustomerId }));
+  };
 
   return (
-    <div className="content-wrapper iso-ui iso-form-workspace" data-iso-theme="light">
+    <div className="content-wrapper iso-ui iso-form-workspace iso-entry-page" data-iso-theme="light">
       <section className="content-header">
         <h1>
           Create order
@@ -471,53 +711,67 @@ const Createorder = () => {
         </ol>
       </section>
       <section className="content">
+        <OcrDocumentIntake
+          id="order-ocr-document"
+          file={ocrFile}
+          scanning={isOcrLoading}
+          scanError={ocrScanError}
+          onFileSelected={handleOcrFileChange}
+          onRemoveFile={handleOcrFileRemoved}
+          onScan={handleOcrUpload}
+          onEnterManually={() => { setShowManualEntry(true); setIsEditingOcr(false); }}
+        />
+        {ocrResult && !isEditingOcr && (
+          <OcrExtractionReview
+            id="order-review"
+            title="Order Review"
+            sourceFile={ocrFile}
+            groups={orderReviewGroups}
+            stops={orderReviewStops}
+            extraFields={flattenOcrFields(ocrResult?.gpt_response?.structured_json || ocrResult?.data || {})}
+            broker={{
+              title: "Customer Information",
+              status: customerRecord ? "Matched" : ocrCustomerName ? (ocrCustomerCandidates.length > 1 ? "Multiple Matches / Confirm" : ocrCustomerCandidates.length === 1 ? "Match Requires Confirmation" : "No Match") : "No Match",
+              ocrFields: [{ label: "Customer from PDF", value: ocrCustomerName, source: "PDF Extracted" }],
+              candidates: ocrCustomerCandidates.map((customer) => ({ id: customer.id, name: customerDisplayName(customer) })),
+              selectedId: selectedOcrCustomerId,
+              profileLabel: "View Customer Profile",
+              onSelect: setSelectedOcrCustomerId,
+              onConfirm: confirmOrderCustomer,
+              record: customerRecord,
+              recordFields: Object.entries(customerRecord || {}).filter(([key, value]) =>
+                /name|legal|address|city|state|postal|zip|country|phone|email|\bmc\b/i.test(key) &&
+                key.toLowerCase() !== "id" && value !== null && value !== undefined && String(value).trim()
+              ).map(([label, value]) => ({ label, value, source: "IFM Record" })),
+              notice: customerRecord ? "Customer selected from the IFM record. PDF values do not modify the customer profile." : "Confirm a single IFM customer record or edit the customer manually. No customer profile is created or changed.",
+            }}
+            persistenceNotice="The current create API stores stop type and location/address, but does not persist OCR stop appointments, contacts, references, time zones, or instructions."
+            savedRecordId={getdataid || undefined}
+            savedLink={getdataid ? `/assign/${getdataid}` : undefined}
+            savedLinkLabel="Assign order"
+            onEdit={() => { setIsEditingOcr(true); setShowManualEntry(true); }}
+            onReviewAndSave={() => setpopup(true)}
+            isSaving={isSubmitting}
+            headingRef={reviewHeadingRef}
+          />
+        )}
+        {isEditingOcr && (
+          <div className="ocr-review__actionbar">
+            <button type="button" className="btn btn-primary" onClick={() => { setIsEditingOcr(false); setShowManualEntry(false); }}>
+              Apply Changes / Back to Review
+            </button>
+          </div>
+        )}
+        {showManualEntry && <EntryFormGuide kind="order" values={formData} onReview={() => setpopup(true)} />}
         {referenceError && <Alert tone="danger" title="Order reference data could not be loaded">Company and customer options may be unavailable. Check your connection and reload this page before saving.</Alert>}
         {/* Small boxes (Stat box) */}
-        <div className="row">
+        <div className="row" hidden={!showManualEntry} style={!showManualEntry ? { display: "none" } : undefined}>
           <div className="col-md-12 col-xs-12">
-
-            {/* OCR UPLOAD SECTION */}
-            <div className="box box-solid">
-              <div className="box-body">
-                <div className="form-group">
-                  <label htmlFor="order-ocr-document">Upload Document (OCR Auto-fill)</label>
-                  <div className="input-group">
-                    <input
-                      type="file"
-                      id="order-ocr-document"
-                      aria-describedby="order-ocr-help"
-                      className="form-control"
-                      onChange={handleOcrFileChange}
-                      accept=".pdf,.png,.jpg,.jpeg"
-                    />
-                    <span className="input-group-btn">
-                      <button
-                        type="button"
-                        className="btn btn-success"
-                        onClick={handleOcrUpload}
-                        disabled={isOcrLoading}
-                      >
-                        {isOcrLoading ? (
-                          <>
-                            <i className="fa fa-spinner fa-spin" style={{ marginRight: "5px" }}></i>
-                            Processing...
-                          </>
-                        ) : (
-                          "Scan & Auto-fill"
-                        )}
-                      </button>
-                    </span>
-                  </div>
-                  <p className="help-block" id="order-ocr-help">Upload a PDF or image, then review every extracted field before saving. Company, customer, pickup and delivery are required.</p>
-                </div>
-              </div>
-            </div>
-            {/* END OCR UPLOAD SECTION */}
             <div id="messages" />
             <div className="box">
               <div className="col-md-12 col-xs-12 pull pull-left">
                 <div className="form-group">
-                  <h4>
+                  <h4 id="order-customer-details">
                     <span className="label label-success">
                       CUSTOMER DETAILS
                     </span>
@@ -868,7 +1122,7 @@ const Createorder = () => {
             </div>
             <div className="col-md-12 col-xs-12 pull pull-left">
               <div className="form-group">
-                <h4>
+                <h4 id="order-route-details">
                   <span className="label label-success">
                     PICKUP/DELIVERY DETAIL
                   </span>
@@ -1332,7 +1586,7 @@ const Createorder = () => {
           </div>
           <div className="col-md-12 col-xs-12 pull pull-left">
             <div className="form-group">
-              <h4>
+              <h4 id="order-shipment-details">
                 <span className="label label-success">SHIPMENT DETAIL</span>
               </h4>
             </div>
@@ -1572,7 +1826,7 @@ const Createorder = () => {
             </div>
             <div className="col-md-12 col-xs-12 pull pull-left">
               <div className="form-group">
-                <h4>
+                <h4 id="order-revenue-details">
                   <span className="label label-success">REVENUE DETAILS</span>
                 </h4>
               </div>
@@ -1735,15 +1989,18 @@ const Createorder = () => {
           {/* /.box-body */}
         </div>
         {/* /.box */}
-        <div className="text-center">
+        <div className="text-center entry-footer-actions" hidden={!showManualEntry} style={!showManualEntry ? { display: "none" } : undefined}>
           <button
             type="button"
             className="btn btn-primary"
             onClick={() => setpopup(!popup)}
           >
-            Create Estimate
+            Review &amp; save order
           </button>
-          <button onClick={() => navigate(-1)} className="btn btn-warning">
+          <button onClick={() => {
+            if ((ocrResult || ocrFile || isOcrLoading || manualFields.size > 0) && !getdataid && !window.confirm("Leave this order? Unsaved information will be lost.")) return;
+            navigate(-1);
+          }} className="btn btn-warning">
             Back
           </button>
         </div>
@@ -1786,7 +2043,7 @@ const Createorder = () => {
                   type="button"
                   className="btn btn-primary"
                   onClick={handleonSubmit}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || Boolean(ocrResult && getdataid)}
                 >
                   {isSubmitting ? "Saving..." : "Save Order"}
                 </button>

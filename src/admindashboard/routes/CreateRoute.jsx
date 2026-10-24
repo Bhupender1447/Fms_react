@@ -45,6 +45,12 @@ export default function CreateRoute() {
 	const aggregateWeight = stops.reduce((total, stop) => total + (Number.isFinite(stop.weight) ? stop.weight : 0), 0);
 	const aggregateCapacity = validVehiclePool.reduce((total, vehicle) => total + (Number(vehicle.maxWeight) || 0), 0);
 	const canCreateDraft = validation.valid && assignmentValidation.valid && routeName.trim() && driverName.trim();
+	const draftChecklist = [
+		{ label: 'Name your route', done: Boolean(routeName.trim()), target: 'route-plan-heading' },
+		{ label: 'Enter a driver name', done: Boolean(driverName.trim()), target: 'route-plan-heading' },
+		{ label: 'Add and validate stops', done: stops.length > 0 && validation.valid, target: 'route-stop-review-heading' },
+		{ label: 'Review vehicle capacity (optional)', done: assignmentValidation.valid, target: 'route-vehicles-heading' },
+	];
 	const requestPreview = showRequestPreview ? buildRouteApiPreview({ routeName, stops, vehicles: validVehiclePool, options, depot }) : null;
 	const planningEstimate = useMemo(() => calculatePlanningEstimate({ ...estimateInputs, stops }), [estimateInputs, stops]);
 	const currentRouteFormData = { routeName, driverName, stops, vehicles: validVehiclePool, depot, options };
@@ -122,11 +128,16 @@ export default function CreateRoute() {
 					<h1>Create Route</h1>
 					<p>Plan one carrier route across multiple stops. Broker order creation and trip management remain separate workflows.</p>
 				</div>
-				<span className="route-state-pill route-state-draft"><i className="fa fa-flask" aria-hidden="true" /> Local preview</span>
+				<button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/routes/manage', { state: { drafts: location.state?.drafts || [] } })}>Route manager</button>
 			</div>
 
 			<div className="route-safety-notice" role="status"><strong>Preview only</strong><span>Route data stays in page memory. No route API, PTV request, database write, driver assignment, or dispatch occurs.</span></div>
 
+			<nav className="route-step-nav" aria-label="Route planning steps">
+				<a href="#route-plan-heading"><b>1</b><span>Plan details<small>Name and driver</small></span></a>
+				<a href="#manual-stop-heading"><b>2</b><span>Add stops<small>Import or enter manually</small></span></a>
+				<a href="#route-stop-review-heading"><b>3</b><span>Review<small>Check stops and capacity</small></span></a>
+			</nav>
 			<section className="route-section" aria-labelledby="route-plan-heading">
 				<div className="route-section-heading"><div><h2 id="route-plan-heading">Plan details</h2><p>Name the route and set the operating objective.</p></div></div>
 				<div className="route-form-grid">
@@ -226,6 +237,10 @@ export default function CreateRoute() {
 				</div> : <div className="route-validation route-validation-error" role="alert"><strong>Complete valid assumptions</strong><ul>{planningEstimate.errors.map((error) => <li key={error}>{error}</li>)}</ul></div>)}
 			</section>}
 
+			<section className="route-draft-checklist" aria-label="Draft readiness">
+				<div><h2>{canCreateDraft ? 'Ready to create your draft' : 'Finish your route plan'}</h2><p>{stops.length} stop{stops.length === 1 ? '' : 's'} added. Drafts stay in this navigation session; refreshing may clear them.</p></div>
+				<ul>{draftChecklist.map((item) => <li key={item.label} className={item.done ? 'is-complete' : ''}><a href={`#${item.target}`}><i className={`fa ${item.done ? 'fa-check-circle' : 'fa-circle-o'}`} aria-hidden="true" />{item.label}<span>{item.done ? 'Complete' : 'Needed'}</span></a></li>)}</ul>
+			</section>
 			<div className="route-action-bar">
 				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={createMapPreview}><i className="fa fa-map" aria-hidden="true" /> Create map</button>
 				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={() => setShowEstimate(true)}><i className="fa fa-calculator" aria-hidden="true" /> Create estimate</button>
