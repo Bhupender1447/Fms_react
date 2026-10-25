@@ -1,0 +1,19 @@
+.sis-connections-page { margin-left: 230px; padding: 30px; min-height: calc(100vh - 100px); }
+.sis-connections-page > .iso-alert { margin-bottom: 20px; }
+.sis-connections-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 22px; }
+.sis-connection-card { padding: 22px; }
+.sis-connection-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.sis-connection-heading h2 { margin: 0; font-size: 18px; }
+.sis-connection-card > p, .sis-connections-footer { color: var(--iso-muted); font-size: 13px; line-height: 1.7; }
+.sis-connection-card > p { min-height: 66px; margin: 14px 0; }
+.sis-connection-card nav { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.sis-connection-link { color: var(--iso-accent); font-weight: 600; }
+.sis-connection-link:focus-visible { outline: 2px solid var(--iso-accent); outline-offset: 3px; }
+.sis-connections-footer { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--iso-border); }
+@media (min-width: 768px) { .sidebar-collapse .sis-connections-page { margin-left: 50px; } }
+@media (max-width: 767px) {
+  .sis-connections-page { margin-left: 0; padding: 22px 14px; }
+  .sis-connections-grid { grid-template-columns: 1fr; }
+  .sis-connection-heading { flex-direction: column; }
+  .sis-connection-card > p { min-height: 0; }
+}

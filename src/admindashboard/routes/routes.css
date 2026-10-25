@@ -66,6 +66,8 @@
 .route-progress .progress-bar { background: var(--route-accent); }
 .route-progress > small { display: block; margin-top: 8px; font-size: 11px; color: var(--route-muted); line-height: 1.5; }
 .route-map-unavailable { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 20px; background: #f7f8fa; border-radius: 8px; text-align: center; }
+.route-route-summary { display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0 18px; padding: 14px 16px; background: #f5f8fb; border-radius: 8px; color: #243044; font-size: 13px; }
+.route-route-summary strong { color: var(--route-accent); }
 .route-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
 .route-summary { background: #fff; border: 1px solid var(--route-border); border-radius: 10px; padding: 20px; }
 .route-summary > span { display: block; color: var(--route-muted); font-size: 12px; margin-bottom: 9px; }

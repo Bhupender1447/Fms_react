@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import MapService from '../../services/MapService';
 import ExcelStopUploader from './ExcelStopUploader';
 import RouteMap from './RouteMap';
 import { buildRouteApiPreview, createLocalRouteDraft, createMockPtvOptimizationClient } from './routePlanningService';
@@ -29,6 +30,10 @@ export default function CreateRoute() {
 	const [showEstimate, setShowEstimate] = useState(false);
 	const [estimateRequested, setEstimateRequested] = useState(false);
 	const [estimateInputs, setEstimateInputs] = useState({ distanceKm: '', averageSpeedKmh: '', fuelConsumptionLPer100Km: '', fuelPricePerL: '', driverCostPerHour: '' });
+	const [routeData, setRouteData] = useState(null);
+	const [routeRequestStatus, setRouteRequestStatus] = useState('');
+	const [routeRequestError, setRouteRequestError] = useState('');
+	const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
 	const [showRequestPreview, setShowRequestPreview] = useState(false);
 	const [mockLifecycle, setMockLifecycle] = useState(null);
 	const [mockRunning, setMockRunning] = useState(false);
@@ -53,19 +58,147 @@ export default function CreateRoute() {
 	];
 	const requestPreview = showRequestPreview ? buildRouteApiPreview({ routeName, stops, vehicles: validVehiclePool, options, depot }) : null;
 	const planningEstimate = useMemo(() => calculatePlanningEstimate({ ...estimateInputs, stops }), [estimateInputs, stops]);
+	const providerToll = useMemo(() => {
+		const toll = routeData?.result?.tolls ?? routeData?.result?.toll;
+		const isAmount = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+		if (isAmount(toll)) return { amount: Number(toll), currency: null };
+		if (!toll || typeof toll !== 'object') return null;
+		if (isAmount(toll.amount)) return { amount: Number(toll.amount), currency: toll.currency || toll.currencyCode || null };
+		const prices = toll.costs?.prices;
+		if (Array.isArray(prices) && prices.length) {
+			const price = prices.find((item) => item.currency === 'CAD') || prices[0];
+			if (isAmount(price.price)) return { amount: Number(price.price), currency: price.currency || null };
+		}
+		if (Array.isArray(toll.costs) && toll.costs.length && isAmount(toll.costs[0].amount)) {
+			return { amount: Number(toll.costs[0].amount), currency: toll.costs[0].currency || null };
+		}
+		if (isAmount(toll.cost)) return { amount: Number(toll.cost), currency: toll.currency || null };
+		return null;
+	}, [routeData]);
+	const routeFingerprint = useMemo(() => JSON.stringify({
+		stops: stops.map(({ address, city, region, postalCode, latitude, longitude }) => ({ address, city, region, postalCode, latitude, longitude })),
+		depot,
+		objective: options.objective,
+	}), [stops, depot, options.objective]);
 	const currentRouteFormData = { routeName, driverName, stops, vehicles: validVehiclePool, depot, options };
 
 	const openRouteView = () => navigate('/routes/view', {
 		state: {
 			routePreview: { ...currentRouteFormData, routeName: routeName.trim() || 'Untitled route plan' },
+			routeData: routeData?.fingerprint === routeFingerprint ? routeData : null,
 			routeFormData: currentRouteFormData,
 			drafts: location.state?.drafts || [],
 		},
 	});
 
-	const createMapPreview = () => {
+	const calculatePtvRoute = async () => {
+		if (routeData?.fingerprint === routeFingerprint) {
+			setRouteRequestStatus('Using the existing PTV route for the current stop order.');
+			setRouteRequestError('');
+			return routeData;
+		}
+		if (stops.length < 2) throw new Error('Add at least two stops before calculating a PTV truck route.');
+		if (stops.length > 20) throw new Error('PTV route preview supports up to 20 stops at a time. Reduce the stop count before requesting a route.');
+		const startAddress = String(depot.startAddress || '').trim();
+		const endAddress = String(depot.endAddress || '').trim();
+
+		const resolvePoint = async (address, point) => {
+			const hasLatitude = point?.latitude !== null && point?.latitude !== undefined && point.latitude !== '';
+			const hasLongitude = point?.longitude !== null && point?.longitude !== undefined && point.longitude !== '';
+			if (hasLatitude && hasLongitude && Number.isFinite(Number(point.latitude)) && Number.isFinite(Number(point.longitude))) {
+				return { lat: Number(point.latitude), lng: Number(point.longitude) };
+			}
+			const place = await MapService.geocode(address);
+			const lat = Number(place?.lat);
+			const lng = Number(place?.lng);
+			if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+				throw new Error(`Could not find valid coordinates for ${address}.`);
+			}
+			return { lat, lng };
+		};
+
+		const resolvedStops = await Promise.all(stops.map(async (stop) => {
+			const address = [stop.address, stop.city, stop.region, stop.postalCode].filter(Boolean).join(', ');
+			const hasLatitude = stop.latitude !== null && stop.latitude !== undefined && stop.latitude !== '';
+			const hasLongitude = stop.longitude !== null && stop.longitude !== undefined && stop.longitude !== '';
+			if (!address && !(hasLatitude && hasLongitude && Number.isFinite(Number(stop.latitude)) && Number.isFinite(Number(stop.longitude)))) {
+				throw new Error(`Stop ${stop.stopId || stop.sourceRow} needs an address or coordinates.`);
+			}
+			const point = await resolvePoint(address, stop);
+			return { ...stop, latitude: point.lat, longitude: point.lng };
+		}));
+		const startPoint = startAddress
+			? await resolvePoint(startAddress)
+			: { lat: resolvedStops[0].latitude, lng: resolvedStops[0].longitude };
+		const endPoint = endAddress
+			? await resolvePoint(endAddress)
+			: { lat: resolvedStops[resolvedStops.length - 1].latitude, lng: resolvedStops[resolvedStops.length - 1].longitude };
+		const waypoints = startAddress || endAddress
+			? resolvedStops.map((stop) => ({ lat: stop.latitude, lng: stop.longitude }))
+			: resolvedStops.slice(1, -1).map((stop) => ({ lat: stop.latitude, lng: stop.longitude }));
+		const routeChoice = options.objective === 'distance' ? 'shortest' : options.objective === 'cost' ? 'economic' : 'fast';
+		const result = await MapService.getRoute(startPoint, endPoint, waypoints, { type: 'truck' }, routeChoice, true);
+		const path = MapService.parseRoutePath(result?.path);
+		const nextRouteData = {
+			fingerprint: JSON.stringify({
+				stops: resolvedStops.map(({ address, city, region, postalCode, latitude, longitude }) => ({ address, city, region, postalCode, latitude, longitude })),
+				depot,
+				objective: options.objective,
+			}),
+			result,
+			path,
+			stops: resolvedStops,
+			provider: 'PTV truck routing',
+		};
+		setStops(resolvedStops);
+		setRouteData(nextRouteData);
+		setRouteRequestError('');
+		setRouteRequestStatus(path.length >= 2
+			? 'PTV returned a truck route for the current stop order.'
+			: 'PTV returned route metrics, but no usable road geometry. The map will show stop markers only.');
+
+		const distanceKm = Number(result.distanceKms);
+		const durationSeconds = Number(result.duration);
+		if (Number.isFinite(distanceKm) && distanceKm > 0 && Number.isFinite(durationSeconds) && durationSeconds > 0) {
+			setEstimateInputs((current) => ({
+				...current,
+				distanceKm: String(distanceKm),
+				averageSpeedKmh: String(Math.round((distanceKm / (durationSeconds / 3600)) * 100) / 100),
+			}));
+		}
+		return nextRouteData;
+	};
+
+	const createMapPreview = async () => {
 		setMapCreated(true);
-		requestAnimationFrame(() => document.getElementById('route-map-preview')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+		setIsCalculatingRoute(true);
+		setRouteRequestError('');
+		setRouteRequestStatus('Resolving stop locations and requesting a PTV truck route…');
+		requestAnimationFrame(() => document.getElementById('route-map-preview')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }));
+		try {
+			await calculatePtvRoute();
+		} catch (error) {
+			setRouteRequestError(error.message || 'PTV route calculation failed.');
+			setRouteRequestStatus('');
+		} finally {
+			setIsCalculatingRoute(false);
+		}
+	};
+
+	const createEstimate = async () => {
+		setShowEstimate(true);
+		setEstimateRequested(false);
+		setIsCalculatingRoute(true);
+		setRouteRequestError('');
+		setRouteRequestStatus('Using the current stop sequence to request PTV route distance and duration…');
+		try {
+			await calculatePtvRoute();
+		} catch (error) {
+			setRouteRequestError(error.message || 'Could not load PTV route metrics. Enter distance and speed assumptions manually.');
+			setRouteRequestStatus('');
+		} finally {
+			setIsCalculatingRoute(false);
+		}
 	};
 
 	const updateVehicle = (index, field, value) => {
@@ -131,7 +264,7 @@ export default function CreateRoute() {
 				<button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/routes/manage', { state: { drafts: location.state?.drafts || [] } })}>Route manager</button>
 			</div>
 
-			<div className="route-safety-notice" role="status"><strong>Preview only</strong><span>Route data stays in page memory. No route API, PTV request, database write, driver assignment, or dispatch occurs.</span></div>
+			<div className="route-safety-notice" role="status"><strong>Preview only</strong><span>Map and estimate actions may request geocoding and PTV truck-routing data. Route plans stay in page memory; no stop-order optimizer, database write, driver assignment, HOS calculation, or dispatch is run.</span></div>
 
 			<nav className="route-step-nav" aria-label="Route planning steps">
 				<a href="#route-plan-heading"><b>1</b><span>Plan details<small>Name and driver</small></span></a>
@@ -143,15 +276,16 @@ export default function CreateRoute() {
 				<div className="route-form-grid">
 					<label className="route-field"><span>Route name *</span><input className="form-control" required value={routeName} onChange={(event) => setRouteName(event.target.value)} placeholder="e.g. London north deliveries" /></label>
 					<label className="route-field"><span>Driver for this route *</span><input className="form-control" required value={driverName} onChange={(event) => setDriverName(event.target.value)} placeholder="Local preview driver name or ID" /></label>
-					<label className="route-field"><span>Optimization objective</span><select className="form-control" value={options.objective} onChange={(event) => setOptions((current) => ({ ...current, objective: event.target.value }))}><option value="time">Minimum driving time</option><option value="distance">Minimum distance</option><option value="cost">Minimum operating cost</option><option value="vehicles">Minimum number of trucks</option></select></label>
+					<label className="route-field"><span>PTV routing objective</span><select className="form-control" value={options.objective} onChange={(event) => setOptions((current) => ({ ...current, objective: event.target.value }))}><option value="time">Fastest truck route</option><option value="distance">Shortest truck route</option><option value="cost">Most economical PTV route</option></select></label>
 					<label className="route-field"><span>Depot start</span><input className="form-control" value={depot.startAddress} onChange={(event) => setDepot((current) => ({ ...current, startAddress: event.target.value }))} placeholder="Depot address" /></label>
 					<label className="route-field"><span>Depot end</span><input className="form-control" value={depot.endAddress} onChange={(event) => setDepot((current) => ({ ...current, endAddress: event.target.value }))} placeholder="Optional return address" /></label>
 				</div>
 				<div className="route-toggle-row">
-					<label><input type="checkbox" checked={options.obeyTimeWindows} onChange={(event) => setOptions((current) => ({ ...current, obeyTimeWindows: event.target.checked }))} /> Respect appointment windows</label>
-					<label><input type="checkbox" checked={options.balanceWorkload} onChange={(event) => setOptions((current) => ({ ...current, balanceWorkload: event.target.checked }))} /> Balance driver workload</label>
-					<label><input type="checkbox" checked={options.minimizeVehicles} onChange={(event) => setOptions((current) => ({ ...current, minimizeVehicles: event.target.checked }))} /> Minimize trucks used</label>
+					<label><input type="checkbox" checked={options.obeyTimeWindows} onChange={(event) => setOptions((current) => ({ ...current, obeyTimeWindows: event.target.checked }))} /> Draft preference: respect appointment windows</label>
+					<label><input type="checkbox" checked={options.balanceWorkload} onChange={(event) => setOptions((current) => ({ ...current, balanceWorkload: event.target.checked }))} /> Draft preference: balance workload</label>
+					<label><input type="checkbox" checked={options.minimizeVehicles} onChange={(event) => setOptions((current) => ({ ...current, minimizeVehicles: event.target.checked }))} /> Draft preference: minimize trucks</label>
 				</div>
+				<p className="route-estimate-note">These draft preferences are not enforced by PTV in this preview. Only the selected PTV routing objective is sent; stop order remains as entered.</p>
 			</section>
 
 			<ExcelStopUploader onStopsChange={(nextStops) => { setStops(nextStops); setSaveMessage(''); }} />
@@ -217,12 +351,23 @@ export default function CreateRoute() {
 			</section>
 
 			{mapCreated && <section id="route-map-preview" className="route-section" aria-labelledby="route-map-preview-heading">
-				<div className="route-section-heading"><div><h2 id="route-map-preview-heading">Coordinate map preview</h2><p>No geocoding or route calculation is triggered.</p></div><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setMapCreated(false)}>Hide map</button></div>
-				<RouteMap stops={stops} />
+				<div className="route-section-heading"><div><h2 id="route-map-preview-heading">PTV truck route preview</h2><p>PTV routes the current stop order; it does not reorder stops. Stop-order optimization is not available in this route flow.</p></div><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setMapCreated(false)}>Hide map</button></div>
+				{routeRequestStatus && <p className="route-inline-success" role="status">{routeRequestStatus}</p>}
+				{routeRequestError && <div className="route-validation route-validation-error" role="alert"><strong>Route preview unavailable</strong><p>{routeRequestError}</p><button type="button" className="btn btn-outline-primary btn-sm" disabled={isCalculatingRoute} onClick={createMapPreview}>{isCalculatingRoute ? 'Calculating…' : 'Retry PTV route'}</button></div>}
+				{routeData && routeData.fingerprint === routeFingerprint && <div className="route-route-summary" role="status">
+					<span><strong>{routeData.provider}</strong></span>
+					<span>{routeData.result.distanceKms ?? '—'} km</span>
+					<span>{routeData.result.durationText || 'Duration unavailable'}</span>
+					<span>Objective: {options.objective}</span>
+					{providerToll && <span>PTV-reported tolls: {providerToll.amount.toFixed(2)} {providerToll.currency || '(currency not provided)'}</span>}
+				</div>}
+				<RouteMap stops={routeData?.fingerprint === routeFingerprint ? routeData.stops : stops} routePath={routeData?.fingerprint === routeFingerprint ? routeData.path : []} providerRoute={Boolean(routeData?.fingerprint === routeFingerprint && routeData.path.length >= 2)} />
 			</section>}
 
 			{showEstimate && <section className="route-section" aria-labelledby="route-estimate-heading">
-				<div className="route-section-heading"><div><h2 id="route-estimate-heading">Planning estimate</h2><p>Enter assumptions; no distance service, provider rate, taxes, tolls, or maintenance costs are included.</p></div><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowEstimate(false)}>Hide estimate</button></div>
+				<div className="route-section-heading"><div><h2 id="route-estimate-heading">Route cost estimate</h2><p>Distance and driving time come from PTV when available. Fuel consumption, fuel price, and driver rate are your assumptions.</p></div><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowEstimate(false)}>Hide estimate</button></div>
+				{routeRequestError && <p className="route-inline-error" role="status">PTV metrics unavailable: {routeRequestError} You can still enter distance and speed manually.</p>}
+				{providerToll && <p className="route-estimate-note">PTV-reported tolls are displayed separately and are not included in the fuel and driver estimate subtotal.</p>}
 				<div className="route-estimate-grid">
 					<label className="route-field"><span>Route distance (km) *</span><input className="form-control" type="number" min="0" step="any" value={estimateInputs.distanceKm} onChange={(event) => setEstimateInputs((current) => ({ ...current, distanceKm: event.target.value }))} /></label>
 					<label className="route-field"><span>Average speed (km/h) *</span><input className="form-control" type="number" min="0.1" step="any" value={estimateInputs.averageSpeedKmh} onChange={(event) => setEstimateInputs((current) => ({ ...current, averageSpeedKmh: event.target.value }))} /></label>
@@ -230,7 +375,7 @@ export default function CreateRoute() {
 					<label className="route-field"><span>Fuel price (per L) *</span><input className="form-control" type="number" min="0" step="any" value={estimateInputs.fuelPricePerL} onChange={(event) => setEstimateInputs((current) => ({ ...current, fuelPricePerL: event.target.value }))} /></label>
 					<label className="route-field"><span>Driver cost (per hour) *</span><input className="form-control" type="number" min="0" step="any" value={estimateInputs.driverCostPerHour} onChange={(event) => setEstimateInputs((current) => ({ ...current, driverCostPerHour: event.target.value }))} /></label>
 				</div>
-				<p className="route-estimate-note">Service time uses stop durations you supplied; {stops.filter((stop) => !Number.isFinite(stop.serviceMinutes)).length} stop(s) have no service-time input. Monetary values use your entered currency units without conversion.</p>
+				<p className="route-estimate-note">Service time uses stop durations you supplied; {stops.filter((stop) => !Number.isFinite(stop.serviceMinutes)).length} stop(s) have no service-time input. Tolls, taxes, maintenance, and empty/return mileage are not included. Monetary values use your entered currency units without conversion.</p>
 				<button type="button" className="btn btn-primary btn-sm" onClick={() => setEstimateRequested(true)}>Calculate local estimate</button>
 				{estimateRequested && (planningEstimate.valid ? <div className="route-estimate-result" role="status">
 					<strong>Local planning estimate · not a quote</strong><span>Driving time: {planningEstimate.drivingHours} h</span><span>Known service time: {planningEstimate.knownServiceMinutes} min</span><span>Estimated duration: {planningEstimate.estimatedHours} h</span><span>Estimated fuel: {planningEstimate.fuelLitres} L</span><span>Fuel cost: {planningEstimate.fuelCost.toFixed(2)} entered units</span><span>Driver cost: {planningEstimate.driverCost.toFixed(2)} entered units</span><b>Total: {planningEstimate.totalCost.toFixed(2)} entered units</b>
@@ -242,8 +387,8 @@ export default function CreateRoute() {
 				<ul>{draftChecklist.map((item) => <li key={item.label} className={item.done ? 'is-complete' : ''}><a href={`#${item.target}`}><i className={`fa ${item.done ? 'fa-check-circle' : 'fa-circle-o'}`} aria-hidden="true" />{item.label}<span>{item.done ? 'Complete' : 'Needed'}</span></a></li>)}</ul>
 			</section>
 			<div className="route-action-bar">
-				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={createMapPreview}><i className="fa fa-map" aria-hidden="true" /> Create map</button>
-				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={() => setShowEstimate(true)}><i className="fa fa-calculator" aria-hidden="true" /> Create estimate</button>
+				<button className="btn btn-outline-primary" type="button" disabled={!stops.length || isCalculatingRoute} onClick={createMapPreview}><i className="fa fa-map" aria-hidden="true" /> {isCalculatingRoute && mapCreated ? 'Calculating map…' : 'Create map'}</button>
+				<button className="btn btn-outline-primary" type="button" disabled={!stops.length || isCalculatingRoute} onClick={createEstimate}><i className="fa fa-calculator" aria-hidden="true" /> {isCalculatingRoute && showEstimate ? 'Loading estimate…' : 'Create estimate'}</button>
 				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={openRouteView}><i className="fa fa-list-ol" aria-hidden="true" /> View route</button>
 				<button className="btn btn-outline-secondary" type="button" disabled={!validation.valid || validVehiclePool.length === 0} onClick={() => setShowRequestPreview((current) => !current)}><i className="fa fa-code" aria-hidden="true" /> {showRequestPreview ? 'Hide request preview' : 'Preview API request'}</button>
 				<button className="btn btn-primary" type="button" disabled={!canCreateDraft} onClick={saveLocalDraft}><i className="fa fa-save" aria-hidden="true" /> Create local draft</button>

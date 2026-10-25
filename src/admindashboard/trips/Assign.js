@@ -95,6 +95,13 @@ const Assigntrip = () => {
         <div className="row">
           <div className="col-md-12 col-xs-12">
             <div id="messages" />
+            <div className="alert alert-warning" role="status">
+              <strong>HOS status: Not assessed.</strong> Trip assignment does not
+              evaluate driver hours, duty-history evidence, or HOS rules, and is
+              not HOS or dispatch compliance clearance. Review official records
+              and applicable requirements separately.{" "}
+              <Link to="/sis/safety">Review SIS Safety requirements</Link>
+            </div>
             <div className="alert alert-success alert-dismissible" role="alert">
               <button
                 type="button"

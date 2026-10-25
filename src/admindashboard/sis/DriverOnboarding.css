@@ -1,0 +1,24 @@
+.sis-onboarding-page { margin-left: 230px; padding: 30px; min-height: calc(100vh - 100px); }
+.sis-onboarding-notice { margin-bottom: 20px; }
+.sis-onboarding-account { display: flex; align-items: flex-end; gap: 20px; margin: 20px 0; }
+.sis-onboarding-account .iso-field { min-width: 260px; }
+.sis-onboarding-account p, .sis-onboarding-form-card > p, .sis-onboarding-footer { color: var(--iso-muted); font-size: 13px; line-height: 1.7; }
+.sis-onboarding-form-card, .sis-onboarding-records { padding: 22px; margin-bottom: 20px; }
+.sis-onboarding-form-card h2, .sis-onboarding-records h2 { margin: 0; font-size: 19px; }
+.sis-onboarding-form-card form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 14px; margin-top: 18px; }
+.sis-onboarding-form-card form button { justify-self: start; }
+.sis-onboarding-records-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.sis-onboarding-records-controls { display: flex; align-items: flex-end; gap: 12px; }
+.sis-onboarding-records-controls .iso-field { min-width: 190px; }
+.sis-onboarding-table-wrap { width: 100%; overflow-x: auto; }
+.sis-onboarding-table-wrap table { width: 100%; min-width: 920px; border-collapse: collapse; font-size: 13px; }
+.sis-onboarding-table-wrap th { padding: 12px; text-align: left; color: var(--iso-muted); background: var(--iso-surface-raised); }
+.sis-onboarding-table-wrap td { padding: 12px; border-top: 1px solid var(--iso-border); vertical-align: top; color: var(--iso-text); }
+.sis-onboarding-audit { display: grid; gap: 5px; min-width: 170px; }
+.sis-onboarding-audit time { color: var(--iso-muted); white-space: nowrap; }
+.sis-onboarding-review-actions { display: grid; justify-items: start; gap: 8px; min-width: 220px; }
+.sis-onboarding-review-actions .iso-field { width: 100%; }
+.sis-onboarding-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 14px; margin-top: 16px; color: var(--iso-muted); font-size: 13px; }
+.sis-onboarding-footer { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--iso-border); }
+@media (min-width: 768px) { .sidebar-collapse .sis-onboarding-page { margin-left: 50px; } }
+@media (max-width: 767px) { .sis-onboarding-page { margin-left: 0; padding: 22px 14px; } .sis-onboarding-account { flex-direction: column; align-items: stretch; } .sis-onboarding-account .iso-field { min-width: 0; } .sis-onboarding-form-card form { grid-template-columns: 1fr; } .sis-onboarding-records-heading, .sis-onboarding-records-controls { align-items: stretch; flex-direction: column; } .sis-onboarding-records-controls .iso-field { min-width: 0; } .sis-onboarding-pagination { justify-content: space-between; } }

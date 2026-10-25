@@ -15,15 +15,6 @@ const DriverHOS = () => {
   const [snapshotError, setSnapshotError] = useState('');
   const [snapshotUpdatedAt, setSnapshotUpdatedAt] = useState(null);
   const [zoomImage, setZoomImage] = useState(null);
-  const [currentTime, setCurrentTime] = useState(new Date()); // Track current time for ongoing trips
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000); // Update every minute
-
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -67,35 +58,6 @@ const DriverHOS = () => {
     const interval = window.setInterval(fetchSnapshot, 30000);
     return () => { active = false; window.clearInterval(interval); };
   }, [id]);
-
-  // Calculate remaining hours for a trip (8.5 hour shift)
-  const calculateRemainingHours = (trip) => {
-    const shiftHours = 8.5; // 8 hours 30 minutes
-    const loginTime = new Date(trip.login_time);
-
-    if (trip.status === 'on') {
-      const elapsedMs = currentTime - loginTime;
-      const elapsedHours = elapsedMs / (1000 * 60 * 60);
-      const remaining = shiftHours - elapsedHours;
-
-      return remaining > 0
-        ? `${remaining.toFixed(2)} hrs`
-        : <span className="text-danger">-{Math.abs(remaining).toFixed(2)} hrs</span>;
-    }
-
-    if (trip.logout_time) {
-      const logoutTime = new Date(trip.logout_time);
-      const elapsedMs = logoutTime - loginTime;
-      const elapsedHours = elapsedMs / (1000 * 60 * 60);
-      const remaining = shiftHours - elapsedHours;
-
-      return remaining > 0
-        ? `${remaining.toFixed(2)} hrs`
-        : <span className="text-danger">-{Math.abs(remaining).toFixed(2)} hrs</span>;
-    }
-
-    return 'N/A';
-  };
 
   const fetchTripDetails = async (tripId) => {
     setLoadingDetails(true);
@@ -202,12 +164,12 @@ const DriverHOS = () => {
             <div className="card border-0 shadow-sm">
               <div className="card-header bg-white border-bottom d-flex justify-content-between align-items-center flex-wrap">
                 <div>
-                  <h5 className="mb-1"><i className="fas fa-clock me-2 text-primary"></i>Current HOS details</h5>
+                  <h5 className="mb-1"><i className="fas fa-clock me-2 text-primary"></i>Latest IFM duty and HOS records</h5>
                   <small className="text-muted">{hosSnapshot?.source || 'IFM duty status and HOS activity logs'} · Refreshes every 30 seconds</small>
                 </div>
                 <div className="text-end">
-                  <span className={`badge ${hosSnapshot?.freshness === 'current' ? 'bg-success' : hosSnapshot?.freshness === 'delayed' ? 'bg-warning text-dark' : 'bg-secondary'}`}>
-                    {snapshotLoading ? 'Refreshing' : hosSnapshot?.freshness === 'current' ? 'Recent data' : hosSnapshot?.freshness === 'delayed' ? 'Delayed data' : hosSnapshot?.freshness === 'stale' ? 'Stale data' : 'No HOS data'}
+                  <span className="badge bg-secondary">
+                    {snapshotLoading ? 'Refreshing' : hosSnapshot?.freshness === 'current' ? 'Recent IFM record' : hosSnapshot?.freshness === 'delayed' ? 'Older IFM record' : hosSnapshot?.freshness === 'stale' ? 'Stale IFM record' : 'No HOS data'}
                   </span>
                   <div className="small text-muted mt-1">Checked {snapshotUpdatedAt ? snapshotUpdatedAt.toLocaleTimeString() : 'not yet'}</div>
                 </div>
@@ -223,8 +185,8 @@ const DriverHOS = () => {
                       <div className="col-md-3"><strong>Latest HOS activity</strong><div className="text-capitalize">{hosSnapshot?.latest_hos?.activity_type || 'No HOS log'}</div></div>
                     </div>
                     <div className="small text-muted mb-3">Source record time: {hosSnapshot?.last_updated || 'Unavailable'}</div>
-                    <div className="alert alert-info py-2 mb-3">
-                      HOS records are shown as available in IFM. Compliance status is <strong>unverified</strong>; confirm against the driver’s official ELD records.
+                    <div className="alert alert-warning py-2 mb-3" role="status">
+                      HOS assessment: <strong>Not assessed.</strong> IFM record freshness does not establish complete duty history or ELD upload coverage. No remaining-hours calculation or dispatch clearance is available; confirm hours using official ELD records and applicable reviewed rules.
                     </div>
                     <h6>Recent HOS activity</h6>
                     {hosSnapshot?.recent_hos?.length ? (
@@ -306,13 +268,13 @@ const DriverHOS = () => {
             </div>
           </div>
 
-          {/* HOS Table */}
+          {/* Trip log table; elapsed trip time is not an HOS assessment. */}
           <div className="col-12">
             <div className="card border-0 shadow-sm">
               <div className="card-header bg-white border-bottom">
                 <h5 className="mb-0">
                   <i className="fas fa-table me-2 text-primary"></i>
-                  Hours of Service (HOS) Records
+                  Driver Trip Records · HOS Not Assessed
                 </h5>
               </div>
               <div className="card-body p-0">
@@ -325,7 +287,7 @@ const DriverHOS = () => {
                           <th>Login Time</th>
                           <th>Logout Time</th>
                           <th>Status</th>
-                          <th>Remaining Hours</th> {/* Added column */}
+                          <th>HOS assessment</th>
                           <th>Pre Trip Inspection</th>
                           <th>Images</th>
                           <th className="text-end">Actions</th>
@@ -349,7 +311,7 @@ const DriverHOS = () => {
                             </span>
                           </td>
                           <td>
-                            {calculateRemainingHours(trip)}
+                            <span className="badge bg-secondary">Not assessed</span>
                           </td>
                           <td>
                             {trip.pre_trip_inspection === 'yes' || trip.pre_trip_inspection === true ? (

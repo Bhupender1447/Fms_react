@@ -59,7 +59,7 @@ export default function FleetHosRoster() {
       </div>
 
       <div className="alert alert-warning" role="alert">
-        HOS data is unverified. A connection shows how records are associated; it does not confirm legal compliance or an active vehicle assignment unless the source is an active trip.
+        HOS assessment: <strong>Not assessed.</strong> This page shows IFM duty/HOS records and possible record associations only. Record recency does not establish complete ELD duty-history coverage, calculate remaining hours, or confirm legal compliance. A connection does not confirm an active vehicle assignment unless its source is an active trip.
       </div>
 
       {error && <div className="alert alert-danger" role="alert">{error}</div>}

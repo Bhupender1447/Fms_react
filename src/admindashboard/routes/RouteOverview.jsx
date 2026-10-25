@@ -9,7 +9,9 @@ export default function RouteOverview() {
 	const navigate = useNavigate();
 	const draft = location.state?.draft;
 	const routePreview = location.state?.routePreview || draft;
+	const routeData = location.state?.routeData;
 	const [stops, setStops] = useState(() => routePreview?.stops || []);
+	const [routeIsStale, setRouteIsStale] = useState(false);
 	const [draggingIndex, setDraggingIndex] = useState(null);
 	const dragSourceIndex = useRef(null);
 	const isExistingDraft = Boolean(draft);
@@ -32,12 +34,18 @@ export default function RouteOverview() {
 		event.preventDefault();
 		const transferredIndex = event.dataTransfer.getData('text/plain');
 		const sourceIndex = dragSourceIndex.current ?? (transferredIndex === '' ? -1 : Number(transferredIndex));
-		if (Number.isInteger(sourceIndex)) setStops((current) => reorderRouteStops(current, sourceIndex, destinationIndex));
+		if (Number.isInteger(sourceIndex)) {
+			setStops((current) => reorderRouteStops(current, sourceIndex, destinationIndex));
+			setRouteIsStale(true);
+		}
 		dragSourceIndex.current = null;
 		setDraggingIndex(null);
 	};
 
-	const moveStop = (index, offset) => setStops((current) => reorderRouteStops(current, index, index + offset));
+	const moveStop = (index, offset) => {
+		setStops((current) => reorderRouteStops(current, index, index + offset));
+		setRouteIsStale(true);
+	};
 
 	const applyStopOrder = () => {
 		if (!isExistingDraft) {
@@ -84,7 +92,10 @@ export default function RouteOverview() {
 				<div className="route-summary"><span>Vehicle profile</span><strong>{routePreview.vehicles?.[0]?.id || draft?.routes?.[0]?.vehicle?.id || 'Not provided'}</strong></div>
 				<div className="route-summary"><span>Verified completions</span><strong>{progress.completed} / {progress.total}</strong></div>
 			</section>
-			<section className="route-section" aria-labelledby="route-overview-map-heading"><div className="route-section-heading"><div><h2 id="route-overview-map-heading">Stop map</h2><p>Markers require coordinates supplied with each stop. No geocoding or road routing runs here.</p></div></div><RouteMap stops={stops} /></section>
+			<section className="route-section" aria-labelledby="route-overview-map-heading"><div className="route-section-heading"><div><h2 id="route-overview-map-heading">Stop map</h2><p>{routeData?.path?.length > 1 && !routeIsStale ? 'PTV road route for the current stop order.' : routeIsStale ? 'Stop order changed. The prior PTV road route is stale; recalculate from Create Route.' : 'Markers require coordinates supplied with each stop. Return to Create Route to calculate a PTV road route.'}</p></div></div>
+				{routeData?.result && !routeIsStale && <div className="route-route-summary" role="status"><span><strong>PTV truck routing</strong></span><span>{routeData.result.distanceKms ?? '—'} km</span><span>{routeData.result.durationText || 'Duration unavailable'}</span></div>}
+				<RouteMap stops={stops} routePath={routeIsStale ? [] : routeData?.path || []} providerRoute={Boolean(!routeIsStale && routeData?.path?.length > 1)} />
+			</section>
 			<section className="route-section" aria-labelledby="route-sequence-heading">
 				<div className="route-section-heading"><div><h2 id="route-sequence-heading">Full stop sequence</h2><p>Use the drag handle or the arrow controls to change order.</p></div></div>
 				{!sequenceValidation.valid && <div className="route-validation route-validation-error" role="alert"><strong>Review the route sequence before applying it</strong><ul>{sequenceValidation.errors.map((error, index) => <li key={`${error.sourceRow}-${error.field}-${index}`}>{error.message}</li>)}</ul></div>}

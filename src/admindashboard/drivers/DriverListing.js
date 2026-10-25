@@ -73,8 +73,8 @@ export default function DriverListing() {
         </button>
       </div>
 
-      <div className="alert alert-info" role="note">
-        These are backend records. They are shown as received and do not represent a validated HOS compliance calculation.
+      <div className="alert alert-warning" role="note">
+        HOS assessment: <strong>Not assessed.</strong> These are backend IFM records shown as received. They do not establish complete ELD duty-history coverage, calculate remaining hours, or provide compliance or dispatch clearance.
       </div>
       {error && <div className="alert alert-danger" role="alert">{error}</div>}
 

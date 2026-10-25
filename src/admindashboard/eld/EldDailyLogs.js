@@ -34,17 +34,12 @@ const EldDashboard = () => {
     endDate: "",
   });
 
-  const cookie = "ci_session=i7uiaoea50db00kpf1lh8g2uo8ridcqh";
-
   // Fetch drivers list
   const fetchDrivers = async () => {
     try {
       const res = await axios.get(
         `${BASE_URL}api/fetchdriversProductData`,
-        {
-          headers: { Cookie: cookie },
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
       setDrivers(res.data || []);
     } catch (error) {
@@ -59,10 +54,7 @@ const EldDashboard = () => {
     const url = `${BASE_URL}api/hos_daily_logs?startDate=${filter.startDate}&endDate=${filter.endDate}&driverIds=${driverId}`;
 
     try {
-      const res = await axios.get(url, {
-        headers: { Cookie: cookie },
-        withCredentials: true,
-      });
+      const res = await axios.get(url, { withCredentials: true });
 
       setLogs(res.data.data || []);
     } catch (error) {
@@ -117,6 +109,12 @@ const EldDashboard = () => {
   return (
     <div className="content-wrapper p-3" style={{ minHeight: 600 }}>
       <h2 className="mb-4">ELD Daily Logs Dashboard</h2>
+      <div className="alert alert-warning" role="note">
+        These are Samsara-reported daily log records, not a SIS HOS assessment.
+        Provider-reported durations, rulesets, and certification metadata have
+        not been verified for account scope, completeness, legal applicability,
+        or dispatch clearance.
+      </div>
 
       {/* Filters */}
       <div className="row g-3 mb-4">
@@ -220,12 +218,8 @@ const EldDashboard = () => {
                 </div>
 
                 <div className="col-md-4">
-                  <strong>CERTIFIED:</strong>{" "}
-                  {meta.isCertified ? (
-                    <span className="text-success">Yes</span>
-                  ) : (
-                    <span className="text-danger">No</span>
-                  )}
+                  <strong>Provider-reported certification (not verified by SIS):</strong>{" "}
+                  {meta.isCertified ? "Yes" : "No"}
                 </div>
               </div>
 

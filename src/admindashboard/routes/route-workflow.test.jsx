@@ -1,11 +1,34 @@
 import React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import MapService from '../../services/MapService';
 import CreateRoute from './CreateRoute';
 import ManageRoutes from './ManageRoutes';
 import RouteDetails from './RouteDetails';
 import RouteOverview from './RouteOverview';
 jest.mock('./RouteMap', () => ({ __esModule: true, default: () => null }));
+jest.mock('../../services/MapService', () => ({
+	__esModule: true,
+	default: {
+		geocode: jest.fn(),
+		getRoute: jest.fn(),
+		parseRoutePath: jest.fn(),
+	},
+}));
+
+beforeEach(() => {
+	jest.clearAllMocks();
+	MapService.geocode.mockResolvedValue({ lat: 43.01, lng: -81.2 });
+	MapService.getRoute.mockResolvedValue({
+		status: true,
+		distanceKms: 120,
+		duration: 7200,
+		durationText: '02:00:00',
+		tolls: { tollAvailable: false },
+		path: [[-81.25, 42.98], [-81.2, 43]],
+	});
+	MapService.parseRoutePath.mockReturnValue([{ lat: 42.98, lng: -81.25 }, { lat: 43, lng: -81.2 }]);
+});
 
 test('manager finds plans by name and restores results after clearing filters', () => {
 	const drafts = [{ id: 'PLAN-1', routeName: 'North deliveries', status: 'DRAFT_NOT_OPTIMIZED', stops: [] }];
@@ -73,7 +96,7 @@ test('creates a session route draft and keeps operational mutations disabled', (
 	expect(screen.getByText('NOT COMPLETED')).toBeInTheDocument();
 });
 
-test('creates a coordinate map and estimate, then applies a reordered route to the create form', () => {
+test('creates a PTV map and estimate, then views and reorders the route preview', async () => {
 	renderRouteFlow();
 	fireEvent.change(screen.getByLabelText('Route name *'), { target: { value: 'Sequence review' } });
 	fireEvent.change(screen.getByLabelText('Driver for this route *'), { target: { value: 'Driver Preview' } });
@@ -93,9 +116,20 @@ test('creates a coordinate map and estimate, then applies a reordered route to t
 
 	addStop({ id: 'STOP-1', latitude: '42.98', longitude: '-81.25', serviceMinutes: '40' });
 	addStop({ id: 'STOP-2', latitude: '43.00', longitude: '-81.20', serviceMinutes: '' });
+	fireEvent.change(screen.getByLabelText('PTV routing objective'), { target: { value: 'cost' } });
 	fireEvent.click(screen.getByRole('button', { name: 'Create map' }));
-	expect(screen.getByRole('heading', { name: 'Coordinate map preview' })).toBeInTheDocument();
+	expect(screen.getByRole('heading', { name: 'PTV truck route preview' })).toBeInTheDocument();
+	expect(await screen.findByText('PTV returned a truck route for the current stop order.')).toBeInTheDocument();
+	expect(MapService.getRoute).toHaveBeenCalledWith(
+		{ lat: 42.98, lng: -81.25 },
+		{ lat: 43, lng: -81.2 },
+		[],
+		{ type: 'truck' },
+		'economic',
+		true
+	);
 	fireEvent.click(screen.getByRole('button', { name: 'Create estimate' }));
+	await waitFor(() => expect(screen.getByLabelText('Route distance (km) *')).toHaveValue(120));
 	fireEvent.change(screen.getByLabelText('Route distance (km) *'), { target: { value: '120' } });
 	fireEvent.change(screen.getByLabelText('Average speed (km/h) *'), { target: { value: '60' } });
 	fireEvent.change(screen.getByLabelText('Fuel consumption (L/100 km) *'), { target: { value: '30' } });
@@ -105,6 +139,8 @@ test('creates a coordinate map and estimate, then applies a reordered route to t
 	expect(screen.getByText('Total: 120.67 entered units')).toBeInTheDocument();
 
 	fireEvent.click(screen.getByRole('button', { name: 'View route' }));
+	expect(await screen.findByRole('heading', { name: 'View Route' })).toBeInTheDocument();
+	expect(screen.getByText('PTV truck routing')).toBeInTheDocument();
 	fireEvent.click(screen.getByRole('button', { name: 'Move stop 2 up' }));
 	const sequence = within(screen.getByRole('list', { name: 'Reorder route stops' })).getAllByRole('listitem');
 	expect(within(sequence[0]).getByText(/^STOP-2.*PICKUP$/)).toBeInTheDocument();
@@ -113,4 +149,26 @@ test('creates a coordinate map and estimate, then applies a reordered route to t
 	const rows = within(screen.getByRole('region', { name: 'Review stops' })).getAllByRole('row');
 	expect(within(rows[1]).getByText('STOP-2')).toBeInTheDocument();
 	expect(within(rows[2]).getByText('STOP-1')).toBeInTheDocument();
+});
+
+test('Create map geocodes stops without coordinates and reports routing failures', async () => {
+	renderRouteFlow();
+	const addStop = (id) => {
+		fireEvent.change(screen.getByLabelText('Stop ID *'), { target: { value: id } });
+		fireEvent.change(screen.getByLabelText('Customer *'), { target: { value: `Customer ${id}` } });
+		fireEvent.change(screen.getByLabelText('Address *'), { target: { value: `${id} Main Street` } });
+		fireEvent.change(screen.getByLabelText('City *'), { target: { value: 'London' } });
+		fireEvent.change(screen.getByLabelText('Province / State *'), { target: { value: 'Ontario' } });
+		fireEvent.change(screen.getByLabelText('Postal / ZIP *'), { target: { value: 'N6A 1A1' } });
+		fireEvent.click(screen.getByRole('button', { name: 'Add stop' }));
+	};
+
+	MapService.getRoute.mockRejectedValueOnce(new Error('PTV service is unavailable'));
+	addStop('STOP-A');
+	addStop('STOP-B');
+	fireEvent.click(screen.getByRole('button', { name: 'Create map' }));
+
+	expect(await screen.findByText(/PTV service is unavailable/)).toBeInTheDocument();
+	expect(MapService.geocode).toHaveBeenCalledTimes(2);
+	expect(MapService.getRoute).toHaveBeenCalledTimes(1);
 });

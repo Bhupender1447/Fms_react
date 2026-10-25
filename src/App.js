@@ -133,6 +133,8 @@ import DispatchBoard from "./admindashboard/Dispatch_board";
 import Loadboard from "./admindashboard/Loadboard";
 import WorldModel from "./admindashboard/sis/WorldModel";
 import Safety from "./admindashboard/sis/Safety";
+import DriverOnboarding from "./admindashboard/sis/DriverOnboarding";
+import Connections from "./admindashboard/sis/Connections";
 // import Article1 from "./websitefiles/blogs/Article1";
 // import Article2 from "./websitefiles/blogs/Article2";
 // import Article3 from "./websitefiles/blogs/Article3";
@@ -329,6 +331,8 @@ function App() {
         <Route path="/loadboard" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Loadboard /><Footeradmin /></div>} />
         <Route path="/sis/world-model" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><WorldModel /><Footeradmin /></div>} />
         <Route path="/sis/safety" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Safety /><Footeradmin /></div>} />
+        <Route path="/sis/driver-onboarding" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><DriverOnboarding /><Footeradmin /></div>} />
+        <Route path="/sis/connections" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Connections /><Footeradmin /></div>} />
         <Route path="/triplist" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Triplist /><Footeradmin /></div>} />
         <Route path="/trips/update/:id" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Updatetrip /><Footeradmin /></div>} />
         <Route path="trips/assign/:id" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Assigntrip /><Footeradmin /></div>} />
@@ -471,4 +475,3 @@ function App() {
 }
 
 export default App;
-
