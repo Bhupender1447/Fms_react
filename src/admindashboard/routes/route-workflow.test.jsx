@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import MapService from '../../services/MapService';
 import CreateRoute from './CreateRoute';
@@ -13,6 +13,7 @@ jest.mock('../../services/MapService', () => ({
 		geocode: jest.fn(),
 		getRoute: jest.fn(),
 		parseRoutePath: jest.fn(),
+		optimizeStops: jest.fn(),
 	},
 }));
 
@@ -28,6 +29,7 @@ beforeEach(() => {
 		path: [[-81.25, 42.98], [-81.2, 43]],
 	});
 	MapService.parseRoutePath.mockReturnValue([{ lat: 42.98, lng: -81.25 }, { lat: 43, lng: -81.2 }]);
+	MapService.optimizeStops.mockResolvedValue([0]);
 });
 
 test('manager finds plans by name and restores results after clearing filters', () => {
@@ -171,4 +173,150 @@ test('Create map geocodes stops without coordinates and reports routing failures
 	expect(await screen.findByText(/PTV service is unavailable/)).toBeInTheDocument();
 	expect(MapService.geocode).toHaveBeenCalledTimes(2);
 	expect(MapService.getRoute).toHaveBeenCalledTimes(1);
+});
+
+test('optimizes stop order in preview and keeps first/last stops fixed', async () => {
+	renderRouteFlow();
+	fireEvent.change(screen.getByLabelText('Route name *'), { target: { value: 'Optimization preview' } });
+	fireEvent.change(screen.getByLabelText('Driver for this route *'), { target: { value: 'Driver Preview' } });
+
+	const addStop = (id, latitude, longitude) => {
+		fireEvent.change(screen.getByLabelText('Stop ID *'), { target: { value: id } });
+		fireEvent.change(screen.getByLabelText('Customer *'), { target: { value: `Customer ${id}` } });
+		fireEvent.change(screen.getByLabelText('Address *'), { target: { value: `${id} Main Street` } });
+		fireEvent.change(screen.getByLabelText('City *'), { target: { value: 'London' } });
+		fireEvent.change(screen.getByLabelText('Province / State *'), { target: { value: 'Ontario' } });
+		fireEvent.change(screen.getByLabelText('Postal / ZIP *'), { target: { value: 'N6A 1A1' } });
+		fireEvent.change(screen.getByLabelText('Latitude (optional)'), { target: { value: latitude } });
+		fireEvent.change(screen.getByLabelText('Longitude (optional)'), { target: { value: longitude } });
+		fireEvent.click(screen.getByRole('button', { name: 'Add stop' }));
+	};
+
+	addStop('STOP-1', '42.98', '-81.25');
+	addStop('STOP-2', '43.00', '-81.20');
+	addStop('STOP-3', '43.03', '-81.15');
+	addStop('STOP-4', '43.05', '-81.10');
+	MapService.optimizeStops.mockResolvedValueOnce([1, 0]);
+
+	fireEvent.click(screen.getByRole('button', { name: 'Optimize stop order' }));
+	expect(await screen.findByText(/Stop order was optimized/)).toBeInTheDocument();
+	expect(MapService.optimizeStops).toHaveBeenCalledWith(
+		{ lat: 42.98, lng: -81.25 },
+		{ lat: 43.05, lng: -81.1 },
+		[{ lat: 43, lng: -81.2 }, { lat: 43.03, lng: -81.15 }]
+	);
+	expect(MapService.getRoute).toHaveBeenCalledTimes(2);
+	expect(MapService.getRoute).toHaveBeenLastCalledWith(
+		{ lat: 42.98, lng: -81.25 },
+		{ lat: 43.05, lng: -81.1 },
+		[{ lat: 43.03, lng: -81.15 }, { lat: 43, lng: -81.2 }],
+		{ type: 'truck' }, 'fast', true
+	);
+	expect(screen.getByText(/the PTV road route was refreshed/)).toBeInTheDocument();
+
+	const rows = within(screen.getByRole('region', { name: 'Review stops' })).getAllByRole('row');
+	expect(within(rows[1]).getByText('STOP-1')).toBeInTheDocument();
+	expect(within(rows[2]).getByText('STOP-3')).toBeInTheDocument();
+	expect(within(rows[3]).getByText('STOP-2')).toBeInTheDocument();
+	expect(within(rows[4]).getByText('STOP-4')).toBeInTheDocument();
+});
+
+function renderOptimizationFixture(count = 4) {
+	const stops = Array.from({ length: count }, (_, index) => ({
+		stopId: `STOP-${index + 1}`, sourceRow: index + 1,
+		customer: `Customer ${index}`, address: `${index + 1} Main Street`,
+		city: 'London', region: 'Ontario', postalCode: 'N6A 1A1',
+		stopType: 'SERVICE', appointmentStart: '', appointmentEnd: '',
+		serviceMinutes: 10, weight: null, pallets: null,
+		latitude: 43 + index / 100, longitude: -81,
+	}));
+	render(<MemoryRouter initialEntries={[{
+		pathname: '/routes/create', state: { routeFormData: { stops } },
+	}]}><CreateRoute /></MemoryRouter>);
+}
+
+test.each([
+	['duplicate', [0, 0]],
+	['negative', [-1, 0]],
+	['out of range', [0, 2]],
+	['fractional', [0, 0.5]],
+	['string', ['0', '1']],
+	['incomplete', [0]],
+])('rejects %s optimizer indices without changing or losing stops', async (_, order) => {
+	renderOptimizationFixture();
+	MapService.optimizeStops.mockResolvedValueOnce(order);
+	fireEvent.click(screen.getByRole('button', { name: 'Optimize stop order' }));
+	expect(await screen.findByText('Backend optimizer returned an invalid stop order.')).toBeInTheDocument();
+	const rows = within(screen.getByRole('region', { name: 'Review stops' })).getAllByRole('row');
+	expect(rows).toHaveLength(5);
+	[1, 2, 3, 4].forEach((id) => expect(within(rows[id]).getByText(`STOP-${id}`)).toBeInTheDocument());
+	expect(MapService.getRoute).toHaveBeenCalledTimes(1);
+});
+
+test('retains reordered stops and clears old estimate metrics when PTV refresh fails', async () => {
+	renderOptimizationFixture();
+	MapService.optimizeStops.mockResolvedValueOnce([1, 0]);
+	MapService.getRoute.mockResolvedValueOnce({
+		status: true, distanceKms: 120, duration: 7200, durationText: '02:00:00',
+	}).mockRejectedValueOnce(new Error('PTV is unavailable'));
+	fireEvent.click(screen.getByRole('button', { name: 'Create estimate' }));
+	await waitFor(() => expect(screen.getByLabelText('Route distance (km) *')).toHaveValue(120));
+	fireEvent.click(screen.getByRole('button', { name: 'Optimize stop order' }));
+	expect(await screen.findByText(/but PTV route refresh failed/)).toBeInTheDocument();
+	expect(screen.getByText('PTV is unavailable', { exact: true })).toBeInTheDocument();
+	expect(screen.getByLabelText('Route distance (km) *')).toHaveValue(null);
+	expect(screen.getByLabelText('Average speed (km/h) *')).toHaveValue(null);
+	const rows = within(screen.getByRole('region', { name: 'Review stops' })).getAllByRole('row');
+	expect(within(rows[2]).getByText('STOP-3')).toBeInTheDocument();
+	expect(within(rows[3]).getByText('STOP-2')).toBeInTheDocument();
+	fireEvent.click(screen.getByRole('button', { name: 'Retry PTV route' }));
+	expect(await screen.findByText('PTV returned a truck route for the current stop order.')).toBeInTheDocument();
+	expect(MapService.getRoute).toHaveBeenCalledTimes(3);
+});
+
+test.each([3, 21])('disables optimizer for unsupported %i-stop plans', (count) => {
+	renderOptimizationFixture(count);
+	expect(screen.getByRole('button', { name: 'Optimize stop order' })).toBeDisabled();
+	expect(MapService.optimizeStops).not.toHaveBeenCalled();
+});
+
+test('a delayed PTV response cannot restore a stop removed during calculation', async () => {
+	renderOptimizationFixture();
+	let finishRoute;
+	MapService.getRoute.mockImplementationOnce(() => new Promise((resolve) => { finishRoute = resolve; }));
+	fireEvent.click(screen.getByRole('button', { name: 'Create map' }));
+	await waitFor(() => expect(MapService.getRoute).toHaveBeenCalledTimes(1));
+	fireEvent.click(screen.getByRole('button', { name: 'Remove stop STOP-2' }));
+	await act(async () => {
+		finishRoute({ status: true, distanceKms: 120, duration: 7200 });
+	});
+	expect(await screen.findByText(/Route inputs changed while the request was running/)).toBeInTheDocument();
+	expect(screen.queryByRole('button', { name: 'Remove stop STOP-2' })).not.toBeInTheDocument();
+	expect(within(screen.getByRole('region', { name: 'Review stops' })).getAllByRole('row')).toHaveLength(4);
+});
+
+test('a delayed optimizer response cannot overwrite edits or refresh the old sequence', async () => {
+	renderOptimizationFixture();
+	let finishOptimization;
+	MapService.optimizeStops.mockImplementationOnce(() => new Promise((resolve) => { finishOptimization = resolve; }));
+	fireEvent.click(screen.getByRole('button', { name: 'Optimize stop order' }));
+	await waitFor(() => expect(MapService.optimizeStops).toHaveBeenCalledTimes(1));
+	fireEvent.click(screen.getByRole('button', { name: 'Remove stop STOP-2' }));
+	await act(async () => { finishOptimization([1, 0]); });
+	expect(await screen.findByText(/Route inputs changed during optimization/)).toBeInTheDocument();
+	expect(screen.queryByRole('button', { name: 'Remove stop STOP-2' })).not.toBeInTheDocument();
+	expect(MapService.getRoute).toHaveBeenCalledTimes(1);
+});
+
+test.each([
+	{ status: true, duration: 7200 },
+	{ status: true, distanceKms: null, duration: 7200 },
+	{ status: true, distanceKms: 120, duration: -1 },
+	{ status: false, distanceKms: 120, duration: 7200 },
+])('rejects incomplete route metrics: %j', async (response) => {
+	renderOptimizationFixture();
+	MapService.getRoute.mockResolvedValueOnce(response);
+	fireEvent.click(screen.getByRole('button', { name: 'Create map' }));
+	expect(await screen.findByText(/PTV returned incomplete route distance or duration/)).toBeInTheDocument();
+	expect(screen.queryByText('PTV returned a truck route for the current stop order.')).not.toBeInTheDocument();
 });

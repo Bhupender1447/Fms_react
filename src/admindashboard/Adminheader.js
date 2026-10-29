@@ -2,6 +2,8 @@ import React, { useEffect } from 'react'
 import Sidebar from './Sidebar'
 import { Link } from 'react-router-dom';
 import AdminLayout from '../AdminLayout';
+import FloatingCommunications from './communications/FloatingCommunications';
+import IsoviaHologram from '../components/IsoviaHologram';
 
 const Adminheader = () => {
   // useEffect(() => {
@@ -27,14 +29,14 @@ const Adminheader = () => {
   return (<>
 <header className="main-header">
   {/* Logo */}
-  <Link to="/admin" className="logo">
+  <Link to="/admin" className="logo iso-hologram-sidebar" aria-label="Isovia dashboard">
     {/* mini logo for sidebar mini 50x50 pixels */}
     <span className="logo-mini">
-      <b>IFM</b>
+      <IsoviaHologram />
     </span>
     {/* logo for regular state and mobile devices */}
     <span className="logo-lg">
-      <b>ISOVIA</b>
+      <IsoviaHologram />
     </span>
   </Link>
   {/* Header Navbar: style can be found in header.less */}
@@ -52,6 +54,7 @@ const Adminheader = () => {
 </header>
 
 <Sidebar/>
+<FloatingCommunications />
 
 </>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Connections from './Connections';
 import Sidebar from '../Sidebar';
@@ -23,8 +23,24 @@ test('sidebar exposes the SIS connections overview', () => {
   localStorage.setItem('logindetail', JSON.stringify({ role: 'admin' }));
   try {
     render(<MemoryRouter><Sidebar /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: 'Safety & Intelligence' }));
     expect(screen.getByRole('link', { name: /SIS Connections/ })).toHaveAttribute('href', '/sis/connections');
   } finally {
     localStorage.removeItem('logindetail');
   }
+});
+
+test('five foundations show their actual delivery state and disclose readiness on demand', () => {
+  render(<MemoryRouter><Connections /></MemoryRouter>);
+  const section = screen.getByRole('region', { name: 'Five parts. One accountable flow.' });
+  const details = section.querySelectorAll('details');
+  expect(details).toHaveLength(5);
+  ['World Model', 'Event Engine', 'Governance Engine', 'Decision Ledger', 'Supervisor'].forEach(name => expect(screen.getByRole('heading', { name, exact: true })).toBeVisible());
+  expect(screen.getByText('Read-only prototype')).toBeVisible();
+  expect(screen.getByText('Contract only')).toBeVisible();
+  expect(screen.getAllByText('Planned')).toHaveLength(3);
+  expect(details[0]).not.toHaveAttribute('open');
+  details[0].setAttribute('open', '');
+  expect(screen.getByRole('link', { name: 'Inspect account context' })).toHaveAttribute('href', '/sis/world-model');
+  expect(screen.queryByRole('button', { name: /approve|execute|dispatch/i })).not.toBeInTheDocument();
 });

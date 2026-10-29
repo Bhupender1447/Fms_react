@@ -1,495 +1,165 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import ReactPaginate from 'react-paginate';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { FiArrowLeft, FiArrowRight, FiGrid, FiLayers, FiLock, FiPlus, FiRefreshCw } from 'react-icons/fi';
+import { Alert, Button, EmptyState, Input, Select } from '../../design-system/components';
 import { BASE_URL } from '../../config';
+import DriverCard from './DriverCard';
+import DriverProfile from './DriverProfile';
+import { dateAttention, driverName } from './driverCommandData';
+import './driver-command-center.css';
 
-// DocumentChecklist Component
-const DocumentChecklist = ({ driverId, onClose }) => {
-  const [documentData, setDocumentData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const PAGE_SIZE = 12;
 
-  useEffect(() => {
-    const fetchDocumentData = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(
-          `${BASE_URL}api/checkDocumentList?id=${driverId}`
-        );
-
-        if (response.data.status === 'success') {
-          setDocumentData(response.data.data[0]);
-        } else {
-          setError('Failed to fetch document data');
-        }
-      } catch (err) {
-        setError('Error fetching document data: ' + err.message);
-        console.error('Error fetching document data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (driverId) {
-      fetchDocumentData();
-    }
-  }, [driverId]);
-
-  const getStatusBadge = (status) => {
-    const badgeClasses = {
-      expired: 'bg-danger',
-      expiring: 'bg-warning',
-      valid: 'bg-success',
-      default: 'bg-secondary'
-    };
-
-    const className = badgeClasses[status] || badgeClasses.default;
-    return (
-      <span className={`badge ${className}`}>
-        {status.toUpperCase()}
-      </span>
-    );
-  };
-
-  const getDaysText = (remainingDays) => {
-    if (remainingDays === 0) return 'Expired today';
-    if (remainingDays === 1) return '1 day remaining';
-    if (remainingDays > 1) return `${remainingDays} days remaining`;
-    return 'Expired';
-  };
-
-  if (loading) {
-    return (
-      <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-        <div className="modal-dialog modal-lg">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 className="modal-title">Document Checklist</h4>
-              <button type="button" className="close" onClick={onClose}>
-                <span aria-hidden="true">×</span>
-              </button>
-            </div>
-            <div className="modal-body text-center">
-              <div className="spinner-border" role="status">
-                <span className="sr-only">Loading...</span>
-              </div>
-              <p className="mt-2">Loading document data...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+function storedView() {
+  try {
+    const value = localStorage.getItem('ifm.driver-command.view');
+    if (value === null || value === 'carousel' || value === 'grid') return { view: value || 'carousel', warning: '' };
+    return { view: 'carousel', warning: 'The stored view preference was invalid. Carousel view is selected.' };
+  } catch (error) {
+    return { view: 'carousel', warning: 'View preference storage is unavailable. Your selection will last for this visit only.' };
   }
-
-  return (
-    <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="modal-dialog modal-lg">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 className="modal-title">Document Checklist</h4>
-            <button type="button" className="close" onClick={onClose}>
-              <span aria-hidden="true">×</span>
-            </button>
-          </div>
-          <div className="modal-body">
-            {error ? (
-              <div className="alert alert-danger">
-                {error}
-              </div>
-            ) : !documentData ? (
-              <div className="alert alert-warning">
-                No document data found
-              </div>
-            ) : (
-              <div>
-                {/* Header */}
-                <div className="card-header bg-light">
-                  <h5 className="card-title mb-0">
-                    {documentData.name}
-                  </h5>
-                  <small className="text-muted">Driver ID: {documentData.driver_id}</small>
-                </div>
-
-                {/* Documents List */}
-                <div className="mt-3">
-                  {documentData.documents && documentData.documents.length > 0 ? (
-                    <div className="list-group">
-                      {documentData.documents.map((doc, index) => (
-                        <div
-                          key={index}
-                          className="list-group-item d-flex justify-content-between align-items-center"
-                        >
-                          <div className="flex-grow-1">
-                            <h6 className="mb-1">{doc.document_type}</h6>
-                            <small className="text-muted">
-                              <strong>Expiry:</strong> {new Date(doc.expiry_date).toLocaleDateString()} |
-                              <strong> Status:</strong> {getDaysText(doc.remaining_days)}
-                            </small>
-                          </div>
-                          <div>
-                            {getStatusBadge(doc.status)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 text-muted">
-                      No documents found for this driver
-                    </div>
-                  )}
-                </div>
-
-                {/* Summary */}
-                <div className="card-footer bg-light mt-3">
-                  <div className="row text-center">
-                    <div className="col-6">
-                      <small className="text-muted">
-                        Total Documents: <strong>{documentData.documents?.length || 0}</strong>
-                      </small>
-                    </div>
-                    <div className="col-6">
-                      <small className="text-muted">
-                        Expired: <strong className="text-danger">
-                          {documentData.documents?.filter(doc => doc.status === 'expired').length || 0}
-                        </strong>
-                      </small>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="modal-footer">
-            <button
-              type="button"
-              className="btn btn-default"
-              onClick={onClose}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Main Drivers Component
-const Drivers = () => {
-  const [data, setData] = useState([]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [selectedDriverForDocs, setSelectedDriverForDocs] = useState(null);
-
-  useEffect(() => {
-    axios.get(`${BASE_URL}api/fetchdriversProductData`)
-      .then(res => setData(res.data))
-      .catch(error => console.log(error));
-  }, []);
-
-  const handlePageClick = (event) => {
-    setCurrentPage(event.selected);
-  };
-
-  const handleRemove = async (id) => {
-    try {
-      const response = await axios.post(
-        `${BASE_URL}api/remove`,
-        new URLSearchParams({
-          id: id,
-          type: 'fms_drivers'
-        }).toString(),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Cookie': 'ci_session=06vlfcjjenfs9pp507kpsbcetr7h8va3'
-          }
-        }
-      );
-      console.log("Response:", response.data);
-      setData(data.filter(item => item.id !== id));
-    } catch (error) {
-      console.error("Error removing item:", error);
-    }
-  };
-
-  const offset = currentPage * itemsPerPage;
-  const currentData = data.slice(offset, offset + itemsPerPage);
-
-  return (
-    <div className="content-wrapper" style={{ minHeight: 440 }}>
-      {/* Content Header (Page header) */}
-      <section className="content-header">
-        <h1>
-          Manage
-          <small>Drivers</small>
-        </h1>
-      </section>
-
-      {/* Main content */}
-      <section className="content">
-        <div className="row">
-          <div className="col-md-12 col-xs-12">
-            <div id="messages" />
-            <div className="alert alert-success alert-dismissible" role="alert">
-              <button
-                type="button"
-                className="close"
-                data-dismiss="alert"
-                aria-label="Close"
-              >
-                <span aria-hidden="true">×</span>
-              </button>
-              Successfully updated{" "}
-            </div>
-            <Link to={'/drivers/create'} className="btn btn-primary">
-              Add Drivers
-            </Link>
-            <br /> <br />
-            <div className="box">
-              <div className="box-header">
-                <div className="col-md-6 col-xs-12 pull pull-right">
-                  <button id="exportButton" className="btn btn-default">
-                    <span className="fa fa-file-pdf-o" /> Export to PDF
-                  </button>
-                  <button id="exportButtonExcl" className="btn btn-default">
-                    <span className="fa fa-file-excel-o" /> Export to Excel
-                  </button>
-                </div>
-              </div>
-
-              {/* /.box-header */}
-              <div className="box-body">
-                <div id="manageTable_wrapper" className="dataTables_wrapper form-inline dt-bootstrap no-footer">
-                  <div className="row">
-                    <div className="col-sm-6">
-                      <div className="dataTables_length" id="manageTable_length">
-                        <label>
-                          Show{" "}
-                          <select
-                            name="manageTable_length"
-                            aria-controls="manageTable"
-                            className="form-control input-sm"
-                            onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                            value={itemsPerPage}
-                          >
-                            <option value={10}>10</option>
-                            <option value={25}>25</option>
-                            <option value={50}>50</option>
-                            <option value={100}>100</option>
-                          </select>{" "}
-                          entries
-                        </label>
-                      </div>
-                    </div>
-                    <div className="col-sm-6">
-                      <div id="manageTable_filter" className="dataTables_filter">
-                        <label>
-                          Search:
-                          <input
-                            type="search"
-                            className="form-control input-sm"
-                            placeholder=""
-                            aria-controls="manageTable"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="row">
-                    <div className="col-sm-12">
-                      <table
-                        id="manageTable"
-                        className="table table-bordered table-striped dataTable no-footer"
-                        role="grid"
-                        aria-describedby="manageTable_info"
-                        style={{ width: 1243 }}
-                      >
-                        <thead>
-                          <tr role="row">
-                            <th style={{ width: "41.2px" }}>Image</th>
-                            <th style={{ width: "69.2px" }}>FirstName</th>
-                            <th style={{ width: "67.2px" }}>LastName</th>
-                            <th style={{ width: "115.2px" }}>Address1</th>
-                            <th style={{ width: "127.2px" }}>Address2</th>
-                            <th style={{ width: "54.2px" }}>Country</th>
-                            <th style={{ width: "35.2px" }}>State</th>
-                            <th style={{ width: "27.2px" }}>City</th>
-                            <th style={{ width: "25.2px" }}>Zip</th>
-                            <th style={{ width: 294 }}>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentData.map(item => (
-                            <tr role="row" className="odd" key={item.id}>
-                              <td>
-                                <img
-                                  src={item.image}
-                                  alt={item.fname}
-                                  className="img-circle"
-                                  width={50}
-                                  height={50}
-                                />
-                              </td>
-                              <td>{item.fname}</td>
-                              <td>{item.lname}</td>
-                              <td>{item.address1}</td>
-                              <td>{item.address2}</td>
-                              <td>{item.country}</td>
-                              <td>{item.state}</td>
-                              <td>{item.city}</td>
-                              <td>{item.zip}</td>
-                              <td>
-                                <button
-                                  type="button"
-                                  className="btn btn-default btn-xs"
-                                  onClick={() => console.log("Default Charges")}
-                                  data-toggle="modal"
-                                  data-target="#defaultModal"
-                                >
-                                  Default Charges
-                                </button>{" "}
-                                <button
-                                  type="button"
-                                  className="btn btn-primary btn-xs"
-                                  onClick={() => setSelectedDriverForDocs(item.id)}
-                                >
-                                  Document Checklist
-                                </button>{" "}
-                                <button
-                                  type="button"
-                                  className="btn btn-success btn-xs"
-                                  onClick={() => console.log("Travel Docs.")}
-                                  data-toggle="modal"
-                                  data-target="#travelModal"
-                                >
-                                  Travel Docs.
-                                </button>{" "}
-                                <button
-                                  type="button"
-                                  className="btn btn-info btn-xs"
-                                  onClick={() => console.log("Payment Prof.")}
-                                  data-toggle="modal"
-                                  data-target="#paymentModal"
-                                >
-                                  Payment Prof.
-                                </button>{" "}
-                                <Link
-                                  to={`/drivers/update/${item.id}`}
-                                  className="btn btn-default btn-xs"
-                                >
-                                  <i className="fa fa-pencil" />
-                                </Link>{" "}
-                                <button
-                                  type="button"
-                                  className="btn btn-default btn-xs"
-                                  onClick={() => handleRemove(item.id)}
-                                  data-toggle="modal"
-                                  data-target="#removeModal"
-                                >
-                                  <i className="fa fa-trash" />
-                                </button>{" "}
-                                <Link
-                                  to={`/drivers/hos/${item.id}`}
-                                  className="btn btn-warning btn-xs"
-                                  title={`Open current HOS details for ${item.fname} ${item.lname}`}
-                                >
-                                  Live HOS
-                                </Link>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Pagination Footer */}
-                  <div className="row">
-                    <div className="col-sm-5">
-                      <div
-                        className="dataTables_info"
-                        id="manageTable_info"
-                        role="status"
-                        aria-live="polite"
-                      >
-                        Showing {offset + 1} to {Math.min(offset + itemsPerPage, data.length)} of {data.length} entries
-                      </div>
-                    </div>
-                    <div className="col-sm-7">
-                      <div
-                        className="dataTables_paginate paging_simple_numbers"
-                        id="manageTable_paginate"
-                      >
-                        <ReactPaginate
-                          previousLabel={"Previous"}
-                          nextLabel={"Next"}
-                          breakLabel={"..."}
-                          breakClassName={"break-me"}
-                          pageCount={Math.ceil(data.length / itemsPerPage)}
-                          marginPagesDisplayed={2}
-                          pageRangeDisplayed={5}
-                          onPageChange={handlePageClick}
-                          containerClassName={"pagination"}
-                          subContainerClassName={"pages pagination"}
-                          activeClassName={"active"}
-                          forcePage={currentPage}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Additional Footer Section */}
-                  <div className="row">
-                    <div className="col-sm-12">
-                      <div className="box-footer clearfix">
-                        <div className="pull-left">
-                          <strong>Total Drivers:</strong> {data.length}
-                        </div>
-                        <div className="pull-right">
-                          <div className="btn-group">
-                            <button
-                              type="button"
-                              className="btn btn-default btn-sm"
-                              onClick={() => window.print()}
-                            >
-                              <i className="fa fa-print"></i> Print
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-default btn-sm"
-                              onClick={() => console.log('Export functionality')}
-                            >
-                              <i className="fa fa-download"></i> Export
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* /.box-body */}
-            </div>
-            {/* /.box */}
-          </div>
-          {/* col-md-12 */}
-        </div>
-        {/* /.row */}
-      </section>
-      {/* /.content */}
-
-      {/* Document Checklist Modal */}
-      {selectedDriverForDocs && (
-        <DocumentChecklist
-          driverId={selectedDriverForDocs}
-          onClose={() => setSelectedDriverForDocs(null)}
-        />
-      )}
-    </div>
-  );
 }
 
-export default Drivers;
+// Presentation callbacks are reserved for a future authorized adapter. There is
+// no demo fleet or save adapter in the live container below.
+export function DriverCommandCenter({ drivers = null, loading = false, error = '', onRefresh, permissions = {}, onSave, onReloadDriver }) {
+  const [preference, setPreference] = useState(storedView);
+  const [search, setSearch] = useState('');
+  const [availability, setAvailability] = useState('all');
+  const [assignment, setAssignment] = useState('all');
+  const [page, setPage] = useState(0);
+  const [selectedId, setSelectedId] = useState(null);
+  const [updates, setUpdates] = useState({});
+  const listRef = useRef(null);
+  const cardRefs = useRef({});
+  const leaveGuard = useRef(() => true);
+  const hasData = Array.isArray(drivers) && !loading && !error;
+  const fleet = useMemo(() => hasData ? drivers.map(driver => updates[String(driver.id)] || driver) : [], [hasData, drivers, updates]);
+  useEffect(() => { setUpdates({}); }, [drivers]);
+
+  const filtered = useMemo(() => fleet.filter(driver => {
+    const matches = `${driverName(driver)} ${driver.id} ${driver.employeecode || ''}`.toLowerCase().includes(search.trim().toLowerCase());
+    // No availability/current-assignment contract has been verified.
+    return matches && (availability === 'all' || availability === 'unknown') && (assignment === 'all' || assignment === 'unverified');
+  }), [fleet, search, availability, assignment]);
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pages - 1);
+  const visible = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+  const selected = fleet.find(driver => String(driver.id) === selectedId);
+  const alerts = fleet.map(driver => permissions.view_compliance === true ? dateAttention(driver) : null);
+  const knownAlerts = alerts.filter(value => value === true).length;
+  const attentionValue = !hasData ? 'Unavailable' : alerts.every(value => value !== null) ? String(knownAlerts) : `${knownAlerts} known`;
+
+  const leaveProfile = () => {
+    if (!leaveGuard.current()) return false;
+    setSelectedId(null);
+    return true;
+  };
+  const changeFilter = (setter, value) => {
+    if (!leaveProfile()) return;
+    setter(value);
+    setPage(0);
+    if (listRef.current) listRef.current.scrollLeft = 0;
+  };
+  const selectDriver = (id) => {
+    if (String(id) === selectedId || !leaveGuard.current()) return;
+    setSelectedId(String(id));
+  };
+  const closeProfile = () => {
+    const id = selectedId;
+    if (leaveProfile()) cardRefs.current[id]?.focus();
+  };
+  const setView = (view) => {
+    let warning = '';
+    try { localStorage.setItem('ifm.driver-command.view', view); }
+    catch (storageError) { warning = 'View preference could not be saved. Your selection will last for this visit only.'; }
+    setPreference({ view, warning });
+  };
+  const scrollCards = (direction) => {
+    const list = listRef.current;
+    if (!list) return;
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    list.scrollBy({ left: direction * list.clientWidth * .8, behavior: reduced ? 'auto' : 'smooth' });
+  };
+  const keyboardCards = (event) => {
+    if (preference.view !== 'carousel' || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const buttons = visible.map(driver => cardRefs.current[String(driver.id)]).filter(Boolean);
+    const index = buttons.indexOf(event.target);
+    if (index < 0) return;
+    event.preventDefault();
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : Math.max(0, Math.min(buttons.length - 1, index + (event.key === 'ArrowRight' ? 1 : -1)));
+    buttons[next]?.focus();
+  };
+  const drag = useRef(null);
+  const dragStart = (event) => {
+    if (preference.view !== 'carousel' || event.pointerType !== 'mouse' || event.button !== 0 || event.target.closest('a,button,input,select')) return;
+    drag.current = { x: event.clientX, left: event.currentTarget.scrollLeft };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const dragMove = (event) => {
+    if (drag.current) event.currentTarget.scrollLeft = drag.current.left - (event.clientX - drag.current.x);
+  };
+
+  return <main className="content-wrapper iso-ui dcc" data-iso-theme="light">
+    <header className="dcc-header">
+      <div><p className="dcc-eyebrow">IFM / People & operations</p><h1>Driver Command Center<span aria-hidden="true">∞</span></h1><p>Your fleet, in focus. People first. Every handoff visible.</p></div>
+      <div className="dcc-header-actions">
+        <Button variant="secondary" disabled={loading || !onRefresh} onClick={() => { if (leaveProfile()) { setUpdates({}); onRefresh(); } }}><FiRefreshCw aria-hidden="true" />{loading ? 'Refreshing...' : 'Refresh'}</Button>
+        <Button disabled title="Account-scoped driver creation permissions are not verified."><FiPlus aria-hidden="true" />Add Driver</Button>
+      </div>
+    </header>
+    <div className="dcc-boundary"><FiLock aria-hidden="true" /><div><strong>Verified data only</strong><p>Live records and changes are locked until driver ownership and permissions are verified. HOS is not assessed. SIS recommendations and automated dispatch are disabled.</p></div></div>
+    <section className="dcc-summary" aria-label="Fleet summary">
+      {[
+        ['Total drivers', hasData ? String(fleet.length) : 'Unavailable', 'Authorized roster only'],
+        ['Available drivers', 'Unavailable', 'Availability source not verified'],
+        ['Drivers assigned to trips', 'Unavailable', 'Assignment scope not verified'],
+        ['Drivers requiring attention', attentionValue, 'Recorded date alerts only; other checks not assessed'],
+        ['ELD/HOS coverage', 'Not connected', 'No verified provider coverage'],
+      ].map(([label, value, help]) => <div className="dcc-stat" key={label} aria-label={label}><span>{label}</span><strong>{value}</strong><small>{help}</small></div>)}
+    </section>
+    {error && <Alert tone="danger" title="Driver data unavailable">{error}</Alert>}
+    {preference.warning && <Alert tone="warning" title="View preference">{preference.warning}</Alert>}
+    <section className="dcc-workspace" aria-labelledby="dcc-roster-title">
+      <div className="dcc-roster-heading"><div><p className="dcc-eyebrow">The driver workspace</p><h2 id="dcc-roster-title">People behind every move</h2></div><div className="dcc-views" role="group" aria-label="Driver view">
+        <Button variant="secondary" aria-label="Carousel view" aria-pressed={preference.view === 'carousel'} onClick={() => setView('carousel')}><FiLayers aria-hidden="true" />Carousel</Button>
+        <Button variant="secondary" aria-label="Grid view" aria-pressed={preference.view === 'grid'} onClick={() => setView('grid')}><FiGrid aria-hidden="true" />Grid</Button>
+      </div></div>
+      <div className="dcc-filters">
+        <Input type="search" label="Search drivers" value={search} placeholder="Name, employee code or driver ID" onChange={event => changeFilter(setSearch, event.target.value)} />
+        <Select label="Availability filter" value={availability} onChange={event => changeFilter(setAvailability, event.target.value)}><option value="all">All availability</option><option value="available">Verified available only</option><option value="unknown">Availability unavailable</option></Select>
+        <Select label="Assignment filter" value={assignment} onChange={event => changeFilter(setAssignment, event.target.value)}><option value="all">All assignments</option><option value="assigned">Verified assigned only</option><option value="unverified">Assignment unverified</option></Select>
+      </div>
+      <div className="dcc-list-toolbar"><p role="status">{loading ? 'Loading authorized roster...' : hasData ? `${filtered.length} matching drivers / ${fleet.length} loaded` : 'No authorized roster loaded'}</p>
+        {preference.view === 'carousel' && <div className="dcc-carousel-actions"><Button variant="secondary" aria-label="Previous drivers" disabled={!visible.length} onClick={() => scrollCards(-1)}><FiArrowLeft aria-hidden="true" /></Button><Button variant="secondary" aria-label="Next drivers" disabled={!visible.length} onClick={() => scrollCards(1)}><FiArrowRight aria-hidden="true" /></Button></div>}
+      </div>
+      {loading ? <EmptyState loading title="Loading drivers">Waiting for the account-scoped data gate.</EmptyState> : !hasData ? <EmptyState title="Your fleet workspace is ready"><FiLock className="dcc-empty-icon" aria-hidden="true" />No personal records are exposed. Verified driver ownership and role permissions are required before this view can connect.</EmptyState> : !visible.length ? <EmptyState title="No matching drivers">Adjust search or filters. Missing availability is never treated as available.</EmptyState> :
+        <div ref={listRef} className={`dcc-list dcc-list--${preference.view}`} role="group" aria-label={preference.view === 'carousel' ? 'Driver carousel' : 'Driver grid'} onKeyDown={keyboardCards} onPointerDown={dragStart} onPointerMove={dragMove} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }} onLostPointerCapture={() => { drag.current = null; }}>
+          {visible.map(driver => <DriverCard key={driver.id} driver={driver} selected={selectedId === String(driver.id)} canViewCompliance={permissions.view_compliance === true} onOpen={() => selectDriver(driver.id)} buttonRef={element => { cardRefs.current[String(driver.id)] = element; }} />)}
+        </div>}
+      {hasData && <nav className="dcc-pagination" aria-label="Driver pages"><Button variant="secondary" disabled={currentPage === 0} onClick={() => { if (leaveProfile()) { setPage(currentPage - 1); if (listRef.current) listRef.current.scrollLeft = 0; } }}>Previous page</Button><span>Page {currentPage + 1} of {pages}</span><Button variant="secondary" disabled={currentPage + 1 >= pages} onClick={() => { if (leaveProfile()) { setPage(currentPage + 1); if (listRef.current) listRef.current.scrollLeft = 0; } }}>Next page</Button></nav>}
+    </section>
+    {selected && <DriverProfile key={selectedId} driver={selected} permissions={permissions} onClose={closeProfile} leaveGuard={leaveGuard} onSave={onSave} onReloadDriver={onReloadDriver} onUpdated={driver => setUpdates(current => ({ ...current, [String(driver.id)]: driver }))} />}
+    <footer className="dcc-footer"><span>Human-led operations. No compliance or dispatch clearance implied.</span><Button variant="secondary" disabled={!hasData} onClick={() => window.print()}>Print loaded view</Button></footer>
+  </main>;
+}
+
+export default function Drivers() {
+  const [refresh, setRefresh] = useState(0);
+  const [state, setState] = useState({ loading: true, error: '' });
+  useEffect(() => {
+    const controller = new AbortController();
+    setState({ loading: true, error: '' });
+    axios.get(`${BASE_URL}api/fetchdriversProductData`, { params: { command_center: '1' }, withCredentials: true, signal: controller.signal })
+      .then(() => {
+        // No authorized driver projection exists yet. A legacy array is not
+        // evidence of ownership, even if a misconfigured server returns 200.
+        if (!controller.signal.aborted) setState({ loading: false, error: 'Driver ownership is not verified. The roster is withheld; an unscoped response cannot unlock this screen.' });
+      })
+      .catch(requestError => {
+        if (!controller.signal.aborted) setState({ loading: false, error: requestError.response?.data?.message || requestError.message || 'Could not verify access to driver records.' });
+      });
+    return () => controller.abort();
+  }, [refresh]);
+  return <DriverCommandCenter loading={state.loading} error={state.error} onRefresh={() => setRefresh(value => value + 1)} />;
+}

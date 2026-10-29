@@ -1,0 +1,80 @@
+.ifm-comms { padding: 30px; background: #f4f6fa; color: #152039; min-height: calc(100vh - 100px); }
+.ifm-comms *, .ifm-comms-floating * { box-sizing: border-box; }
+.ifm-comms button, .ifm-comms select, .ifm-comms input, .ifm-comms-floating button { font: inherit; min-height: 44px; border: 1px solid #ced5df; border-radius: 9px; padding: 9px 12px; background: white; color: #152039; }
+.ifm-comms button:disabled, .ifm-comms-floating button:disabled { color: #586377; background: #edf0f5; cursor: not-allowed; }
+.ifm-comms :focus-visible, .ifm-comms-floating :focus-visible { outline: 3px solid #087d96; outline-offset: 3px; }
+.ifm-comms-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 24px; }
+.ifm-comms-heading h1 { font-size: clamp(26px, 3vw, 38px); font-weight: 750; margin: 6px 0; letter-spacing: -.8px; }
+.ifm-comms-heading p { margin-bottom: 0; }
+.ifm-comms-eyebrow { color: #800020; font-size: 11px; font-weight: 750; letter-spacing: 1.8px; }
+.ifm-comms .ifm-comms-primary { background: #800020; color: white; border-color: #800020; font-weight: 650; }
+.ifm-comms .ifm-comms-primary:disabled { background: #edf0f5; color: #586377; border-color: #ced5df; }
+.ifm-comms-primary svg { margin-right: 6px; }
+.ifm-comms-notice { display: flex; gap: 12px; border: 1px solid #c5dbe2; background: #f0f9fc; border-radius: 12px; padding: 16px; margin-bottom: 22px; }
+.ifm-comms-notice > svg { flex-shrink: 0; margin-top: 3px; color: #086277; }
+.ifm-comms-notice p { margin: 3px 0 0; font-size: 13px; }
+.ifm-comms-shell { display: grid; grid-template-columns: 210px minmax(270px, .9fr) minmax(300px, 1.2fr); background: white; border: 1px solid #dce2ea; border-radius: 18px; overflow: hidden; min-height: 660px; box-shadow: 0 15px 50px #0b102008; }
+.ifm-comms-folders { background: #0b1020; color: white; padding: 24px 16px; display: flex; flex-direction: column; gap: 7px; }
+.ifm-comms-brand { font-size: 14px; font-weight: 650; margin-bottom: 20px; }
+.ifm-comms-folders label { font-size: 12px; color: #d0d9ed; margin-bottom: 10px; }
+.ifm-comms-folders select { display: block; width: 100%; margin-top: 5px; }
+.ifm-comms-folders > button { margin-bottom: 14px; }
+.ifm-comms-folders > a { color: #d7e0f0; display: flex; gap: 10px; align-items: center; min-height: 44px; padding: 10px; border-radius: 8px; text-decoration: none; font-size: 13px; }
+.ifm-comms-folders > a[aria-current="page"] { background: #800020; color: white; box-shadow: inset 3px 0 #00d9ff; }
+.ifm-comms-folders > a:hover { background: #293148; }
+.ifm-comms-labels { border-top: 1px solid #34405b; padding-top: 20px; margin-top: 18px; font-size: 12px; color: #c1cce1; }
+.ifm-comms-labels p { margin-top: 8px; line-height: 1.6; }
+.ifm-comms-provider-key { margin-top: auto; display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; padding-top: 22px; }
+.ifm-comms-provider-key small { width: 100%; color: #c1cce1; }
+.ifm-comms-list { border-right: 1px solid #e2e6ed; min-width: 0; }
+.ifm-comms-list > header { padding: 24px 20px 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
+.ifm-comms-list h2 { font-size: 19px; margin: 0; font-weight: 700; }
+.ifm-comms-list header > span { color: #626c7c; font-size: 11px; }
+.ifm-comms-search { display: flex; align-items: center; margin: 6px 18px 14px; gap: 8px; }
+.ifm-comms-search input { min-width: 0; width: 100%; }
+.ifm-comms-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 18px 18px; }
+.ifm-comms-filters label { font-size: 11px; color: #4e5c71; }
+.ifm-comms-filters select, .ifm-comms-filters input { display: block; width: 100%; min-width: 0; margin-top: 4px; font-size: 12px; }
+.ifm-comms-empty { padding: 65px 28px; text-align: center; color: #566276; }
+.ifm-comms-empty > svg { font-size: 38px; color: #800020; margin-bottom: 20px; }
+.ifm-comms-empty h3 { font-size: 20px; color: #152039; line-height: 1.4; }
+.ifm-comms-empty p { font-size: 13px; line-height: 1.8; }
+.ifm-comms-messages { padding: 0; margin: 0; list-style: none; }
+.ifm-comms-messages button { width: 100%; text-align: left; border-radius: 0; border-width: 1px 0 0; display: flex; flex-direction: column; gap: 8px; padding: 20px; overflow-wrap: anywhere; }
+.ifm-comms-messages button[aria-pressed="true"] { background: #fbf0f3; box-shadow: inset 3px 0 #800020; }
+.ifm-comms-provider { display: inline-flex; align-items: center; width: fit-content; font-size: 11px; font-weight: 750; padding: 4px 8px; border-radius: 5px; }
+.ifm-comms-provider.gmail { background: #f8e5e8; color: #800020; }
+.ifm-comms-provider.outlook { background: #e4f2ff; color: #105584; }
+.ifm-comms-message-from { font-size: 12px; font-weight: 650; }
+.ifm-comms-unread { margin-left: 8px; color: #800020; font-size: 11px; }
+.ifm-comms-preview { font-size: 12px; color: #5b6474; }
+.ifm-comms-messages small { color: #626c7c; font-size: 11px; }
+.ifm-comms-reader { padding: 28px; min-width: 0; overflow-wrap: anywhere; }
+.ifm-comms-reader h2 { font-size: 25px; font-weight: 700; line-height: 1.3; }
+.ifm-comms-reader p, .ifm-comms-reader time { font-size: 13px; color: #536077; }
+.ifm-comms-reader-intro { padding: 32px 0; }
+.ifm-comms-orbit { display: inline-grid; place-items: center; width: 78px; height: 78px; border: 1px solid #bedce4; border-radius: 24px; background: radial-gradient(ellipse at top right, #d7f7fb, #fcf2f4 75%); color: #800020; font-size: 30px; margin-bottom: 24px; }
+.ifm-comms-reader-meta { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; margin-bottom: 20px; }
+.ifm-comms-body { white-space: pre-wrap; padding: 24px 0; font-size: 14px; line-height: 1.8; }
+.ifm-comms-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ifm-comms-actions button { font-size: 12px; }
+.ifm-comms-context { border-top: 1px solid #e0e5ec; margin-top: 28px; padding-top: 24px; }
+.ifm-comms-context h3 { font-size: 19px; }
+.ifm-comms-context small { display: block; margin-top: 15px; color: #586377; line-height: 1.6; }
+.ifm-comms-connect { padding: 24px; background: white; border: 1px solid #d9b2bd; border-radius: 14px; margin-bottom: 22px; }
+.ifm-comms-connect header, .ifm-comms-floating header { display: flex; justify-content: space-between; gap: 15px; align-items: flex-start; }
+.ifm-comms-connect h2 { font-size: 22px; margin-top: 0; }
+.ifm-comms-connect p { line-height: 1.7; font-size: 13px; }
+.ifm-comms-provider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 20px 0; }
+.ifm-comms-provider-grid article { padding: 20px; border: 1px solid #e0e5ec; border-radius: 12px; }
+.ifm-comms-provider-grid h3 { font-size: 20px; }
+.ifm-comms-floating { position: fixed; right: 24px; bottom: 24px; z-index: 1040; color: #152039; }
+.ifm-comms-floating .ifm-comms-launcher { display: flex; gap: 9px; align-items: center; margin-left: auto; background: #800020; color: white; border: 1px solid #c21840; box-shadow: 0 8px 30px #30001030; border-radius: 28px; padding: 12px 20px; }
+.ifm-comms-floating section { background: white; width: min(360px, calc(100vw - 32px)); max-height: calc(100dvh - 120px); overflow-y: auto; margin-bottom: 12px; border: 1px solid #cddde5; border-radius: 16px; box-shadow: 0 15px 60px #0b102033; padding: 22px; }
+.ifm-comms-floating small { display: block; color: #586377; margin-top: 4px; }
+.ifm-comms-floating h2 { font-size: 20px; line-height: 1.4; }
+.ifm-comms-floating p { font-size: 13px; line-height: 1.7; }
+.ifm-comms-panel-icon { color: #800020; font-size: 34px; margin: 26px 0 12px; }
+@media (max-width: 1200px) { .ifm-comms { padding: 20px; } .ifm-comms-shell { grid-template-columns: 180px minmax(240px, 1fr); } .ifm-comms-reader { grid-column: 1 / -1; border-top: 1px solid #e0e5ec; } .ifm-comms-empty { padding: 35px 22px; } }
+@media (max-width: 600px) { .ifm-comms { padding: 16px; } .ifm-comms-heading { align-items: flex-start; flex-direction: column; } .ifm-comms-shell { grid-template-columns: minmax(0, 1fr); } .ifm-comms-folders { display: grid; grid-template-columns: 1fr 1fr; padding: 18px; } .ifm-comms-folders label, .ifm-comms-brand, .ifm-comms-labels, .ifm-comms-provider-key { grid-column: 1 / -1; } .ifm-comms-list { border-right: 0; } .ifm-comms-reader { padding: 22px; } .ifm-comms-provider-grid { grid-template-columns: 1fr; } .ifm-comms-floating { right: 16px; bottom: 16px; } .ifm-comms-launcher span { display: none; } }
+@media (prefers-reduced-motion: reduce) { .ifm-comms *, .ifm-comms-floating * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

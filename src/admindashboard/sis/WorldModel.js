@@ -60,11 +60,12 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 
-function AttributeList({ attributes, prefix = '' }) {
+function AttributeList({ attributes, prefix = '', entityType }) {
   return <dl className="sis-world-attributes">{Object.entries(attributes).map(([key, value]) => {
-    const label = [prefix, key.replace(/_/g, ' ')].filter(Boolean).join(' / ');
+    const customerLabel = entityType === 'trip' ? 'Broker / carrier customer reference' : 'Customer / company reference';
+    const label = [prefix, key === 'customer_id' ? customerLabel : key.replace(/_/g, ' ')].filter(Boolean).join(' / ');
     return value && typeof value === 'object'
-      ? <div key={key}><AttributeList attributes={value} prefix={label} /></div>
+      ? <div key={key}><AttributeList attributes={value} prefix={label} entityType={entityType} /></div>
       : <div key={key}><dt>{label}</dt><dd>{displayValue(value, 'Not supplied')}</dd></div>;
   })}</dl>;
 }
@@ -199,7 +200,7 @@ export default function WorldModel() {
           <option value="">{accountsLoading ? 'Checking authorized accounts...' : 'Select an account'}</option>
           {accounts.map((account) => <option key={account.account_id} value={account.account_id}>{account.name}</option>)}
         </Select>
-        <p>Account choices come from your active memberships and read permissions. Each snapshot request rechecks access.</p>
+        <p>This account identifies the operating company. For a trip, the broker is the carrier’s customer. For an order or route, the customer is a customer or company. Each snapshot rechecks your account read permissions.</p>
       </Card>
       {accountError && <Alert tone="danger" title="Account access unavailable" className="sis-world-notice" action={<Button variant="secondary" onClick={() => setAccountReload((value) => value + 1)}>Retry account access</Button>}>{accountError}</Alert>}
       {!accountsLoading && !accountError && accounts.length === 0 && <Alert tone="warning" title="No authorized accounts" className="sis-world-notice">A verified account, active membership and order/trip read permissions are required. Legacy unassigned records are excluded.</Alert>}
@@ -266,7 +267,7 @@ export default function WorldModel() {
                     <details className="sis-world-details">
                       <summary>Inspect {TYPE_LABELS[entity.entity_type] || entity.entity_type} {displayValue(entity.source?.record_id)} details</summary>
                       <dl><dt>Entity key</dt><dd>{entity.entity_key}</dd><dt>Observed by projection</dt><dd>{formatDate(entity.observed_at)}</dd></dl>
-                      <AttributeList attributes={entity.attributes || {}} />
+                      <AttributeList attributes={entity.attributes || {}} entityType={entity.entity_type} />
                     </details>
                   </td>
                   <td>{formatDate(entity.source?.updated_at)}</td>

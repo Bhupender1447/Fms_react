@@ -7,12 +7,13 @@ const LiveLocationMap = () => {
   const mapInstance = useRef(null);
   const markerInstance = useRef(null);
   const [status, setStatus] = useState("Click the button to detect location");
+  const [mapError, setMapError] = useState("");
 
   const loadGoogleMapScript = (callback) => {
     if (window.google && window.google.maps) {
       callback();
     } else if (!GOOGLE_MAPS_API_KEY) {
-      setStatus("Google Maps is not configured. Add REACT_APP_GOOGLE_MAPS_API_KEY to the React environment.");
+      setMapError("Google Maps is not configured. GPS sharing does not require the map.");
     } else {
       const script = document.createElement("script");
       script.src =
@@ -20,7 +21,7 @@ const LiveLocationMap = () => {
       script.async = true;
       script.defer = true;
       script.onload = callback;
-      script.onerror = () => setStatus("Google Maps failed to load. Check the browser key and Maps JavaScript API access.");
+      script.onerror = () => setMapError("Google Maps failed to load. GPS sharing does not require the map.");
       document.head.appendChild(script);
     }
   };
@@ -56,35 +57,33 @@ const LiveLocationMap = () => {
     })
       .then(async (res) => {
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Location update failed");
+        if (!res.ok || data.status !== "success") throw new Error(data.message || "Location update failed");
         setStatus("Location shared with dispatch.");
       })
-      .catch(() => {
-        setStatus("Failed to send location.");
+      .catch((error) => {
+        setStatus(error.message || "Failed to send location.");
       });
   };
 
   const handleLocationClick = () => {
-    loadGoogleMapScript(() => {
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const { latitude, longitude } = pos.coords;
-            setStatus(`Latitude: ${latitude}, Longitude: ${longitude}`);
-            initializeMap(latitude, longitude);
-            sendLocation(latitude, longitude);
-          },
-          (err) => setStatus("Error: " + err.message),
-          {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0,
-          }
-        );
-      } else {
-        setStatus("Geolocation not supported.");
-      }
-    });
+    if ("geolocation" in navigator) {
+      setStatus("Getting your location...");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          sendLocation(latitude, longitude);
+          loadGoogleMapScript(() => initializeMap(latitude, longitude));
+        },
+        (err) => setStatus("Error: " + err.message),
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0,
+        }
+      );
+    } else {
+      setStatus("Geolocation not supported.");
+    }
   };
 
   return (
@@ -92,6 +91,9 @@ const LiveLocationMap = () => {
       <h2>Live Location Tracker</h2>
       <button onClick={handleLocationClick}>📍 Get My Location</button>
       <p>{status}</p>
+      {mapError && <p role="alert">{mapError}</p>}
+      <p>Use Share live location in the header for automatic updates while this app is open.
+        Your last shared position remains visible to dispatch with its update time.</p>
       <div
         id="map"
         ref={mapRef}

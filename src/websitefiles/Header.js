@@ -20,7 +20,6 @@ const Header = () => {
     <div className="iso-public-header-inner">
       <NavLink className="iso-public-brand" to="/" aria-label="Isovia home">
         <img src="/images/logo.png" alt="" />
-        <span>ISOVIA<small>FREIGHT SYSTEMS</small></span>
       </NavLink>
       <Button ref={toggleRef} variant="secondary" className="iso-public-toggle" aria-controls="isoviaMainNav" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
         {open ? 'Close menu' : 'Menu'}

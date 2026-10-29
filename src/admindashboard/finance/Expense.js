@@ -97,10 +97,11 @@ const Expense = () => {
         alert('Expense deleted');
         fetchExpenses();
       } else {
-        alert('Failed to delete');
+        alert(res.data.message || 'Failed to delete');
       }
     } catch (err) {
       console.error('Delete error', err);
+      alert(err.response?.data?.message || 'Expense could not be deleted.');
     }
   };
 

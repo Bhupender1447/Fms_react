@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
-import { BASE_URL } from "../../config";
+import CustomsSubmissionNotice from "./CustomsSubmissionNotice";
 
 const AciTripForm = () => {
   const [formData, setFormData] = useState({
@@ -44,34 +43,20 @@ const AciTripForm = () => {
   const handleChange = (e) => {
     let { name, value } = e.target;
 
-    // Convert datetime-local value into "YYYY-MM-DD HH:mm:ss"
-    if (name === "estimatedArrivalDateTime") {
-      const date = new Date(value);
-      value = date.toISOString().slice(0, 19).replace("T", " ");
-    }
-
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      const res = await axios.post(
-        `${BASE_URL}api/borderconnectsendACI`,
-        formData
-      );
-      console.log(res.data);
-      alert("ACI Trip sent successfully!");
-    } catch (err) {
-      console.error(err);
-      alert("Error sending ACI trip!");
-    }
   };
 
   return (
     <div className="content-wrapper" style={{ minHeight: 440 }}>
       <h2 className="mb-4 text-center">ACI Trip Form</h2>
-      <form onSubmit={handleSubmit}>
+      <CustomsSubmissionNotice />
+      <form onSubmit={handleSubmit} aria-label="Manual ACI form (live sending unavailable)">
+        <fieldset>
+          <legend>Manual ACI details</legend>
         {/* Trip Info */}
         <div className="card mb-3 shadow-sm">
           <div className="card-header bg-primary text-white">Trip Info</div>
@@ -370,10 +355,11 @@ const AciTripForm = () => {
 
         {/* Submit */}
         <div className="text-center">
-          <button type="submit" className="btn btn-lg btn-primary px-5">
-            Submit ACI Trip
+          <button type="submit" disabled className="btn btn-lg btn-primary px-5" title="Live sending requires the approved account-scoped review and submission workflow.">
+            Submission unavailable
           </button>
         </div>
+        </fieldset>
       </form>
     </div>
   );

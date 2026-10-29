@@ -76,3 +76,16 @@ test('expired identity blocks account loading and permits an explicit safe retry
   expect(await screen.findByText('No authorized accounts')).toBeInTheDocument();
   expect(global.fetch).toHaveBeenCalledTimes(2);
 });
+
+test('operating ownership stays distinct from trip broker and order customer roles', async () => {
+  const body = snapshot('1');
+  body.world_model.entities = [
+    { entity_key: 'ifm:order:10', entity_type: 'order', source: { system: 'ifm', record_id: '10' }, attributes: { customer_id: '100' } },
+    { entity_key: 'ifm:trip:20', entity_type: 'trip', source: { system: 'ifm', record_id: '20' }, attributes: { customer_id: '200' } },
+  ];
+  global.fetch.mockResolvedValueOnce(reply({ status: 'success', accounts: [choices[0]] })).mockResolvedValueOnce(reply(body));
+  render(<WorldModel />);
+  await screen.findByText('Customer / company reference');
+  expect(screen.getByText('Broker / carrier customer reference')).toBeInTheDocument();
+  expect(screen.getByText(/For an order or route, the customer is a customer or company/)).toBeVisible();
+});

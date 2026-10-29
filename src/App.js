@@ -135,6 +135,8 @@ import WorldModel from "./admindashboard/sis/WorldModel";
 import Safety from "./admindashboard/sis/Safety";
 import DriverOnboarding from "./admindashboard/sis/DriverOnboarding";
 import Connections from "./admindashboard/sis/Connections";
+import EvidenceReview from "./admindashboard/sis/EvidenceReview";
+import NativeEldPrototype from "./admindashboard/eld/NativeEldPrototype.jsx";
 // import Article1 from "./websitefiles/blogs/Article1";
 // import Article2 from "./websitefiles/blogs/Article2";
 // import Article3 from "./websitefiles/blogs/Article3";
@@ -169,6 +171,7 @@ import Iftalisting from "./admindashboard/ifta/Iftalisting";
 import Ifta from "./admindashboard/ifta/Ifta";
 import AceTripForm from "./admindashboard/borderconnect/AceTripForm";
 import AciTripForm from "./admindashboard/borderconnect/AciTripForm";
+import CustomsManifestReview from "./admindashboard/borderconnect/CustomsManifestReview";
 import CustomPaperwork from "./admindashboard/CustomPaperwork/CustomPaperwork";
 import DriverCustomPaperwork from "./Driverdashboard/CustomPaperwork/DriverCustomPaperwork";
 import ListCoversheet from "./admindashboard/listCoversheet/ListCoversheet";
@@ -214,6 +217,9 @@ import SplitTripCityHighway from "./admindashboard/trips/SplitTripCityHighway";
 import AddAdditionalStop from "./admindashboard/trips/AddAdditionalStop";
 import PerformanceDashboard from "./admindashboard/drivers/PerformanceDashboard";
 import NotificationConfig from "./admindashboard/drivers/NotificationConfig";
+import CommunicationsWorkspace from "./admindashboard/communications/CommunicationsWorkspace";
+import CompanyHosSettings from "./admindashboard/hos/CompanyHosSettings";
+import RatexIndex from "./admindashboard/loadboard/RatexIndex";
 
 
 
@@ -294,6 +300,7 @@ function App() {
 
 
         <Route path="/admin" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Dashboard /><Footeradmin /></div>} />
+        <Route path="/workspace/email/*" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><CommunicationsWorkspace /><Footeradmin /></div>} />
         <Route path="/hos" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><HoursOfServiceForm /><Footeradmin /></div>} />
         <Route path="/addTrailerActivity" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><AddTrailerActivity /><Footeradmin /></div>} />
         <Route path="/trailerPerformance" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><TrailerPerformance /><Footeradmin /></div>} />
@@ -301,6 +308,7 @@ function App() {
         <Route path="/hosgetall" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><VehicleDriverLogs /><Footeradmin /></div>} />
         <Route path="/driverdutynotification" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><DriverDutyNotification /><Footeradmin /></div>} />
         <Route path="/hos-fleet" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><FleetHosRoster /><Footeradmin /></div>} />
+        <Route path="/hos/company-settings" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><CompanyHosSettings /><Footeradmin /></div>} />
         <Route path="/accounting" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Dashboardaccounting /><Footeradmin /></div>} />
         <Route path="/createorder" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Createorder /><Footeradmin /></div>} />
         <Route path="/orderlist" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Orders /><Footeradmin /></div>} />
@@ -329,10 +337,13 @@ function App() {
         <Route path="/tripsplit/:tripId" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><SplitRoutes /><Footeradmin /></div>} />
         <Route path="/DispatchBoard" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><DispatchBoard /><Footeradmin /></div>} />
         <Route path="/loadboard" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Loadboard /><Footeradmin /></div>} />
+        <Route path="/loadboard/ratex-index" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><RatexIndex /><Footeradmin /></div>} />
         <Route path="/sis/world-model" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><WorldModel /><Footeradmin /></div>} />
         <Route path="/sis/safety" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Safety /><Footeradmin /></div>} />
         <Route path="/sis/driver-onboarding" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><DriverOnboarding /><Footeradmin /></div>} />
         <Route path="/sis/connections" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Connections /><Footeradmin /></div>} />
+        <Route path="/sis/review" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><EvidenceReview /><Footeradmin /></div>} />
+        <Route path="/sis/native-eld" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><NativeEldPrototype /><Footeradmin /></div>} />
         <Route path="/triplist" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Triplist /><Footeradmin /></div>} />
         <Route path="/trips/update/:id" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Updatetrip /><Footeradmin /></div>} />
         <Route path="trips/assign/:id" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Assigntrip /><Footeradmin /></div>} />
@@ -430,6 +441,7 @@ function App() {
         <Route path="/ifta" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Ifta /><Footeradmin /></div>} />
         <Route path="/borderconnect/acetripform" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><AceTripForm /><Footeradmin /></div>} />
         <Route path="/borderconnect/acitripform" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><AciTripForm /><Footeradmin /></div>} />
+        <Route path="/customs/review" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><CustomsManifestReview /><Footeradmin /></div>} />
         <Route path="/custompage" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><CustomPaperwork /><Footeradmin /></div>} />
         <Route path="/listcoversheet" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><ListCoversheet /><Footeradmin /></div>} />
         <Route path="/revenuerxpenseslist" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><RevenueExpensesList /><Footeradmin /></div>} />

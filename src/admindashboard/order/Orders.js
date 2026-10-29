@@ -148,7 +148,7 @@ const Orders = () => {
         toast.success("Order removed successfully");
       } catch (error) {
         console.error("Error removing item:", error);
-        toast.error("Error removing order");
+        toast.error(error.response?.data?.message || "Error removing order");
       }
     }
   };

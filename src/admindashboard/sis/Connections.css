@@ -1,5 +1,5 @@
-.sis-connections-page { margin-left: 230px; padding: 30px; min-height: calc(100vh - 100px); }
-.sis-connections-page > .iso-alert { margin-bottom: 20px; }
+.sis-connections-page { margin-left: 230px; padding: 30px; min-height: calc(100vh - 100px); background: var(--iso-bg); color: var(--iso-text); }
+.sis-connections-page > .iso-alert { margin: 20px 0 32px; }
 .sis-connections-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 22px; }
 .sis-connection-card { padding: 22px; }
 .sis-connection-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
@@ -10,8 +10,42 @@
 .sis-connection-link { color: var(--iso-accent); font-weight: 600; }
 .sis-connection-link:focus-visible { outline: 2px solid var(--iso-accent); outline-offset: 3px; }
 .sis-connections-footer { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--iso-border); }
+.sis-connections-page * { box-sizing: border-box; }
+.sis-connections-page a:focus-visible, .sis-foundation-card summary:focus-visible { outline: 3px solid var(--iso-focus); outline-offset: 4px; }
+.sis-connections-hero { position: relative; overflow: hidden; padding: 34px 36px; border-radius: 16px; color: var(--iso-text); background: radial-gradient(ellipse at 95% 10%, #96385a80, transparent 55%), #241019; border: 1px solid #86405d; }
+.sis-connections-hero::after { content: ''; position: absolute; width: 380px; height: 380px; right: -110px; top: -130px; border-radius: 50%; border: 1px solid #f8bad526; box-shadow: 0 0 0 50px #f8bad508, 0 0 0 100px #f8bad505; pointer-events: none; }
+.sis-connections-hero .iso-page-header { position: relative; z-index: 1; margin: 0; border: 0; padding: 0; }
+.sis-connections-hero .iso-page-header h1 { font-size: clamp(30px, 3vw, 42px); letter-spacing: -.04em; line-height: 1.15; }
+.sis-connections-hero .iso-page-header p { font-size: 17px; color: #f2dce6; margin-top: 14px; }
+.sis-connections-hero-description { color: #d8b9c8; font-size: 13px; line-height: 1.8; max-width: 580px; margin: 14px 0 0; }
+.sis-connections-principles { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #f2a5c12b; }
+.sis-connections-principles span { display: flex; align-items: center; gap: 9px; font-size: 11px; color: #edcfde; }
+.sis-connections-principles svg { font-size: 15px; color: #f2a5c1; }
+.sis-connections-section-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 20px; }
+.sis-connections-eyebrow { font-size: 9px; font-weight: 750; letter-spacing: .16em; color: var(--iso-primary); margin: 0 0 9px; }
+.sis-connections-section-heading h2 { font-size: 23px; line-height: 1.3; letter-spacing: -.03em; margin: 0; color: var(--iso-text); }
+.sis-connections-section-heading > p { color: var(--iso-muted); font-size: 12px; line-height: 1.8; max-width: 300px; margin: 0; }
+.sis-foundation-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
+.sis-foundation-grid > li { min-width: 0; }
+.sis-foundation-card { border: 1px solid var(--iso-border); border-radius: 10px; background: var(--iso-surface); height: 100%; }
+.sis-foundation-card[open] { border-color: #b96b89; }
+.sis-foundation-card summary { padding: 20px 16px; cursor: pointer; list-style: none; }
+.sis-foundation-card summary::-webkit-details-marker { display: none; }
+.sis-foundation-top { display: flex; justify-content: space-between; align-items: center; color: var(--iso-primary); margin-bottom: 26px; }
+.sis-foundation-top > svg { font-size: 23px; }.sis-foundation-top > span { color: var(--iso-muted); font-size: 10px; }
+.sis-foundation-card h3 { font-size: 15px; line-height: 1.4; min-height: 42px; color: var(--iso-text); margin: 0 0 10px; }
+.sis-foundation-status { display: inline-block; font-size: 9px; font-weight: 650; padding: 5px 7px; border-radius: 4px; color: var(--iso-primary); background: var(--iso-surface-raised); line-height: 1.5; }
+.sis-foundation-card summary > p { font-size: 11px; line-height: 1.8; color: var(--iso-muted); min-height: 60px; margin: 15px 0; }
+.sis-foundation-expand { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--iso-primary); padding-top: 14px; border-top: 1px solid var(--iso-border); }
+.sis-foundation-expand > span { font-size: 17px; }.sis-foundation-card[open] .sis-foundation-expand > span { transform: rotate(45deg); }
+.sis-foundation-detail { padding: 0 16px 20px; }.sis-foundation-detail p { font-size: 11px; line-height: 1.9; color: var(--iso-muted); margin: 0; }
+.sis-foundation-detail a { display: inline-flex; gap: 10px; align-items: center; min-height: 44px; font-size: 11px; color: var(--iso-primary); font-weight: 650; }
+.sis-workspace-heading { margin-top: 36px; }.sis-connection-heading h2 { line-height: 1.4; }.sis-connection-heading .iso-badge { font-size: 10px; flex-shrink: 0; max-width: 190px; }
+.sis-connection-card nav { border-top: 1px solid var(--iso-border); padding-top: 12px; }.sis-connection-link { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: var(--iso-primary); font-size: 12px; }
+@media (max-width: 1200px) { .sis-foundation-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }.sis-foundation-card h3 { min-height: 0; }.sis-connection-heading { flex-direction: column; } }
 @media (min-width: 768px) { .sidebar-collapse .sis-connections-page { margin-left: 50px; } }
 @media (max-width: 767px) {
+  .sis-connections-hero { padding: 26px 22px; }.sis-connections-hero .iso-page-header { flex-wrap: wrap; gap: 15px; }.sis-connections-section-heading { align-items: flex-start; flex-direction: column; gap: 12px; }.sis-connections-section-heading > p { max-width: none; }.sis-foundation-grid { grid-template-columns: 1fr; }.sis-foundation-card summary { padding: 20px; }.sis-foundation-top { margin-bottom: 15px; }.sis-foundation-card summary > p { min-height: 0; }.sis-foundation-detail { padding: 0 20px 20px; }.sis-connections-principles { gap: 14px; }
   .sis-connections-page { margin-left: 0; padding: 22px 14px; }
   .sis-connections-grid { grid-template-columns: 1fr; }
   .sis-connection-heading { flex-direction: column; }

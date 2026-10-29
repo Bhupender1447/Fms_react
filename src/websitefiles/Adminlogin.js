@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useEffect, useRef, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { BASE_URL } from '../config';
 
 const Adminlogin = () => {
@@ -67,40 +67,49 @@ const Adminlogin = () => {
   const [Email, setEmail] = useState('');
   const [Password, setPassword] = useState('');
   const [error, seterror] = useState('');
+  const [pending, setPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const submitting = useRef(false);
 
   let navigate = useNavigate();
-  const handleonSubmit = (e) => {
+  const handleonSubmit = async (e) => {
     e.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
+    setPending(true);
+    seterror('');
+    localStorage.removeItem('logindetail');
+    localStorage.removeItem('hasJustLoggedIn');
     const formdata = new FormData();
-    formdata.append("email", Email);
+    formdata.append("email", Email.trim());
     formdata.append("password", Password);
-
-    axios.post(`${BASE_URL}api/login`, formdata)
-      .then(res => {
-        let loginres = res.data;
-        console.log(loginres);
-        if (loginres.status === "success") {
-          let data = {
-            name: loginres.username,
-            id: loginres.user_id,
-            email: loginres.email,
-            role: loginres.role // Assuming the response contains a 'role' field
-          };
-          localStorage.setItem("logindetail", JSON.stringify(data));
-          localStorage.setItem('hasJustLoggedIn', 'true');
-
-
-          // Navigate based on user role
-          if (loginres.role === "admin") {
-            navigate('/accounting');
-          } else if (loginres.role === "user") {
-            navigate('/user'); // Change '/user' to the appropriate route for regular users
-          }
-        } else if (loginres.status === "error") {
-          seterror(loginres.message);
-        }
-      })
-      .catch(err => seterror(err.response?.data?.message || err.message));
+    try {
+      const { data: login } = await axios.post(`${BASE_URL}api/login`, formdata, { withCredentials: true });
+      if (login?.status !== 'success') throw new Error(login?.message || 'Sign-in returned an invalid response.');
+      const { data: session } = await axios.get(`${BASE_URL}api/staff-session`, { withCredentials: true });
+      if (session?.status !== 'success' || !/^[1-9][0-9]*$/.test(String(session.user_id))
+          || typeof session.username !== 'string' || typeof session.email !== 'string'
+          || !['admin', 'user'].includes(session.role)
+          || String(session.user_id) !== String(login.user_id) || session.role !== login.role) {
+        throw new Error('The server session could not be verified. Please sign in again.');
+      }
+      if (session.role !== 'admin') {
+        throw new Error('Your user role is recognized, but a staff workspace for this role is not connected. No administrator access has been granted.');
+      }
+      localStorage.setItem('logindetail', JSON.stringify({
+        name: session.username, id: session.user_id, email: session.email, role: session.role,
+      }));
+      localStorage.setItem('hasJustLoggedIn', 'true');
+      setPassword('');
+      navigate('/accounting');
+    } catch (err) {
+      localStorage.removeItem('logindetail');
+      localStorage.removeItem('hasJustLoggedIn');
+      seterror(err.response?.data?.message || err.message || 'Sign-in failed. Please try again.');
+    } finally {
+      submitting.current = false;
+      setPending(false);
+    }
   };
 
   return (
@@ -109,33 +118,31 @@ const Adminlogin = () => {
       <div className="login-card text-center">
         <h3>Sign in to start your session</h3>
         {error && <p role="alert" className="text-danger">{error}</p>}
-        <form onSubmit={handleonSubmit}>
-          <input type="email" placeholder="Email" required="" value={Email}
+        <form onSubmit={handleonSubmit} aria-label="Staff sign-in" aria-busy={pending}>
+          <input type="email" aria-label="Email" autoComplete="username" placeholder="Email" required disabled={pending} value={Email}
             onChange={(e) => setEmail(e.target.value)} />
           <div className="password-holder">
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
+              aria-label="Password"
+              autoComplete="current-password"
               placeholder="Password"
               id="password"
-              required=""
+              required
+              disabled={pending}
               value={Password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <span className="toggle-pass-login" id="togglePassLogin">
-              👁️
-            </span>
+            <button type="button" className="toggle-pass-login" aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)}>
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
           </div>
           <div className="check-box-login">
-            <div className="checkbox-wrapper">
-              <input type="checkbox" id="rememberMe" />
-              <label htmlFor="rememberMe">Remember Me</label>
-            </div>
-            <Link to="#" className="checkbox-wrapper">
-              Forgot Password?
-            </Link>
+            <p>Access uses a server session. Contact your administrator for password recovery or role approval.</p>
           </div>
-          <button type="submit" className="btn-login">
-            Login
+          <button type="submit" className="btn-login" disabled={pending}>
+            {pending ? 'Verifying session...' : 'Login'}
           </button>
         </form>
       </div>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import MapService from '../../services/MapService';
 import ExcelStopUploader from './ExcelStopUploader';
@@ -34,10 +34,15 @@ export default function CreateRoute() {
 	const [routeRequestStatus, setRouteRequestStatus] = useState('');
 	const [routeRequestError, setRouteRequestError] = useState('');
 	const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
+	const [isOptimizingStops, setIsOptimizingStops] = useState(false);
+	const [stopOptimizationStatus, setStopOptimizationStatus] = useState('');
+	const [stopOptimizationError, setStopOptimizationError] = useState('');
 	const [showRequestPreview, setShowRequestPreview] = useState(false);
 	const [mockLifecycle, setMockLifecycle] = useState(null);
 	const [mockRunning, setMockRunning] = useState(false);
 	const [saveMessage, setSaveMessage] = useState('');
+	const latestRouteInputs = useRef(null);
+	latestRouteInputs.current = { stops, depot, objective: options.objective };
 
 	const validation = useMemo(() => validateRouteStops(stops), [stops]);
 	const assignmentValidation = useMemo(() => {
@@ -91,14 +96,15 @@ export default function CreateRoute() {
 		},
 	});
 
-	const calculatePtvRoute = async () => {
-		if (routeData?.fingerprint === routeFingerprint) {
+	const calculatePtvRoute = async (routeStops = stops) => {
+		const requestInputs = latestRouteInputs.current;
+		if (routeStops === stops && routeData?.fingerprint === routeFingerprint) {
 			setRouteRequestStatus('Using the existing PTV route for the current stop order.');
 			setRouteRequestError('');
 			return routeData;
 		}
-		if (stops.length < 2) throw new Error('Add at least two stops before calculating a PTV truck route.');
-		if (stops.length > 20) throw new Error('PTV route preview supports up to 20 stops at a time. Reduce the stop count before requesting a route.');
+		if (routeStops.length < 2) throw new Error('Add at least two stops before calculating a PTV truck route.');
+		if (routeStops.length > 20) throw new Error('PTV route preview supports up to 20 stops at a time. Reduce the stop count before requesting a route.');
 		const startAddress = String(depot.startAddress || '').trim();
 		const endAddress = String(depot.endAddress || '').trim();
 
@@ -117,7 +123,7 @@ export default function CreateRoute() {
 			return { lat, lng };
 		};
 
-		const resolvedStops = await Promise.all(stops.map(async (stop) => {
+		const resolvedStops = await Promise.all(routeStops.map(async (stop) => {
 			const address = [stop.address, stop.city, stop.region, stop.postalCode].filter(Boolean).join(', ');
 			const hasLatitude = stop.latitude !== null && stop.latitude !== undefined && stop.latitude !== '';
 			const hasLongitude = stop.longitude !== null && stop.longitude !== undefined && stop.longitude !== '';
@@ -138,6 +144,15 @@ export default function CreateRoute() {
 			: resolvedStops.slice(1, -1).map((stop) => ({ lat: stop.latitude, lng: stop.longitude }));
 		const routeChoice = options.objective === 'distance' ? 'shortest' : options.objective === 'cost' ? 'economic' : 'fast';
 		const result = await MapService.getRoute(startPoint, endPoint, waypoints, { type: 'truck' }, routeChoice, true);
+		const latestInputs = latestRouteInputs.current;
+		if ((latestInputs.stops !== requestInputs.stops && latestInputs.stops !== routeStops)
+			|| latestInputs.depot !== requestInputs.depot || latestInputs.objective !== requestInputs.objective) {
+			throw new Error('Route inputs changed while the request was running. Your edits were preserved; calculate the route again.');
+		}
+		const hasMetric = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) && Number(value) >= 0;
+		if (result?.status !== true || !hasMetric(result.distanceKms) || !hasMetric(result.duration)) {
+			throw new Error('PTV returned incomplete route distance or duration. No route metrics were applied.');
+		}
 		const path = MapService.parseRoutePath(result?.path);
 		const nextRouteData = {
 			fingerprint: JSON.stringify({
@@ -198,6 +213,63 @@ export default function CreateRoute() {
 			setRouteRequestStatus('');
 		} finally {
 			setIsCalculatingRoute(false);
+		}
+	};
+
+	const optimizeStopOrderPreview = async () => {
+		setStopOptimizationError('');
+		setStopOptimizationStatus('');
+		setRouteRequestError('');
+		if (stops.length < 4 || stops.length > 20) {
+			setStopOptimizationError('Stop-order preview requires 4 to 20 stops, including the fixed first and last stops.');
+			return;
+		}
+		if (depot.startAddress.trim() || depot.endAddress.trim()) {
+			setStopOptimizationError('Stop-order optimization with depot start/end is not supported in this preview yet. Clear depot addresses to optimize stop order.');
+			return;
+		}
+		setIsOptimizingStops(true);
+		const optimizationInputs = latestRouteInputs.current;
+		try {
+			const currentRoute = await calculatePtvRoute();
+			const resolvedStops = currentRoute.stops || [];
+			const start = { lat: resolvedStops[0].latitude, lng: resolvedStops[0].longitude };
+			const end = { lat: resolvedStops[resolvedStops.length - 1].latitude, lng: resolvedStops[resolvedStops.length - 1].longitude };
+			const intermediates = resolvedStops.slice(1, -1).map((stop) => ({ lat: stop.latitude, lng: stop.longitude }));
+			const stopOrder = await MapService.optimizeStops(start, end, intermediates);
+			const latestInputs = latestRouteInputs.current;
+			if ((latestInputs.stops !== optimizationInputs.stops && latestInputs.stops !== resolvedStops)
+				|| latestInputs.depot !== optimizationInputs.depot || latestInputs.objective !== optimizationInputs.objective) {
+				throw new Error('Route inputs changed during optimization. Your edits were preserved; run optimization again.');
+			}
+			if (!Array.isArray(stopOrder) || stopOrder.length !== intermediates.length
+				|| new Set(stopOrder).size !== intermediates.length
+				|| !stopOrder.every((index) => Number.isInteger(index) && index >= 0 && index < intermediates.length)) {
+				throw new Error('Backend optimizer returned an invalid stop order.');
+			}
+			const reorderedStops = [
+				resolvedStops[0],
+				...stopOrder.map((index) => resolvedStops[index + 1]),
+				resolvedStops[resolvedStops.length - 1],
+			];
+			setStops(reorderedStops);
+			setRouteData(null);
+			setEstimateRequested(false);
+			setEstimateInputs((current) => ({ ...current, distanceKm: '', averageSpeedKmh: '' }));
+			setMapCreated(true);
+			setRouteRequestStatus('Refreshing the PTV road route for the updated stop order...');
+			try {
+				await calculatePtvRoute(reorderedStops);
+				setStopOptimizationStatus('Stop order was optimized by Google Route Optimization and the PTV road route was refreshed.');
+			} catch (error) {
+				setRouteRequestStatus('');
+				setRouteRequestError(error.message || 'PTV route refresh failed.');
+				setStopOptimizationError('Stop order was optimized by Google Route Optimization, but PTV route refresh failed. The updated stops are retained; retry the PTV route before using its metrics.');
+			}
+		} catch (error) {
+			setStopOptimizationError(error.message || 'Could not optimize stop order with the backend optimizer.');
+		} finally {
+			setIsOptimizingStops(false);
 		}
 	};
 
@@ -264,7 +336,7 @@ export default function CreateRoute() {
 				<button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/routes/manage', { state: { drafts: location.state?.drafts || [] } })}>Route manager</button>
 			</div>
 
-			<div className="route-safety-notice" role="status"><strong>Preview only</strong><span>Map and estimate actions may request geocoding and PTV truck-routing data. Route plans stay in page memory; no stop-order optimizer, database write, driver assignment, HOS calculation, or dispatch is run.</span></div>
+			<div className="route-safety-notice" role="status"><strong>Preview only</strong><span>Map and estimate actions may request geocoding and PTV truck-routing data. Optional stop-order optimization uses a backend preview optimizer. Route plans stay in page memory; no database write, driver assignment, HOS calculation, or dispatch is run.</span></div>
 
 			<nav className="route-step-nav" aria-label="Route planning steps">
 				<a href="#route-plan-heading"><b>1</b><span>Plan details<small>Name and driver</small></span></a>
@@ -351,9 +423,9 @@ export default function CreateRoute() {
 			</section>
 
 			{mapCreated && <section id="route-map-preview" className="route-section" aria-labelledby="route-map-preview-heading">
-				<div className="route-section-heading"><div><h2 id="route-map-preview-heading">PTV truck route preview</h2><p>PTV routes the current stop order; it does not reorder stops. Stop-order optimization is not available in this route flow.</p></div><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setMapCreated(false)}>Hide map</button></div>
+				<div className="route-section-heading"><div><h2 id="route-map-preview-heading">PTV truck route preview</h2><p>PTV routes the current stop order. "Optimize stop order" uses Google Route Optimization, then automatically refreshes the PTV road route. This is not PTV stop-order optimization or truck-constraint clearance.</p></div><button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setMapCreated(false)}>Hide map</button></div>
 				{routeRequestStatus && <p className="route-inline-success" role="status">{routeRequestStatus}</p>}
-				{routeRequestError && <div className="route-validation route-validation-error" role="alert"><strong>Route preview unavailable</strong><p>{routeRequestError}</p><button type="button" className="btn btn-outline-primary btn-sm" disabled={isCalculatingRoute} onClick={createMapPreview}>{isCalculatingRoute ? 'Calculating…' : 'Retry PTV route'}</button></div>}
+				{routeRequestError && <div className="route-validation route-validation-error" role="alert"><strong>Route preview unavailable</strong><p>{routeRequestError}</p><button type="button" className="btn btn-outline-primary btn-sm" disabled={isCalculatingRoute || isOptimizingStops} onClick={createMapPreview}>{isCalculatingRoute ? 'Calculating…' : 'Retry PTV route'}</button></div>}
 				{routeData && routeData.fingerprint === routeFingerprint && <div className="route-route-summary" role="status">
 					<span><strong>{routeData.provider}</strong></span>
 					<span>{routeData.result.distanceKms ?? '—'} km</span>
@@ -387,14 +459,17 @@ export default function CreateRoute() {
 				<ul>{draftChecklist.map((item) => <li key={item.label} className={item.done ? 'is-complete' : ''}><a href={`#${item.target}`}><i className={`fa ${item.done ? 'fa-check-circle' : 'fa-circle-o'}`} aria-hidden="true" />{item.label}<span>{item.done ? 'Complete' : 'Needed'}</span></a></li>)}</ul>
 			</section>
 			<div className="route-action-bar">
-				<button className="btn btn-outline-primary" type="button" disabled={!stops.length || isCalculatingRoute} onClick={createMapPreview}><i className="fa fa-map" aria-hidden="true" /> {isCalculatingRoute && mapCreated ? 'Calculating map…' : 'Create map'}</button>
-				<button className="btn btn-outline-primary" type="button" disabled={!stops.length || isCalculatingRoute} onClick={createEstimate}><i className="fa fa-calculator" aria-hidden="true" /> {isCalculatingRoute && showEstimate ? 'Loading estimate…' : 'Create estimate'}</button>
-				<button className="btn btn-outline-primary" type="button" disabled={!stops.length} onClick={openRouteView}><i className="fa fa-list-ol" aria-hidden="true" /> View route</button>
+				<button className="btn btn-outline-primary" type="button" disabled={!stops.length || isCalculatingRoute || isOptimizingStops} onClick={createMapPreview}><i className="fa fa-map" aria-hidden="true" /> {isCalculatingRoute && mapCreated ? 'Calculating map…' : 'Create map'}</button>
+				<button className="btn btn-outline-primary" type="button" disabled={!stops.length || isCalculatingRoute || isOptimizingStops} onClick={createEstimate}><i className="fa fa-calculator" aria-hidden="true" /> {isCalculatingRoute && showEstimate ? 'Loading estimate…' : 'Create estimate'}</button>
+				<button className="btn btn-outline-primary" type="button" disabled={!stops.length || isOptimizingStops} onClick={openRouteView}><i className="fa fa-list-ol" aria-hidden="true" /> View route</button>
+				<button className="btn btn-outline-primary" type="button" title="Google Route Optimization preview; 4 to 20 stops, fixed endpoints, no depot addresses. PTV road routing refreshes automatically." disabled={stops.length < 4 || stops.length > 20 || isOptimizingStops || isCalculatingRoute} onClick={optimizeStopOrderPreview}><i className="fa fa-random" aria-hidden="true" /> {isOptimizingStops ? 'Optimizing stops…' : 'Optimize stop order'}</button>
 				<button className="btn btn-outline-secondary" type="button" disabled={!validation.valid || validVehiclePool.length === 0} onClick={() => setShowRequestPreview((current) => !current)}><i className="fa fa-code" aria-hidden="true" /> {showRequestPreview ? 'Hide request preview' : 'Preview API request'}</button>
 				<button className="btn btn-primary" type="button" disabled={!canCreateDraft} onClick={saveLocalDraft}><i className="fa fa-save" aria-hidden="true" /> Create local draft</button>
 				<button className="btn btn-outline-secondary" type="button" disabled title="Enable only after server authorization and persistence are implemented."><i className="fa fa-ban" aria-hidden="true" /> Save to IFM</button>
 				<button className="btn btn-outline-secondary" type="button" disabled title="No route has been authorized or persisted."><i className="fa fa-ban" aria-hidden="true" /> Dispatch to Driver App</button>
 			</div>
+			{stopOptimizationStatus && <p className="route-inline-success" role="status">{stopOptimizationStatus}</p>}
+			{stopOptimizationError && <p className="route-inline-error" role="alert">{stopOptimizationError}</p>}
 			{!validation.valid && <p className="route-action-hint">Resolve validation errors before creating a local draft.</p>}
 			{!driverName.trim() && <p className="route-action-hint">Enter the one driver who will complete this route before creating a local draft.</p>}
 			{saveMessage && <p role="status" className="route-inline-success">{saveMessage}</p>}
