@@ -1,0 +1,47 @@
+/* Shared brand bridge loaded after legacy styles by both route layouts.
+   Colors only: preserve layout, status meaning, controls, and API behavior. */
+.btn-primary, .btn-info, .btn-success, .btn-warning, .skin-blue .btn-primary, .skin-blue .btn-info, .skin-blue .btn-success, .skin-blue .btn-warning {
+  background-color: var(--iso-burgundy);
+  border-color: var(--iso-burgundy);
+  color: #fff;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-info:hover, .btn-info:focus,
+.btn-success:hover, .btn-success:focus,
+.btn-warning:hover, .btn-warning:focus,
+.skin-blue .btn-primary:hover, .skin-blue .btn-info:hover, .skin-blue .btn-success:hover, .skin-blue .btn-warning:hover {
+  background-color: var(--iso-burgundy-hover);
+  border-color: var(--iso-burgundy-hover);
+  color: #fff;
+}
+.text-primary, .text-info, .skin-blue .text-primary, .skin-blue .text-info { color: var(--iso-primary) !important; }
+.bg-primary, .bg-info, .skin-blue .bg-primary, .skin-blue .bg-info { background-color: var(--iso-burgundy) !important; color: #fff; }
+.alert-info { color: var(--iso-info); background-color: var(--iso-info-bg); border-color: var(--iso-control-border); }
+.skin-blue.sidebar-mini .main-sidebar,
+.skin-blue.sidebar-mini .main-header .logo,
+.skin-blue.sidebar-mini .main-header .logo:hover { background-color: var(--iso-burgundy); color: #fff; }
+.skin-blue.sidebar-mini .sidebar-menu .dropdown-menu,
+.skin-blue.sidebar-mini .sidebar-menu > li > .treeview-menu { background: var(--iso-burgundy-hover); }
+.skin-blue.sidebar-mini .sidebar-menu > li > a,
+.skin-blue.sidebar-mini .sidebar-menu .dropdown-menu > li > a,
+.skin-blue.sidebar-mini .sidebar-menu .treeview-menu > li > a { color: #fff; }
+.skin-blue.sidebar-mini .sidebar-menu > li:hover > a,
+.skin-blue.sidebar-mini .sidebar-menu > li.active > a,
+.skin-blue.sidebar-mini .sidebar-menu .dropdown-menu > li > a:hover,
+.skin-blue.sidebar-mini .sidebar-menu .treeview-menu > li > a:hover { background: var(--iso-burgundy-hover); color: #fff; border-left-color: var(--iso-crimson); }
+.skin-blue .sidebar-menu > li.active > a { box-shadow: inset 3px 0 var(--iso-crimson); }
+.skin-blue .sidebar-menu a .fa, .skin-blue .sidebar-menu a .glyphicon { color: inherit; }
+.skin-blue .box.box-primary, .skin-blue .box.box-info { border-top-color: var(--iso-burgundy); }
+.skin-blue .nav-tabs-custom > .nav-tabs > li.active { border-top-color: var(--iso-burgundy); }
+.skin-blue .pagination > .active > a, .skin-blue .pagination > .active > span { background: var(--iso-burgundy); border-color: var(--iso-burgundy); color: #fff; }
+.skin-blue .pagination a { color: var(--iso-primary); }
+.skin-blue .form-control:focus { border-color: var(--iso-primary); box-shadow: 0 0 0 2px var(--iso-info-bg); }
+.skin-blue .label-primary, .skin-blue .label-info { background: var(--iso-info-bg); color: var(--iso-info); }
+:is(a, button, input, select, textarea):focus-visible { outline: 3px solid var(--iso-focus); outline-offset: 3px; }
+.bg-aqua, .bg-light-blue, .bg-blue, .bg-teal, .bg-purple { background-color: var(--iso-burgundy) !important; color: #fff; }
+.bg-navy { background-color: var(--iso-navy) !important; color: #fff; }
+.text-aqua, .text-blue, .text-teal, .text-purple { color: var(--iso-primary) !important; }
+.nav-pills > li.active > a, .nav-pills > li.active > a:hover,
+.select2-container--default .select2-results__option--highlighted[aria-selected] { background: var(--iso-burgundy); color: #fff; }
+.nav-tabs > li.active > a { border-top-color: var(--iso-burgundy); }
+.pagination { --bs-pagination-color: var(--iso-primary); --bs-pagination-active-bg: var(--iso-burgundy); --bs-pagination-active-border-color: var(--iso-burgundy); }
+.pagination > .active > a, .pagination > .active > span { background: var(--iso-burgundy); border-color: var(--iso-burgundy); color: #fff; }

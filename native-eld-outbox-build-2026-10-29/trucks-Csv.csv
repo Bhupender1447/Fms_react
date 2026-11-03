@@ -1,0 +1,4 @@
+name,plateno,unitno,trucktype,vin,make,model,year,fleet,fueltype,fuelcard1,fuelcard2,fuelcard3,driver1,driver2,ifta,remarks,company,state,country,odometer,units,owneroperated,owner,length,lengthunits,width,widthunits,gps,color,weight,weigthunits,height,heightunits,image
+Truck A,PL123,U001,Flatbed,VIN001,Ford,F-150,2022,FleetX,Diesel,FC001,FC002,FC003,John,Mike,Yes,Good condition,Company1,Texas,USA,50000,Miles,Yes,Owner1,15,ft,6,ft,Yes,Blue,2500,kg,8,ft,truck1.jpg
+Truck B,PL456,U002,Tanker,VIN002,Volvo,VNL,2021,FleetY,Petrol,FC004,FC005,,David,Sam,No,Average,Company2,California,USA,70000,Miles,No,Owner2,18,ft,7,ft,Yes,Red,2800,kg,9,ft,truck2.jpg
+Truck C,PL789,U003,Reefer,VIN003,Scania,R500,2023,FleetZ,Diesel,FC006,,,Alex,Ryan,Yes,New truck,Company3,Florida,USA,10000,Miles,Yes,Owner3,20,ft,8,ft,No,White,3000,kg,10,ft,truck3.jpg
