@@ -20,6 +20,7 @@ export default function DriverProfile({ driver, permissions, onClose, leaveGuard
   const heading = useRef(null);
   const tabRefs = useRef([]);
   const mounted = useRef(true);
+  const saveGate = useRef(false);
   const name = driverName(driver);
   const dirty = editing && JSON.stringify(draft) !== JSON.stringify(contactDraft(driver));
   const canEdit = permissions.edit_profile === true && typeof onSave === 'function' && typeof onReloadDriver === 'function';
@@ -44,13 +45,14 @@ export default function DriverProfile({ driver, permissions, onClose, leaveGuard
   };
   const save = async event => {
     event.preventDefault();
-    if (!canEdit || saving) return;
+    if (!canEdit || saveGate.current) return;
     const validation = validateContact(draft);
     setErrors(validation);
     if (Object.keys(validation).length) {
       document.getElementById(`dcc-edit-${Object.keys(validation)[0]}`)?.focus();
       return;
     }
+    saveGate.current = true;
     setSaving(true);
     setError('');
     setMessage('');
@@ -68,6 +70,7 @@ export default function DriverProfile({ driver, permissions, onClose, leaveGuard
     } catch (saveError) {
       if (mounted.current) setError(`${submitted ? 'The save request completed, but refreshing failed. Verify the server record before retrying. ' : ''}${saveError.message || 'Unable to save this driver. Changes remain in the form.'}`);
     } finally {
+      saveGate.current = false;
       if (mounted.current) setSaving(false);
     }
   };

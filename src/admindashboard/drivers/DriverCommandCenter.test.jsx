@@ -35,7 +35,7 @@ test('production requests the gated existing API and shows unavailable rather th
   axios.get.mockRejectedValueOnce({ response: { status: 503, data: { message: 'Driver records are locked until ownership is verified.' } } });
   render(<Drivers />);
   expect(await screen.findByRole('alert')).toHaveTextContent('ownership is verified');
-  expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('api/fetchdriversProductData'), expect.objectContaining({ withCredentials: true, params: { command_center: '1' } }));
+  expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('api/driver-command/roster'), expect.objectContaining({ withCredentials: true, params: { limit: 100, offset: 0 } }));
   expect(screen.getByLabelText('Total drivers')).toHaveTextContent('Unavailable');
   expect(screen.getByRole('button', { name: 'Add Driver' })).toBeDisabled();
   expect(axios.post).not.toHaveBeenCalled();
@@ -131,7 +131,7 @@ test('failed saves preserve draft and a mismatched refetch is rejected', async (
   expect(await screen.findByRole('alert')).toHaveTextContent('Permission revoked');
   expect(screen.getByLabelText('First name')).toHaveValue('Alex draft');
   await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent('different driver');
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('different driver'));
   expect(screen.getByLabelText('First name')).toHaveValue('Alex draft');
 });
 

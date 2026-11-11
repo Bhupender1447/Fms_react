@@ -131,3 +131,9 @@
   .dcc-list--carousel { display: grid; grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
   .dcc-driver { break-inside: avoid; print-color-adjust: exact; }
 }
+.dcc-dispatch { margin: 24px 0; padding: 24px; border: 1px solid #e1d9db; border-radius: 16px; background: #fff; overflow-wrap: anywhere; }
+.dcc-dispatch h2 { margin-top: 0; font-size: 24px; }
+.dcc-dispatch .dcc-profile-actions { padding: 20px 0; flex-wrap: wrap; }
+.dcc-dispatch-history { padding-left: 24px; max-height: 360px; overflow-y: auto; }
+.dcc-dispatch-history time { display: inline-block; margin-left: 12px; color: #62585d; }
+@media (max-width: 700px) { .dcc-dispatch { padding: 16px; } }

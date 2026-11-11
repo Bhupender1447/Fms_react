@@ -48,7 +48,7 @@ function TripStatusForm() {
   const fetchTripStatus = useCallback(async () => {
     if (!tripId) { setError('No trip ID provided.'); setLoading(false); return; }
     try {
-      const res = await axios.get(`${BASE_URL}api/maps/trip/status/${tripId}`);
+      const res = await axios.get(`${BASE_URL}api/maps/trip/status/${tripId}`, { withCredentials: true });
       if (res.data.status) setTrip(res.data);
       else setError(res.data.message || 'Trip not found');
     } catch (err) {
@@ -110,7 +110,7 @@ function TripStatusForm() {
         if (location.lat) formData.append('loc[lat]', location.lat);
         if (location.lon) formData.append('loc[lon]', location.lon);
         if (label)        formData.append('loc[label]', label);
-        res = await axios.post(`${BASE_URL}api/maps/trip/status`, formData);
+        res = await axios.post(`${BASE_URL}api/maps/trip/status`, formData, { withCredentials: true });
       } else {
         res = await axios.post(`${BASE_URL}api/maps/trip/status`, {
           tmsTripId: tripId,
@@ -119,7 +119,7 @@ function TripStatusForm() {
           timeStamp: new Date().toISOString(),
           pod_note:  podNote,
           loc: { lat: String(location.lat), lon: String(location.lon), label },
-        });
+        }, { withCredentials: true });
       }
 
       if (res.data.status) {

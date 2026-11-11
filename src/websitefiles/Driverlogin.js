@@ -4,6 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { BASE_URL } from '../config';
 const Driverlogin = () => {
   const sectionRef = useRef(null);
+  const submitting = useRef(false);
+  const [pending, setPending] = useState(false);
   const [Email, setEmail] = useState('');
   const [Password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -11,14 +13,16 @@ const Driverlogin = () => {
   let navigate = useNavigate();
   const handleOnSubmit = (e) => {
     e.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true; setPending(true); setError('');
     const formData = new FormData();
     formData.append("email", Email);
     formData.append("password", Password);
 
-    axios.post(`${BASE_URL}api/driver_login`, formData)
+    axios.post(`${BASE_URL}api/driver_login`, formData, { withCredentials: true })
       .then(res => {
         let loginRes = res.data;
-        console.log(loginRes);
+
         if (loginRes.status === "success") {
           let data = {
             name: loginRes.username,
@@ -31,13 +35,14 @@ const Driverlogin = () => {
 
           // Navigate based on user role
           if (loginRes.role === "driver") {
-            navigate('/logs');
+            navigate('/drivertrip');
           }
         } else if (loginRes.status === "error") {
           setError(loginRes.message);
         }
       })
-      .catch(err => setError(err.message));
+      .catch(err => setError(err.response?.data?.message || err.message))
+      .finally(() => { submitting.current = false; setPending(false); });
   };
 
   // Bubble effect on mouse move
@@ -129,7 +134,7 @@ const Driverlogin = () => {
             </Link>
             <p>{error && error}</p>
           </div>
-          <button type="submit" className="btn-login">
+          <button type="submit" className="btn-login" disabled={pending}>
             Login
           </button>
         </form>

@@ -40,7 +40,7 @@ let logout=async()=>{
   */}
        <li  className="nav-item" id="manageOrderSubMenu">
             <Link className="dropdown-item"  to={'/drivertrip'}>
-              <i className="fa fa-circle-o" /> Manage Orders
+              <i className="fa fa-circle-o" /> Assigned Trips
             </Link>
           </li>
        <li  className="nav-item" id="manageOrderSubMenu">

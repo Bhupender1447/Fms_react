@@ -1,9 +1,10 @@
-import axios from 'axios';
+import { driverProfileRequest, loadDriverRoster } from './driverRosterApi';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiArrowLeft, FiArrowRight, FiGrid, FiLayers, FiLock, FiPlus, FiRefreshCw } from 'react-icons/fi';
 import { Alert, Button, EmptyState, Input, Select } from '../../design-system/components';
-import { BASE_URL } from '../../config';
+
 import DriverCard from './DriverCard';
+import DispatchWorkspace from './DispatchWorkspace';
 import DriverProfile from './DriverProfile';
 import { dateAttention, driverName } from './driverCommandData';
 import './driver-command-center.css';
@@ -22,7 +23,7 @@ function storedView() {
 
 // Presentation callbacks are reserved for a future authorized adapter. There is
 // no demo fleet or save adapter in the live container below.
-export function DriverCommandCenter({ drivers = null, loading = false, error = '', onRefresh, permissions = {}, onSave, onReloadDriver }) {
+export function DriverCommandCenter({ drivers = null, loading = false, error = '', onRefresh, permissions = {}, onSave, onReloadDriver, accountId, accountSelector }) {
   const [preference, setPreference] = useState(storedView);
   const [search, setSearch] = useState('');
   const [availability, setAvailability] = useState('all');
@@ -101,6 +102,7 @@ export function DriverCommandCenter({ drivers = null, loading = false, error = '
   };
 
   return <main className="content-wrapper iso-ui dcc" data-iso-theme="light">
+    {accountSelector && <div style={{ marginBottom: 24 }}>{accountSelector}</div>}
     <header className="dcc-header">
       <div><p className="dcc-eyebrow">IFM / People & operations</p><h1>Driver Command Center<span aria-hidden="true">∞</span></h1><p>Your fleet, in focus. People first. Every handoff visible.</p></div>
       <div className="dcc-header-actions">
@@ -108,7 +110,7 @@ export function DriverCommandCenter({ drivers = null, loading = false, error = '
         <Button disabled title="Account-scoped driver creation permissions are not verified."><FiPlus aria-hidden="true" />Add Driver</Button>
       </div>
     </header>
-    <div className="dcc-boundary"><FiLock aria-hidden="true" /><div><strong>Verified data only</strong><p>Live records and changes are locked until driver ownership and permissions are verified. HOS is not assessed. SIS recommendations and automated dispatch are disabled.</p></div></div>
+    <div className="dcc-boundary"><FiLock aria-hidden="true" /><div><strong>Verified data only</strong><p>Only records authorized for your account are shown. Contact editing requires verified account permission. HOS is not assessed. SIS recommendations and automated dispatch are disabled.</p></div></div>
     <section className="dcc-summary" aria-label="Fleet summary">
       {[
         ['Total drivers', hasData ? String(fleet.length) : 'Unavailable', 'Authorized roster only'],
@@ -139,27 +141,46 @@ export function DriverCommandCenter({ drivers = null, loading = false, error = '
         </div>}
       {hasData && <nav className="dcc-pagination" aria-label="Driver pages"><Button variant="secondary" disabled={currentPage === 0} onClick={() => { if (leaveProfile()) { setPage(currentPage - 1); if (listRef.current) listRef.current.scrollLeft = 0; } }}>Previous page</Button><span>Page {currentPage + 1} of {pages}</span><Button variant="secondary" disabled={currentPage + 1 >= pages} onClick={() => { if (leaveProfile()) { setPage(currentPage + 1); if (listRef.current) listRef.current.scrollLeft = 0; } }}>Next page</Button></nav>}
     </section>
+    {hasData && accountId && <DispatchWorkspace key={accountId} accountId={accountId} drivers={fleet} />}
     {selected && <DriverProfile key={selectedId} driver={selected} permissions={permissions} onClose={closeProfile} leaveGuard={leaveGuard} onSave={onSave} onReloadDriver={onReloadDriver} onUpdated={driver => setUpdates(current => ({ ...current, [String(driver.id)]: driver }))} />}
     <footer className="dcc-footer"><span>Human-led operations. No compliance or dispatch clearance implied.</span><Button variant="secondary" disabled={!hasData} onClick={() => window.print()}>Print loaded view</Button></footer>
   </main>;
 }
 
 export default function Drivers() {
+  const [selectedAccount, setSelectedAccount] = useState('');
+  const [accounts, setAccounts] = useState([]);
   const [refresh, setRefresh] = useState(0);
   const [state, setState] = useState({ loading: true, error: '' });
+  const activeRequest = useRef(null);
+  const records = useRef([]);
   useEffect(() => {
-    const controller = new AbortController();
-    setState({ loading: true, error: '' });
-    axios.get(`${BASE_URL}api/fetchdriversProductData`, { params: { command_center: '1' }, withCredentials: true, signal: controller.signal })
-      .then(() => {
-        // No authorized driver projection exists yet. A legacy array is not
-        // evidence of ownership, even if a misconfigured server returns 200.
-        if (!controller.signal.aborted) setState({ loading: false, error: 'Driver ownership is not verified. The roster is withheld; an unscoped response cannot unlock this screen.' });
-      })
-      .catch(requestError => {
-        if (!controller.signal.aborted) setState({ loading: false, error: requestError.response?.data?.message || requestError.message || 'Could not verify access to driver records.' });
-      });
+    const controller = new AbortController(); activeRequest.current = controller;
+    records.current = []; setState({ loading: true, error: '' });
+    loadDriverRoster(controller.signal, selectedAccount).then(roster => {
+      if (!controller.signal.aborted) {
+        records.current = roster.drivers; setAccounts(roster.accounts);
+        setState({ loading: false, error: '', drivers: roster.drivers, accountId: roster.accountId, permissions: roster.permissions });
+      }
+    }).catch(error => {
+      if (!controller.signal.aborted) {
+        if (Array.isArray(error.response?.data?.authorized_accounts)) setAccounts(error.response.data.authorized_accounts);
+        setState({ loading: false, error: error.response?.data?.message || error.message || 'Could not verify access to driver records.' });
+      }
+    });
     return () => controller.abort();
-  }, [refresh]);
-  return <DriverCommandCenter loading={state.loading} error={state.error} onRefresh={() => setRefresh(value => value + 1)} />;
+  }, [refresh, selectedAccount]);
+  const save = async (id, fields) => {
+    const record = records.current.find(driver => String(driver.id) === id);
+    if (!record || !state.permissions?.edit_profile) throw new Error('Profile editing is unavailable.');
+    try { await driverProfileRequest(id, state.accountId, { signal: activeRequest.current.signal, fields, version: record.record_version }); }
+    catch (error) { throw new Error(error.response?.data?.message || error.message); }
+  };
+  const reload = async id => {
+    const driver = await driverProfileRequest(id, state.accountId, { signal: activeRequest.current.signal });
+    records.current = records.current.map(row => String(row.id) === id ? driver : row);
+    return driver;
+  };
+  const accountSelector = accounts.length > 1 ? <Select label="Account workspace" disabled={state.loading} value={selectedAccount || state.accountId || ''} onChange={event => { activeRequest.current?.abort(); records.current = []; setState({ loading: true, error: '' }); setSelectedAccount(event.target.value); }}><option value="">Select an account</option>{accounts.map(account => <option key={account.account_id} value={account.account_id}>{account.account_name}</option>)}</Select> : null;
+  return <DriverCommandCenter key={state.accountId || 'locked'} accountSelector={accountSelector} accountId={state.accountId} drivers={state.drivers} permissions={state.permissions} onSave={save} onReloadDriver={reload} loading={state.loading} error={state.error} onRefresh={() => setRefresh(value => value + 1)} />;
 }
