@@ -1,21 +1,36 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { Alert, Button } from '../../design-system/components';
 import { BASE_URL } from '../../config';
+import '../../admindashboard/drivers/driver-command-center.css';
+import './trip-execution.css';
 
-// Status display config
-const STATUS_CONFIG = {
-  ACTIVE:      { label: 'Not Started',  color: '#6c757d', next: [{ value: 'IN_PROGRESS', label: '▶ Start Trip' }] },
-  IN_PROGRESS: { label: 'In Progress',  color: '#28a745', next: [{ value: 'PAUSED', label: '⏸ Pause' }, { value: 'COMPLETED', label: '✅ Complete' }] },
-  PAUSED:      { label: 'Paused',       color: '#ffc107', next: [{ value: 'IN_PROGRESS', label: '▶ Resume' }] },
-  COMPLETED:   { label: 'Completed',    color: '#007bff', next: [] },
-  CANCELLED:   { label: 'Cancelled',    color: '#dc3545', next: [] },
-};
+const STATUS_LABELS = { ACTIVE: 'Not started', IN_PROGRESS: 'In progress', PAUSED: 'Paused', COMPLETED: 'Completed', CANCELLED: 'Cancelled' };
+const API = `${BASE_URL}api/maps/trip/`;
+const errorMessage = error => error.response?.data?.message || error.message || 'The request could not be completed.';
+const requestId = () => `execution_${window.crypto.randomUUID()}`;
 
-function TripStatusForm() {
+export default function TripStatusForm() {
   const { tripId } = useParams();
-  const navigate   = useNavigate();
+  const [trip, setTrip] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [result, setResult] = useState('PASS');
+  const [defects, setDefects] = useState('');
+  const [notes, setNotes] = useState('');
+  const [podNote, setPodNote] = useState('');
+  const [podFile, setPodFile] = useState(null);
+  const [podError, setPodError] = useState('');
+  const [revision, setRevision] = useState(0);
+  const gate = useRef(false);
+  const controller = useRef(null);
+  const pendingRequest = useRef(null);
+  const fileInput = useRef(null);
 
+<<<<<<< Updated upstream
   const [trip,       setTrip]       = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -55,47 +70,43 @@ function TripStatusForm() {
       setError('Failed to load trip: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
+=======
+  const refresh = useCallback(async signal => {
+    const response = await axios.get(`${API}status/${encodeURIComponent(tripId)}`, { withCredentials: true, signal });
+    const data = response.data;
+    if (data?.status !== true || data.contract_version !== 'trip-execution.v1' || data.tmsTripId !== tripId
+        || !STATUS_LABELS[data.trip_status] || !Array.isArray(data.stops) || !Array.isArray(data.inspections)
+        || !Array.isArray(data.history) || !Array.isArray(data.documents)) {
+      throw new Error('The trip response could not be verified. Refresh the trip.');
+>>>>>>> Stashed changes
     }
+    if (!signal.aborted) setTrip(data);
   }, [tripId]);
 
-  useEffect(() => { fetchTripStatus(); }, [fetchTripStatus]);
+  useEffect(() => {
+    const abort = new AbortController();
+    controller.current = abort;
+    pendingRequest.current = null;
+    gate.current = false;
+    setTrip(null); setLoading(true); setBusy(false); setError(''); setSuccess('');
+    setPodFile(null); setPodNote(''); setPodError(''); setResult('PASS'); setDefects(''); setNotes('');
+    refresh(abort.signal).catch(failure => {
+      if (!abort.signal.aborted) setError(errorMessage(failure));
+    }).finally(() => { if (!abort.signal.aborted) setLoading(false); });
+    return () => abort.abort();
+  }, [refresh, revision]);
 
-  const validatePod = (file) => {
-    if (!file) return '';
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) return 'Only JPEG, PNG, GIF, or PDF files are accepted.';
-    if (file.size > 5 * 1024 * 1024) return 'File must be smaller than 5 MB.';
-    return '';
-  };
-
-  const handlePodFileChange = (e) => {
-    const file = e.target.files[0];
-    const err  = validatePod(file);
-    setPodError(err);
-    setPodFile(err ? null : file);
-  };
-
-  const handleStatusUpdate = async (newStatus) => {
-    setSubmitting(true);
-    setError('');
-    setSuccess('');
-
-    const currentStatus = trip?.trip_status?.toUpperCase();
-
-    // Client-side transition guard
-    const validTransitions = {
-      ACTIVE:      ['IN_PROGRESS'],
-      IN_PROGRESS: ['PAUSED', 'COMPLETED'],
-      PAUSED:      ['IN_PROGRESS'],
-    };
-    const allowed = validTransitions[currentStatus] || [];
-    if (!allowed.includes(newStatus)) {
-      setError(`Cannot transition from ${currentStatus} to ${newStatus}.`);
-      setSubmitting(false);
-      return;
-    }
-
+  const mutate = async (path, values, file) => {
+    if (gate.current) return;
+    const signal = controller.current.signal;
+    gate.current = true; setBusy(true); setError(''); setSuccess('');
+    // Retain the same key after an uncertain network result. The server returns
+    // the saved response if the first attempt committed before the connection failed.
+    const signature = JSON.stringify([path, values, file && [file.name, file.size, file.lastModified]]);
+    if (pendingRequest.current?.signature !== signature) pendingRequest.current = { signature, id: requestId() };
+    const body = { tmsTripId: tripId, ...values, request_id: pendingRequest.current.id };
     try {
+<<<<<<< Updated upstream
       let res;
 
       if (newStatus === 'COMPLETED' && podFile) {
@@ -120,37 +131,50 @@ function TripStatusForm() {
           pod_note:  podNote,
           loc: { lat: String(location.lat), lon: String(location.lon), label },
         });
+=======
+      let payload = body;
+      if (file) {
+        payload = new FormData();
+        Object.entries(body).forEach(([key, value]) => payload.append(key, value));
+        payload.append('pod_image', file);
+>>>>>>> Stashed changes
       }
-
-      if (res.data.status) {
-        setSuccess(`✅ Trip status updated to ${newStatus}` + (res.data.pod_uploaded ? ' · POD uploaded.' : '.'));
-        setTrip(prev => ({ ...prev, trip_status: newStatus }));
-        if (newStatus === 'COMPLETED') {
-          setTimeout(() => navigate('/drivertrip'), 2500);
-        }
-      } else {
-        setError(res.data.message || 'Update failed');
+      const response = await axios.post(`${API}${path}`, payload, { withCredentials: true, signal });
+      if (response.data?.status !== true) throw new Error(response.data?.message || 'The change could not be verified.');
+      if (signal.aborted) return;
+      pendingRequest.current = null;
+      setSuccess(response.data.message || 'Trip updated.');
+      setTrip(null);
+      await refresh(signal);
+      if (signal.aborted) return;
+      if (file) { setPodFile(null); if (fileInput.current) fileInput.current.value = ''; }
+    } catch (failure) {
+      if (signal.aborted) return;
+      setError(errorMessage(failure));
+      if ([401, 403, 404].includes(failure.response?.status)) setTrip(null);
+      if (failure.response) pendingRequest.current = null;
+      if (failure.response?.status === 409) {
+        setTrip(null);
+        try { await refresh(signal); } catch (refreshFailure) { if (!signal.aborted) setError(errorMessage(refreshFailure)); }
       }
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Network error';
-      setError('❌ ' + msg);
     } finally {
-      setSubmitting(false);
+      if (!signal.aborted) { gate.current = false; setBusy(false); }
     }
   };
 
-  // ─── Render ────────────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div className="content-wrapper">
-        <div style={styles.center}>
-          <div className="spinner-border text-primary" role="status" />
-          <p style={{ marginTop: 12, color: '#666' }}>Loading trip…</p>
-        </div>
-      </div>
-    );
-  }
+  const choosePod = event => {
+    const file = event.target.files?.[0];
+    const valid = !file || (['image/jpeg', 'image/png', 'image/gif', 'application/pdf'].includes(file.type) && file.size > 0 && file.size <= 5 * 1024 * 1024);
+    setPodError(valid ? '' : 'Choose a JPEG, PNG, GIF, or PDF up to 5 MB.');
+    setPodFile(valid ? file || null : null);
+  };
+  const active = trip?.trip_status === 'ACTIVE';
+  const completed = trip?.trip_status === 'COMPLETED';
+  const accepted = trip && (!trip.assignment_id || trip.dispatch_status === 'ACCEPTED');
+  const unfinishedStops = trip?.stops.some(stop => stop.execution_status !== 'COMPLETED');
+  const inspectionType = completed ? 'POST_TRIP' : 'PRE_TRIP';
 
+<<<<<<< Updated upstream
   const statusCfg = STATUS_CONFIG[trip?.trip_status?.toUpperCase()] || STATUS_CONFIG.ACTIVE;
   const isTerminal = ['COMPLETED', 'CANCELLED'].includes(trip?.trip_status?.toUpperCase());
 
@@ -302,35 +326,83 @@ function TripStatusForm() {
             </div>
 
           </div>
+=======
+  return <main className="content-wrapper iso-ui dcc trip-execution" data-iso-theme="light">
+    <header className="dcc-header">
+      <div><h1>Trip execution</h1><p>{tripId}</p></div>
+      <div className="trip-execution-actions"><Link className="iso-button iso-button--secondary" to="/drivertrip">My trips</Link>
+        <Button variant="secondary" disabled={loading || busy} onClick={() => setRevision(value => value + 1)}>Refresh trip</Button></div>
+    </header>
+    {error && <Alert tone="danger" title="Trip action failed">{error}</Alert>}
+    {success && <p role="status">{success}</p>}
+    {loading && <p role="status">Loading trip...</p>}
+    {trip && <>
+      <section className="dcc-dispatch" aria-label="Trip details">
+        <h2>{STATUS_LABELS[trip.trip_status]}</h2>
+        <dl className="dcc-profile-facts">{[['Pickup', trip.pickup_address], ['Delivery', trip.delivery_address], ['Truck', trip.truck_id], ['Dispatch', trip.dispatch_status || 'Direct assignment']].map(([name, value]) => <div key={name}><dt>{name}</dt><dd>{value || 'Unavailable'}</dd></div>)}</dl>
+        {!accepted && <p>Accept this dispatch from My trips before recording execution.</p>}
+        <div className="trip-execution-actions">
+          {active && <Button disabled={busy || !accepted || !trip.pretrip_passed} onClick={() => mutate('status', { status: 'IN_PROGRESS' })}>Start trip</Button>}
+          {active && !trip.pretrip_passed && <p>Save a passed pre-trip inspection to enable start.</p>}
+          {trip.trip_status === 'IN_PROGRESS' && <Button variant="secondary" disabled={busy} onClick={() => mutate('status', { status: 'PAUSED' })}>Pause trip</Button>}
+          {trip.trip_status === 'PAUSED' && <Button disabled={busy || !accepted} onClick={() => mutate('status', { status: 'IN_PROGRESS' })}>Resume trip</Button>}
+>>>>>>> Stashed changes
         </div>
       </section>
-    </div>
-  );
+      {(active || completed) && accepted && <section className="dcc-dispatch" aria-label="Inspection">
+        <h2>{completed ? 'Post-trip inspection' : 'Pre-trip inspection'}</h2>
+        <form onSubmit={event => { event.preventDefault(); mutate('inspection', { inspection_type: inspectionType, result, defects, notes }); }}>
+          <fieldset disabled={busy}>
+            <label htmlFor="inspection-result">Inspection result</label>
+            <select id="inspection-result" value={result} onChange={event => setResult(event.target.value)}><option value="PASS">Pass</option><option value="FAIL">Fail</option></select>
+            <label htmlFor="inspection-defects">Defects found{result === 'FAIL' ? ' (required)' : ''}</label>
+            <textarea id="inspection-defects" value={defects} maxLength={4000} required={result === 'FAIL'} onChange={event => setDefects(event.target.value)} />
+            <label htmlFor="inspection-notes">Inspection notes</label>
+            <textarea id="inspection-notes" value={notes} maxLength={500} onChange={event => setNotes(event.target.value)} />
+            <Button type="submit" disabled={busy}>Save {completed ? 'post-trip' : 'pre-trip'} inspection</Button>
+          </fieldset>
+        </form>
+      </section>}
+      <section className="dcc-dispatch" aria-label="Stops">
+        <h2>Stops</h2>
+        {!trip.stops.length && <p>No stops are recorded for this trip.</p>}
+        <ol className="trip-execution-stops">{trip.stops.map((stop, index) => {
+          const eligible = trip.trip_status === 'IN_PROGRESS' && trip.stops.slice(0, index).every(prior => prior.execution_status === 'COMPLETED');
+          return <li key={stop.id}><h3>{stop.stoptype || 'Stop'} · {stop.location || stop.address1 || 'Location unavailable'}</h3>
+            <p>{stop.execution_status}{stop.arrived_at ? ` · Arrived ${stop.arrived_at}` : ''}{stop.completed_at ? ` · Completed ${stop.completed_at}` : ''}</p>
+            {stop.execution_status !== 'COMPLETED' && <Button variant="secondary" disabled={busy || !eligible} onClick={() => mutate('stop', { stop_id: stop.id, status: stop.execution_status === 'PENDING' ? 'ARRIVED' : 'COMPLETED' })}>{stop.execution_status === 'PENDING' ? 'Record arrival' : 'Complete stop'}</Button>}
+          </li>;
+        })}</ol>
+      </section>
+      {trip.trip_status === 'IN_PROGRESS' && <section className="dcc-dispatch" aria-label="Proof of delivery">
+        <h2>Proof of delivery</h2>
+        <form onSubmit={event => { event.preventDefault(); if (podFile && !podError && !unfinishedStops) mutate('status', { status: 'COMPLETED', pod_note: podNote }, podFile); }}>
+          <fieldset disabled={busy}>
+            <label htmlFor="execution-pod">POD file (required, up to 5 MB)</label>
+            <input ref={fileInput} id="execution-pod" type="file" accept="image/jpeg,image/png,image/gif,application/pdf" onChange={choosePod} required />
+            {podError && <p role="alert">{podError}</p>}
+            <label htmlFor="execution-pod-note">Delivery note</label>
+            <textarea id="execution-pod-note" value={podNote} maxLength={255} onChange={event => setPodNote(event.target.value)} />
+            {unfinishedStops && <p>Complete all recorded stops before completing the trip.</p>}
+            <Button type="submit" disabled={busy || !podFile || !!podError || unfinishedStops}>Complete trip</Button>
+          </fieldset>
+        </form>
+      </section>}
+      <section className="dcc-dispatch" aria-label="Saved inspections">
+        <h2>Saved inspections</h2>
+        {!trip.inspections.length && <p>No inspections recorded.</p>}
+        <ul>{trip.inspections.map(inspection => <li key={inspection.id}>{inspection.inspection_type === 'PRE_TRIP' ? 'Pre-trip' : 'Post-trip'} · {inspection.result} · {inspection.completed_at}{inspection.defects && <p>{inspection.defects}</p>}{inspection.notes && <p>{inspection.notes}</p>}</li>)}</ul>
+      </section>
+      <section className="dcc-dispatch" aria-label="Trip documents">
+        <h2>Documents</h2>
+        {!trip.documents.length && <p>No documents recorded.</p>}
+        <ul>{trip.documents.map(document => <li key={document.id}><a href={`${API}document/${document.id}`} target="_blank" rel="noreferrer">{document.imagetype} · {document.remarks || 'View document'}</a></li>)}</ul>
+      </section>
+      <section className="dcc-dispatch" aria-label="Trip history">
+        <h2>Trip history</h2>
+        {!trip.history.length && <p>No events recorded.</p>}
+        <ol className="dcc-dispatch-history">{trip.history.map(event => <li key={event.id}>{event.note || STATUS_LABELS[event.new_status] || event.new_status}<time>{event.created_at}</time></li>)}</ol>
+      </section>
+    </>}
+  </main>;
 }
-
-const styles = {
-  center: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 200,
-    padding: 40,
-  },
-  badge: {
-    display: 'inline-block',
-    padding: '4px 12px',
-    borderRadius: 12,
-    color: '#fff',
-    fontWeight: 600,
-    fontSize: 13,
-  },
-  buttonRow: {
-    display: 'flex',
-    gap: 12,
-    flexWrap: 'wrap',
-    padding: '8px 0',
-  },
-};
-
-export default TripStatusForm;

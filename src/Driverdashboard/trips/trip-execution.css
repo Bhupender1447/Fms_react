@@ -1,0 +1,10 @@
+.trip-execution { overflow-wrap: anywhere; }
+.trip-execution-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.trip-execution fieldset { display: grid; gap: 12px; border: 0; padding: 0; min-width: 0; }
+.trip-execution label { margin: 0; font-weight: 600; }
+.trip-execution input, .trip-execution select, .trip-execution textarea { width: 100%; max-width: 100%; min-width: 0; padding: 10px; border: 1px solid #d8cdd1; border-radius: 6px; background: white; color: #33252d; font: inherit; }
+.trip-execution textarea { min-height: 76px; resize: vertical; }
+.trip-execution fieldset .iso-button { justify-self: start; }
+.trip-execution-stops { display: grid; gap: 24px; padding-left: 24px; }
+.trip-execution-stops h3 { font-size: 18px; }
+.trip-execution :focus-visible { outline: 3px solid #842a50; outline-offset: 3px; }

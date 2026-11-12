@@ -27,7 +27,7 @@ const Driverheader = () => {
 
   return (<>
   <AdminLayout>
-<header className="main-header">
+<header className="main-header" style={{ maxHeight: 'none' }}>
   <AutoLiveLocationSender/>
   {/* Logo */}
   <Link to="/admin" className="logo">
