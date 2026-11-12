@@ -41,7 +41,15 @@ export default function HomePage() {
           </div>
           <div className="iso-home-hero-footnote"><span>Designed around freight teams</span><span>Canada <span aria-hidden="true">↔</span> United States</span></div>
         </div>
-        <IsoviaHologram className="iso-hologram-hero" />
+        <div className="iso-hero-display" aria-hidden="true">
+          <div className="iso-hero-display-top"><span><i />ISOVIA / FREIGHT SYSTEMS</span><span>01 / &infin;</span></div>
+          <div className="iso-hero-orbit iso-hero-orbit-outer" />
+          <div className="iso-hero-orbit iso-hero-orbit-inner" />
+          <div className="iso-hero-crosshair iso-hero-crosshair-left" /><div className="iso-hero-crosshair iso-hero-crosshair-right" />
+          <IsoviaHologram className="iso-hologram-hero" src="/media/isovia-hologram-no-slogan.mp4" />
+          <div className="iso-hero-display-bottom"><span>People. Freight. Possibility.</span><span>CONNECTED BY DESIGN</span></div>
+          <div className="iso-hero-display-products"><span>IFM</span><i /><span>DRIVER APP</span><i /><span>SIS</span></div>
+        </div>
         <a className="iso-home-scroll" href="#products"><span>Discover the ecosystem</span><FiArrowDown aria-hidden="true" /></a>
       </section>
 

@@ -5,7 +5,5 @@
 .main-header .logo.iso-hologram-sidebar{padding:0 12px;overflow:hidden}
 .iso-hologram-sidebar .iso-brand-hologram{width:70px;height:46px}
 .iso-hologram-sidebar .logo-mini .iso-brand-hologram{width:44px;height:44px}
-.iso-home-hero>.iso-hologram-hero{position:absolute;right:max(24px,calc((100% - 1320px)/2));top:130px;width:42%;height:auto;aspect-ratio:16/9;filter:drop-shadow(0 0 32px #e74c8f35);z-index:0}
-.iso-home-hero:has(>.iso-hologram-hero) .iso-home-hero-content{max-width:62%}
-@media(max-width:1000px){.iso-home-hero>.iso-hologram-hero{right:15px;top:190px;width:36%}}
-@media(max-width:700px){.iso-home-hero:has(>.iso-hologram-hero) .iso-home-hero-content{max-width:100%}.iso-home-hero>.iso-hologram-hero{position:relative;top:auto;right:auto;display:block;width:min(100%,420px);margin:30px auto 0}.iso-public-brand>.iso-brand-hologram{width:116px;height:64px}}
+.iso-hero-display>.iso-hologram-hero{position:absolute;inset:48px 0 auto;width:100%;height:auto;aspect-ratio:16/9;mix-blend-mode:screen;z-index:2}
+@media(max-width:700px){.iso-public-brand>.iso-brand-hologram{width:116px;height:64px}}

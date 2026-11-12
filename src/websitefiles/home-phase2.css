@@ -161,3 +161,39 @@
 @media (prefers-reduced-motion: reduce) {
   .iso-home-button, .iso-home-product { transition: none; }
 }
+
+/* Holographic hero: decorative identity display, without operational telemetry. */
+.iso-home-hero { min-height: 760px; background: radial-gradient(ellipse at 81% 40%, #64233e 0, #391527 35%, transparent 65%), radial-gradient(ellipse at 100% 0, #17516430, transparent 45%), #160b15; }
+.iso-home-hero-grid { opacity: .09; background-size: 64px 64px; mask-image: linear-gradient(90deg, transparent 25%, #000); }
+.iso-home-hero-content { max-width: 56%; }
+.iso-home-hero h1 { font-size: clamp(64px, 7.8vw, 112px); text-shadow: 0 8px 50px #08030b28; }
+.iso-home-hero h1 span { background: linear-gradient(105deg, #f1c5d9, #d58db1 64%, #b7d4e4); color: transparent; background-clip: text; -webkit-background-clip: text; }
+.iso-home-hero .iso-home-eyebrow { letter-spacing: .2em; }
+.iso-home-hero .iso-home-button-primary { box-shadow: 0 0 0 1px #ffffff26, 0 8px 36px #e99ab51b; }
+.iso-home-hero .iso-home-button-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px #e99ab530; }
+.iso-home-hero .iso-home-button-glass { background: linear-gradient(120deg, #ffffff0d, #ffffff03); border-color: #d9acc13b; }
+.iso-hero-display { position: absolute; width: 46%; max-width: 630px; height: 490px; right: max(28px, calc((100% - 1320px) / 2)); top: 94px; pointer-events: none; background: radial-gradient(ellipse at 50% 43%, #e95ba20c, transparent 65%); }
+.iso-hero-display::before, .iso-hero-display::after { content: ''; position: absolute; width: 22px; height: 22px; border-color: #e2aac066; border-style: solid; }
+.iso-hero-display::before { left: 0; top: 0; border-width: 1px 0 0 1px; }
+.iso-hero-display::after { bottom: 46px; right: 0; border-width: 0 1px 1px 0; }
+.iso-hero-display-top, .iso-hero-display-bottom { position: absolute; left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font: 9px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .14em; color: #c7a7b9; }
+.iso-hero-display-top { top: 6px; }
+.iso-hero-display-top>span:first-child { display: flex; align-items: center; gap: 8px; }
+.iso-hero-display-top i { width: 4px; height: 4px; background: #98d5e5; box-shadow: 0 0 12px #98d5e5; border-radius: 50%; }
+.iso-hero-display-bottom { bottom: 63px; padding-top: 16px; border-top: 1px solid #dba4bd22; }
+.iso-hero-display-bottom>span:first-child { color: #e2c3d2; letter-spacing: .03em; }
+.iso-hero-display-products { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 22px; font: 9px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .16em; color: #bca3b3; }
+.iso-hero-display-products i { width: 26px; height: 1px; background: linear-gradient(90deg, #de9abb50, #7cc4dc40); }
+.iso-hero-orbit { position: absolute; border: 1px solid #dea0bd18; border-radius: 50%; left: 50%; top: 44%; }
+.iso-hero-orbit-outer { width: 360px; height: 360px; margin: -180px; animation: iso-identity-orbit 70s linear infinite; border-style: dashed; border-color: #d7afc322; }
+.iso-hero-orbit-outer::after { content: ''; position: absolute; width: 5px; height: 5px; left: 52px; top: 48px; background: #a8dbe9; box-shadow: 0 0 16px #a8dbe9a0; border-radius: 50%; }
+.iso-hero-orbit-inner { width: 294px; height: 294px; margin: -147px; border-color: #dda0bd20; box-shadow: 0 0 80px #df73a309, inset 0 0 60px #ed69b008; }
+.iso-hero-crosshair { position: absolute; top: 43%; width: 10px; height: 10px; opacity: .5; }
+.iso-hero-crosshair::before, .iso-hero-crosshair::after { content: ''; position: absolute; background: #a0c8d7; }
+.iso-hero-crosshair::before { width: 10px; height: 1px; top: 4px; }
+.iso-hero-crosshair::after { height: 10px; width: 1px; left: 4px; }
+.iso-hero-crosshair-left { left: 12px; }.iso-hero-crosshair-right { right: 12px; }
+@keyframes iso-identity-orbit { to { transform: rotate(360deg); } }
+@media (max-width: 1100px) { .iso-hero-display { width: 43%; right: 20px; top: 120px; height: 430px; }.iso-hero-orbit-outer { width: 300px; height: 300px; margin: -150px; }.iso-hero-orbit-inner { width: 240px; height: 240px; margin: -120px; }.iso-hero-display-bottom { font-size: 8px; } }
+@media (max-width: 700px) { .iso-home-hero { min-height: auto; }.iso-home-hero-content { max-width: 100%; }.iso-home-hero h1 { font-size: clamp(60px, 14vw, 88px); }.iso-hero-display { position: relative; width: 100%; height: 330px; max-width: 430px; top: auto; right: auto; margin: 44px auto 0; }.iso-hero-display>.iso-hologram-hero { top: 36px; }.iso-hero-orbit-outer { width: 250px; height: 250px; margin: -125px; }.iso-hero-orbit-inner { width: 210px; height: 210px; margin: -105px; }.iso-hero-display-top, .iso-hero-display-bottom { left: 12px; right: 12px; font-size: 7px; }.iso-hero-display-bottom { bottom: 50px; }.iso-hero-display-products { gap: 14px; font-size: 8px; }.iso-hero-display::after { bottom: 34px; } }
+@media (prefers-reduced-motion: reduce) { .iso-hero-orbit-outer { animation: none; }.iso-home-hero .iso-home-button-primary:hover { transform: none; } }

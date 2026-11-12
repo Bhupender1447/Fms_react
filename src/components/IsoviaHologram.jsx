@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './IsoviaHologram.css';
 
-export default function IsoviaHologram({ className = '' }) {
+export default function IsoviaHologram({ className = '', src = '/media/isovia-hologram.webm' }) {
   const videoRef = useRef(null);
   const [failed, setFailed] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(() => typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -20,6 +20,6 @@ export default function IsoviaHologram({ className = '' }) {
   return <span className={`iso-brand-hologram ${className}`} aria-hidden="true">
     {reducedMotion || failed
       ? <img src="/images/logo.png" alt="" />
-      : <video ref={videoRef} src="/media/isovia-hologram.webm" autoPlay muted loop playsInline preload="auto" disablePictureInPicture onError={() => setFailed(true)} tabIndex={-1} />}
+      : <video ref={videoRef} src={src} autoPlay muted loop playsInline preload="auto" disablePictureInPicture onError={() => setFailed(true)} tabIndex={-1} />}
   </span>;
 }
