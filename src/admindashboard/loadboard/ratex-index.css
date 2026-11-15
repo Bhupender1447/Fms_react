@@ -1,0 +1,9 @@
+.ratex-index { padding: 24px; }
+.ratex-index > a { display: inline-block; margin-bottom: 16px; }
+.ratex-index__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin: 20px 0; }
+.ratex-index__grid > * { min-width: 0; overflow-wrap: anywhere; }
+.ratex-index__value { color: #800020; font-size: 2.5rem; font-weight: 700; margin: 16px 0 4px; }
+.ratex-index table { width: 100%; margin: 12px 0; }
+.ratex-index th, .ratex-index td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+.ratex-index summary { cursor: pointer; padding: 12px 0; }
+@media (max-width: 800px) { .ratex-index__grid { grid-template-columns: minmax(0, 1fr); } .ratex-index { padding: 16px; } }

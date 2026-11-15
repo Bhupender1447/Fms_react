@@ -126,8 +126,6 @@ import SamsaraDrivers from "./admindashboard/Samsara/SamsaraUsers";
 // import Carrieruploadpdf from "./websitefiles/Carrieruploadpdf";
 import TripMap from "./admindashboard/livemap";
 import DispatchBoard from "./admindashboard/Dispatch_board";
-<<<<<<< Updated upstream
-=======
 import Loadboard from "./admindashboard/Loadboard";
 import WorldModel from "./admindashboard/sis/WorldModel";
 import Safety from "./admindashboard/sis/Safety";
@@ -135,8 +133,8 @@ import DriverOnboarding from "./admindashboard/sis/DriverOnboarding";
 import Connections from "./admindashboard/sis/Connections";
 import EvidenceReview from "./admindashboard/sis/EvidenceReview";
 import NativeEldPrototype from "./admindashboard/eld/NativeEldPrototype.jsx";
+import RatexIndex from "./admindashboard/loadboard/RatexIndex";
 import EldSimulation from "./admindashboard/eld/EldSimulation";
->>>>>>> Stashed changes
 // import Article1 from "./websitefiles/blogs/Article1";
 // import Article2 from "./websitefiles/blogs/Article2";
 // import Article3 from "./websitefiles/blogs/Article3";
@@ -323,8 +321,6 @@ function App() {
         <Route path="/tripviewer/:tripId" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><TripViewer /><Footeradmin /></div>} />
         <Route path="/tripsplit/:tripId" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><SplitRoutes /><Footeradmin /></div>} />
         <Route path="/DispatchBoard" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><DispatchBoard /><Footeradmin /></div>} />
-<<<<<<< Updated upstream
-=======
         <Route path="/loadboard" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Loadboard /><Footeradmin /></div>} />
         <Route path="/loadboard/ratex-index" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><RatexIndex /><Footeradmin /></div>} />
         <Route path="/sis/world-model" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><WorldModel /><Footeradmin /></div>} />
@@ -334,7 +330,6 @@ function App() {
         <Route path="/sis/review" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><EvidenceReview /><Footeradmin /></div>} />
         <Route path="/sis/native-eld" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><NativeEldPrototype /><Footeradmin /></div>} />
         <Route path="/sis/eld-simulation" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><EldSimulation /><Footeradmin /></div>} />
->>>>>>> Stashed changes
         <Route path="/triplist" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Triplist /><Footeradmin /></div>} />
         <Route path="/trips/update/:id" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Updatetrip /><Footeradmin /></div>} />
         <Route path="trips/assign/:id" element={<div className="skin-blue sidebar-mini"><AdminLayout /><Adminheader /><Assigntrip /><Footeradmin /></div>} />

@@ -1,7 +1,4 @@
 import React, { useEffect, useState } from 'react';
-<<<<<<< Updated upstream
-import { Link, useNavigate } from 'react-router-dom';
-=======
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BASE_URL } from '../config';
 import './sidebar.css';
@@ -117,7 +114,6 @@ function SidebarItem({ item, pathname, search }) {
     </ul>}
   </li>;
 }
->>>>>>> Stashed changes
 
 const Sidebar = () => {
   let navigate = useNavigate();
