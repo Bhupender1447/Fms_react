@@ -1,101 +1,51 @@
-import React, { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { BASE_URL } from '../config'
+import React, { useEffect, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { FiGrid, FiTruck, FiClock, FiFileText, FiMapPin, FiCreditCard, FiLogOut, FiArrowUpRight, FiX } from 'react-icons/fi';
+import { BASE_URL } from '../config';
 
-const Sidebar = () => {
-  let navigate = useNavigate();
-  const[update,setupdate]=useState(0)
+const groups = [
+  { label: 'Workspace', items: [
+    ['/driverdashboard', 'Overview', FiGrid], ['/drivertrip', 'Assigned trips', FiTruck],
+    ['/driver/eld', 'ELD & HOS', FiClock], ['/drivercustompaper', 'Documents', FiFileText],
+    ['/livelocation', 'Location', FiMapPin],
+  ] },
+  { label: 'Money', items: [['/driverincome', 'My income', FiCreditCard], ['/expense', 'Expenses', FiArrowUpRight]] },
+];
 
-useEffect(()=>{
- // Check if login data exists in local storage
- const loginData = JSON.parse(localStorage.getItem("logindetail"));
+export default function Sidebar({ open = false, onClose = () => {} }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    let identity;
+    try { identity = JSON.parse(localStorage.getItem('logindetail') || 'null'); } catch { identity = null; }
+    if (identity?.role !== 'driver') navigate('/driver-login', { replace: true });
+  }, [navigate]);
+  useEffect(() => { onClose(); }, [location.pathname, onClose]);
 
- // eslint-disable-next-line eqeqeq
- if (loginData&&loginData.role=='driver') {
-   
- } else {
-     // No data, redirect to login page
-     navigate('/login');
- }
-},[navigate, update])
+  async function logout() {
+    setLeaving(true);
+    try { await fetch(`${BASE_URL}api/logout`, { credentials: 'include' }); }
+    catch { /* Browser identity is cleared even when the network is unavailable. */ }
+    finally {
+      localStorage.removeItem('logindetail');
+      localStorage.removeItem('hasJustLoggedIn');
+      navigate('/driver-login', { replace: true });
+    }
+  }
 
-
-let logout=async()=>{
-  try { await fetch(`${BASE_URL}api/logout`, { credentials: 'include' }) } catch (error) { /* Clear local state below. */ }
-  localStorage.removeItem('logindetail')
-  setupdate(update+1)
+  return <aside className={`driver-sidebar${open ? ' is-open' : ''}`} id="driver-navigation" aria-label="Driver navigation">
+    <div className="driver-brand-row"><NavLink to="/driverdashboard" className="driver-brand">isovia<span>DRIVER</span></NavLink>
+      <button className="driver-menu-close driver-icon-button" onClick={onClose} aria-label="Close navigation"><FiX /></button>
+    </div>
+    <div className="driver-workspace-label"><span className="driver-workspace-mark"><FiTruck /></span><div>Driver workspace<small>Your work on the road</small></div></div>
+    <nav>{groups.map(group => <div className="driver-nav-group" key={group.label}>
+      <p>{group.label}</p><ul>{group.items.map(([to, label, Icon]) => <li key={to}>
+        <NavLink to={to} className={({ isActive }) => `driver-nav-link${isActive ? ' is-active' : ''}`}><Icon aria-hidden="true" /><span>{label}</span></NavLink>
+      </li>)}</ul>
+    </div>)}</nav>
+    <div className="driver-sidebar-footer"><span className="driver-sidebar-monogram">i</span><span>Isovia IFM<small>Driver portal</small></span>
+      <button onClick={logout} disabled={leaving} className="driver-icon-button" aria-label="Sign out"><FiLogOut /></button>
+    </div>
+  </aside>;
 }
-  return (
-<aside className="main-sidebar">
-  {/* sidebar: style can be found in sidebar.less */}
-  <section className="sidebar" style={{ height: "auto" }}>
-    {/* sidebar menu: : style can be found in sidebar.less */}
-    <ul className="sidebar-menu tree" data-widget="tree">
-      {/*
-  <li  className="nav-item" id="dashboardMainMenu">
-    <Link to="/dashboard">
-      <i class="fa fa-dashboard"></i> <span>Dashboard</span>
-    </Link>
-  </li>
-  */}
-       <li  className="nav-item" id="manageOrderSubMenu">
-            <Link className="dropdown-item"  to={'/drivertrip'}>
-              <i className="fa fa-circle-o" /> Assigned Trips
-            </Link>
-          </li>
-       <li  className="nav-item" id="manageOrderSubMenu">
-            <Link className="dropdown-item"  to={'/driverincome'}>
-              <i className="fa fa-circle-o" /> Income 
-            </Link>
-          </li>
-       <li  className="nav-item" id="manageOrderSubMenu">
-            <Link className="dropdown-item"  to={'/startduty'}>
-              <i className="fa fa-circle-o" /> start duty 
-            </Link>
-          </li>
-       <li  className="nav-item" id="manageOrderSubMenu">
-            <Link className="dropdown-item"  to={'/stopduty'}>
-              <i className="fa fa-circle-o" /> stop duty
-            </Link>
-          </li>
-       <li  className="nav-item" id="manageOrderSubMenu">
-            <Link className="dropdown-item"  to={'/dutylist'}>
-              <i className="fa fa-circle-o" />Dutylist
-            </Link>
-          </li>
-       <li  className="nav-item" id="manageOrderSubMenu">
-            <Link className="dropdown-item"  to={'/logs'}>
-              <i className="fa fa-circle-o" />Logs
-            </Link>
-          </li>
-       <li  className="nav-item" id="manageOrderSubMenu">
-            <Link className="dropdown-item"  to={'/expense'}>
-              <i className="fa fa-circle-o" />Expense
-            </Link>
-          </li>
-       <li  className="nav-item" id="manageOrderSubMenu">
-            <Link className="dropdown-item"  to={'/livelocation'}>
-              <i className="fa fa-circle-o" />livelocation
-            </Link>
-          </li>
-       <li  className="nav-item" id="manageOrderSubMenu">
-            <Link className="dropdown-item"  to={'/drivercustompaper'}>
-              <i className="fa fa-circle-o" />drivercustompaper
-            </Link>
-          </li>
-          <li>
-        <Link onClick={logout}>
-          <i className="glyphicon glyphicon-log-out" /> <span>Logout</span>
-        </Link>
-      </li>
-    </ul>
-
-  </section>
-  {/* /.sidebar */}
-</aside>
-
-
-  )
-}
-
-export default Sidebar

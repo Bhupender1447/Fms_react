@@ -82,7 +82,8 @@ import Assignorder from "./admindashboard/order/Assign";
 import Assigntrip from "./admindashboard/trips/Assign";
 import TripDriverlist from "./Driverdashboard/trips/Triplist";
 import TripDetails from "./Driverdashboard/trips/TripDetails";
-import Income from "./Driverdashboard/income/Income";
+import Income from "./Driverdashboard/income/DriverEarnings";
+import DailyLogbook from "./Driverdashboard/dutystatus/DailyLogbook";
 import Updatetrailors from "./admindashboard/trailors/Update";
 import Updatetrucks from "./admindashboard/trucks/Updatetrucks";
 import Updateowners from "./admindashboard/owners/Update";
@@ -158,7 +159,6 @@ import DriverListing from "./admindashboard/drivers/DriverListing";
 import DriverDutyNotification from "./admindashboard/hos/DriverDutyNotification";
 import FleetHosRoster from "./admindashboard/hos/FleetHosRoster";
 import Dutychart from "./Driverdashboard/dutystatus/Dutychart";
-import TripLogChart from "./Driverdashboard/dutystatus/Logs";
 import DailyLogDetail from "./Driverdashboard/dutystatus/DailyLogDetail";
 import LiveLocationMap from "./Driverdashboard/dutystatus/LiveLocationMap";
 import FinanceManager from "./admindashboard/finance/FinanceManager";
@@ -471,7 +471,8 @@ function App() {
         <Route path="/triprecalculation" element={<div className="skin-blue sidebar-mini"><Driverheader /><TripRecalculateForm /></div>} />
         <Route path="/tripstatus/:tripId" element={<div className="skin-blue sidebar-mini"><Driverheader /><TripStatusForm /></div>} />
         <Route path="/tripdetails" element={<div className="skin-blue sidebar-mini"><Driverheader /><TripDetails /></div>} />
-        <Route path="/logs" element={<div className="skin-blue sidebar-mini"><Driverheader /><TripLogChart /></div>} />
+        <Route path="/driver/eld" element={<div className="skin-blue sidebar-mini"><Driverheader /><DailyLogbook /></div>} />
+        <Route path="/logs" element={<div className="skin-blue sidebar-mini"><Driverheader /><DailyLogbook /></div>} />
         <Route path="/daily-log-detail" element={<div className="skin-blue sidebar-mini"><Driverheader /><DailyLogDetail /></div>} />
         <Route path="/livelocation" element={<div className="skin-blue sidebar-mini"><Driverheader /><LiveLocationMap /></div>} />
         <Route path="/expense" element={<div className="skin-blue sidebar-mini"><Driverheader /><ExpenseManager /></div>} />

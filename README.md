@@ -1,39 +1,18 @@
-# Isovia React Client
+# Isovia React client
 
-React 18 single-page client built with Create React App 5. The PHP/CodeIgniter API is a separate project at `../../fms_api-main/fms_api-main`.
+React 18 application using Create React App 5 and React Router 6. Source lives in `src`, public browser assets in `public`, and current build output in `build`.
 
-## Local Setup
+Read the workspace [developer guide](../docs/developer/DEVELOPER_GUIDE.md) for local configuration, API relationships, feature locations and known blockers. The PHP backend is in `../fms_api`. React tests and their runner are in `../tests/frontend`.
 
-Requirements: Node.js and npm. Install the exact dependency versions from the lockfile:
+From the workspace root, use `scripts/dev.ps1 Frontend` for the supported localhost setup. From this directory, standard commands remain available.
 
-```sh
-npm ci
+```powershell
+npm.cmd ci
+npm.cmd start
+npm.cmd test -- --watchAll=false --runInBand
+npm.cmd run build
 ```
 
-Configure the API origin with `REACT_APP_API_URL` in an untracked local `.env` file. The current fallback in `src/config.js` points to the configured Isovia API and should not be used as a substitute for an approved staging environment.
+`src/config.js` resolves the local API during development. Configure `REACT_APP_API_URL` for the intended environment, then restart or rebuild. Some legacy screens still embed hosted API URLs.
 
-```env
-REACT_APP_API_URL=http://localhost:8080/
-```
-
-The example origin above is illustrative; configure it to match the local or staging API base path. Some legacy screens still use direct absolute API URLs, so changing this value alone does not redirect every request.
-
-## Commands
-
-```sh
-npm start
-npm test -- --watchAll=false
-npm run build
-```
-
-The current test suite contains only the Create React App starter test and does not cover Isovia workflows.
-
-## API And Database
-
-The frontend does not provision the MySQL database. No verified FMS schema dump, migration sequence, or sanitized fixture was found with this client. Use the backend owner's approved local/staging setup instructions; do not import the unrelated `restaurant.sql` file.
-
-The router currently uses the site root as its base path. Deploying under a subpath requires coordinated React router, static-asset, and PHP API configuration changes.
-
-## External Services
-
-Some pages require provider configuration such as Google Maps, Samsara/Gomotive, OCR, or routing services. Use sandbox credentials and approved test data; never add credentials to this repository or upload production records to tests.
+[Test commands](../tests/README.md) · [Route map](../docs/developer/ROUTES.md) · [Workspace guide](../README.md)

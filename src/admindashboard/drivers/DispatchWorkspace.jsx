@@ -1,3 +1,4 @@
+import TripWorkflowPanel from '../../Driverdashboard/trips/TripWorkflowPanel';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Select } from '../../design-system/components';
 import { driverName } from './driverCommandData';
@@ -63,6 +64,7 @@ export default function DispatchWorkspace({ accountId, drivers }) {
       <Button variant="secondary" disabled={busy || detail?.assignment?.dispatch_status !== 'ASSIGNED'} onClick={() => act('send')}>Send Dispatch</Button>
       <Button variant="secondary" disabled={busy || !tripId} onClick={() => setRevision(value => value + 1)}>Refresh Dispatch</Button>
     </div>
+    {detail && <TripWorkflowPanel key={`${tripId}:${revision}`} tripId={tripId} staff />}
     {detail && <><p role="status">Acceptance status: <strong>{detail.assignment?.dispatch_status || 'Not assigned'}</strong> / Trip: {detail.trip.status}</p>
       {detail.assignment?.reject_reason && <p>Rejection reason: {detail.assignment.reject_reason}</p>}
       <h3>Dispatch history</h3>{detail.history?.length ? <ol className="dcc-dispatch-history">{detail.history.map(event => <li key={event.id}><strong>{event.new_status}</strong> <time>{event.created_at}</time><p>{event.note}</p></li>)}</ol> : <p>No dispatch events recorded.</p>}</>}
