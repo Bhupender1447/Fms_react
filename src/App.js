@@ -83,6 +83,7 @@ import Assigntrip from "./admindashboard/trips/Assign";
 import TripDriverlist from "./Driverdashboard/trips/Triplist";
 import TripDetails from "./Driverdashboard/trips/TripDetails";
 import Income from "./Driverdashboard/income/DriverEarnings";
+import TruckNavigation from "./Driverdashboard/trips/TruckNavigation.jsx";
 import DailyLogbook from "./Driverdashboard/dutystatus/DailyLogbook";
 import Updatetrailors from "./admindashboard/trailors/Update";
 import Updatetrucks from "./admindashboard/trucks/Updatetrucks";
@@ -471,6 +472,7 @@ function App() {
         <Route path="/triprecalculation" element={<div className="skin-blue sidebar-mini"><Driverheader /><TripRecalculateForm /></div>} />
         <Route path="/tripstatus/:tripId" element={<div className="skin-blue sidebar-mini"><Driverheader /><TripStatusForm /></div>} />
         <Route path="/tripdetails" element={<div className="skin-blue sidebar-mini"><Driverheader /><TripDetails /></div>} />
+        <Route path="/driver/navigation/:tripId" element={<div className="skin-blue sidebar-mini"><Driverheader /><TruckNavigation /></div>} />
         <Route path="/driver/eld" element={<div className="skin-blue sidebar-mini"><Driverheader /><DailyLogbook /></div>} />
         <Route path="/logs" element={<div className="skin-blue sidebar-mini"><Driverheader /><DailyLogbook /></div>} />
         <Route path="/daily-log-detail" element={<div className="skin-blue sidebar-mini"><Driverheader /><DailyLogDetail /></div>} />

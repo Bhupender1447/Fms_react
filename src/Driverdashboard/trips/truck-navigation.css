@@ -1,0 +1,32 @@
+.truck-navigation-map { width:100%; height:min(65vh,600px); min-height:320px; border-radius:12px; }
+.truck-navigation-map-missing { min-height:180px; padding:30px; background:#f5eff7; border:1px dashed #b39cbd; border-radius:12px; display:grid; place-items:center; }
+.truck-navigation-gps { align-self:center; padding:14px; color:#765387; }
+.truck-current-maneuver { background:#710d2d; color:white; padding:20px; border-radius:10px; margin-top:16px; display:flex; flex-direction:column; gap:8px; }
+.truck-current-maneuver span { font-size:11px; text-transform:uppercase; letter-spacing:1px; }
+.truck-current-maneuver strong { font-size:22px; line-height:1.5; }
+.truck-route-directions { padding-left:25px; }
+.truck-route-directions li { padding:13px 10px; border-bottom:1px solid #eee4f0; }
+.truck-route-directions li[aria-current=step] { background:#f7edf2; border-radius:8px; font-weight:600; }
+.truck-route-directions small { display:block; color:#856c90; margin-top:5px; }
+@media(max-width:600px){.truck-navigation-map{min-height:360px;height:55vh;}.truck-current-maneuver strong{font-size:18px;}}
+
+.truck-navigation .workflow-alert.is-warning { background:#fff6df; border-color:#eddda8; color:#76591d; }
+
+.truck-server-map { display:block; width:100%; height:auto; max-height:70vh; object-fit:contain; background:#eee; border-radius:10px; margin:8px 0 15px; }
+.truck-map-mode { font-size:12px !important; }
+.truck-status-rail { display:flex; flex-wrap:wrap; align-items:center; gap:12px 20px; padding:13px 16px; margin:0 0 18px; background:#fff; border:1px solid #e8dfea; border-radius:12px; font-size:12px; color:#765f82; }
+.truck-signal { display:inline-flex; align-items:center; gap:8px; font-weight:700; }
+.truck-signal::before { content:''; width:8px; height:8px; border-radius:50%; background:currentColor; }
+.truck-signal.is-ready { color:#28714d; }.truck-signal.is-warning { color:#8a641c; }.truck-signal.is-blocked { color:#aa304c; }.truck-signal.is-info { color:#65528a; }
+.truck-route-settings { border:1px solid #e8dfea; border-radius:12px; background:#fff; margin-bottom:20px; }
+.truck-route-settings>summary,.truck-directions>summary { padding:18px 22px; cursor:pointer; font-weight:700; color:#4a3154; }
+.truck-route-settings>.workflow-card { border:0; margin:0; padding-top:0; }
+.truck-directions { padding:0; }.truck-directions>ol { padding:0 24px 10px 44px; }
+.truck-map-controls { display:flex; align-items:center; justify-content:flex-end; gap:9px; margin:12px 0; font-size:12px; color:#795d87; }
+.truck-map-controls .driver-button { min-width:43px; min-height:43px; font-size:20px; padding:5px 12px; }
+.truck-border-notice { background:#fff7e3; border:1px solid #eddda8; border-radius:10px; padding:15px 18px; margin:15px 0; }
+.truck-border-notice h3,.truck-profile-weight-title { font-size:15px; font-weight:700; margin:0 0 8px; }
+.truck-border-notice p { margin:5px 0; color:#73591f; }
+.truck-active-route .truck-current-maneuver { margin:12px 0 16px; }
+.truck-navigation .workflow-alert .driver-button { margin-left:12px; }
+@media(max-width:600px){.truck-status-rail{gap:8px 12px;font-size:11px}.truck-route-settings>summary,.truck-directions>summary{padding:15px 18px}.truck-navigation .workflow-alert .driver-button{margin:10px 0 0;display:block}.truck-active-route{padding:15px}.truck-current-maneuver{padding:16px}}

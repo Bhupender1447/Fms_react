@@ -36,7 +36,7 @@ export default function Driverheader() {
     {menuOpen && <button className="driver-nav-scrim" onClick={closeMenu} aria-label="Close navigation overlay" />}
     <header className="driver-topbar">
       <div className="driver-topbar-start"><button className="driver-mobile-menu driver-icon-button" aria-expanded={menuOpen} aria-controls="driver-navigation" onClick={() => setMenuOpen(value => !value)} aria-label="Open navigation"><FiMenu /></button>
-        <div className="driver-breadcrumb"><Link to="/driverdashboard">Workspace</Link><FiChevronRight aria-hidden="true" /><span>{titles[pathname] || 'Trip workspace'}</span></div>
+        <div className="driver-breadcrumb"><Link to="/driverdashboard">Workspace</Link><FiChevronRight aria-hidden="true" /><span>{(pathname.startsWith('/driver/navigation/') ? 'Truck navigation' : titles[pathname]) || 'Trip workspace'}</span></div>
       </div>
       <div className="driver-topbar-actions">
         <span className={`driver-device-status${online ? '' : ' is-offline'}`}>{online ? <FiWifi /> : <FiWifiOff />}<span>{online ? 'Device online' : 'Device offline'}</span></span>
