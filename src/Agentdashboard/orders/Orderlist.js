@@ -1,3 +1,4 @@
+import { invoiceOrderUrl } from '../../admindashboard/invoices/invoiceWorkflowLinks';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -184,13 +185,7 @@ const Orderlist = () => {
                                 >
                                   Confirmation
                                 </Link>
-                                <Link
-                                  target="_blank"
-                                  to={`${BASE_URL}pdf/invoice_log.php?id=${item.id}`}
-                                  className="btn btn-warning btn-xs"
-                                >
-                                  Invoice
-                                </Link>
+                                <Link to={invoiceOrderUrl(item.id)} className="btn btn-warning btn-xs">Invoice</Link>
                                 <Link
                                   to={"/agentupdate/"+item.id}
                                   className="btn btn-default btn-sm"

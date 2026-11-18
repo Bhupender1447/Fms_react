@@ -1,3 +1,4 @@
+import { invoiceOrderUrl } from '../invoices/invoiceWorkflowLinks';
 import axios from 'axios';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -213,13 +214,7 @@ const Orders = () => {
                           {item.tmsTriptId && <Link to={`/tripviewer/${item.tmsTriptId}`} className="btn btn-default btn-xs">
                             Map
                           </Link>}
-                          <Link
-                            target="_blank"
-                            to={`${BASE_URL}pdf/invoice_log.php?id=${item.id}`}
-                            className="btn btn-warning btn-xs"
-                          >
-                            Invoice
-                          </Link>
+                          <Link to={invoiceOrderUrl(item.id)} className="btn btn-warning btn-xs">Invoice</Link>
                           <Link
                             aria-label={"Edit order " + item.id} to={"/update/" + item.id}
                             className="btn btn-default btn-sm"

@@ -1,3 +1,4 @@
+import { invoiceTripUrl } from '../invoices/invoiceWorkflowLinks';
 import axios from "axios";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -216,13 +217,7 @@ const Triplist = () => {
                                     Map
                                   </Link>
                                 )}
-                                <Link
-                                  target="_blank"
-                                  to={`${BASE_URL}pdf/invoice_orders.php?id=${item.id}`}
-                                  className="btn btn-warning btn-xs"
-                                >
-                                  Invoice
-                                </Link>
+                                <Link to={invoiceTripUrl(item.tmsTriptId)} className="btn btn-warning btn-xs">Invoice</Link>
                                 <Link
                                   to={`/trips/assign/${item.id}`}
                                   className="btn btn-success btn-xs"

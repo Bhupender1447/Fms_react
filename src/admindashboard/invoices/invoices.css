@@ -54,3 +54,17 @@
   .billing-pagination .iso-button { padding: 10px; font-size: 11px; }
 }
 @media (prefers-reduced-motion: reduce) { .ifm-invoices *, .ifm-invoices *::before, .ifm-invoices *::after { animation: none !important; transition: none !important; } }
+.billing-workflow h2 { color: var(--iso-primary); font-size: 20px; }
+.billing-action-form { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; padding: 22px 0; border-top: 1px solid var(--iso-border,#e5dbe0); margin-top: 18px; align-items: end; }
+.billing-action-form h3,.billing-action-form h4,.billing-action-form p,.billing-action-form .iso-alert { grid-column: 1 / -1; margin: 0; }
+.billing-action-form h3,.billing-manage h3 { font-size: 17px; }
+.billing-action-form p { color: var(--iso-muted); line-height: 1.6; }
+.billing-action-form button { justify-self: start; }
+.billing-manage { margin-top: 22px; padding: 24px; border: 1px solid #d9bdc8; border-radius: 12px; background: #fcf9fa; }
+.billing-manage-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.billing-success { padding:14px; background:#eaf7ee; color:#195b32; border-radius:8px; }
+@media(max-width:800px) { .billing-action-form { grid-template-columns: 1fr; } .billing-manage { padding:16px; } }
+.billing-table th[scope="row"] { min-width: 120px; white-space: nowrap; }
+.billing-table td:last-child { min-width: 105px; }
+.billing-manage h3:focus { outline: 2px solid var(--iso-primary); outline-offset: 5px; }
+.billing-email-packet{margin-top:24px;padding:20px;border:1px solid #ddc4cf;border-radius:12px;background:#fffafb}.billing-email-section{margin:20px 0;padding:16px;background:#fff;border:1px solid #eadfe4;border-radius:8px;overflow-wrap:anywhere}.billing-email-section h5{font-size:18px;color:#741632}.billing-email-section textarea{display:block;box-sizing:border-box;width:100%;min-height:90px;padding:10px;border:1px solid #c7b7bf;border-radius:6px;font:inherit}.billing-email-section label{display:block}.billing-email-section fieldset label{display:flex;align-items:center;gap:10px;padding:8px 0}.billing-email-section input[type=checkbox],.billing-email-approval input{width:18px;height:18px;flex-shrink:0}.billing-email-section button{margin:6px}.billing-email-section li{margin:12px 0}.billing-email-approval{display:flex;gap:12px;align-items:flex-start;margin:16px 0}.billing-document-list{padding-left:20px}@media(max-width:520px){.billing-email-packet{padding:14px}.billing-email-section{padding:12px}}

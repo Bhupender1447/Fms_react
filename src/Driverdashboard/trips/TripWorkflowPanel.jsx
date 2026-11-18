@@ -28,7 +28,7 @@ function TripWorkflowContent({ tripId, staff = false }) {
   const [repairNote, setRepairNote] = useState('');
   const [repairConfirmed, setRepairConfirmed] = useState(false);
   const [documentFile, setDocumentFile] = useState(null);
-  const [documentType, setDocumentType] = useState('PICKUP_DOCS');
+  const [documentType, setDocumentType] = useState('BOL');
   const [documentNotes, setDocumentNotes] = useState({});
   const gate = useRef(false);
   const generation = useRef(0);
@@ -128,6 +128,7 @@ function TripWorkflowContent({ tripId, staff = false }) {
   const accepted = data?.dispatch_status === 'ACCEPTED';
   const unstarted = data?.trip_status === 'ACTIVE';
   const reviewFor = id => workflow?.document_reviews?.find(item=>String(item.document_id)===String(id));
+  const approvedBol = data?.documents?.find(document=>['BOL','PICKUP_DOCS'].includes(document.imagetype) && reviewFor(document.id)?.status==='APPROVED');
   const approvedPod = data?.documents?.find(document=>document.imagetype==='POD' && reviewFor(document.id)?.status==='APPROVED');
   const allStopsComplete = data?.stops?.every(stop=>stop.execution_status==='COMPLETED');
   const defects = Object.entries(checklist).filter(([,value])=>value!=='PASS');
@@ -171,9 +172,9 @@ function TripWorkflowContent({ tripId, staff = false }) {
           <button className="driver-button driver-button-primary" disabled={busy||!review.review_note.trim()||!review.equipment_authorized} onClick={()=>mutate('equipment_review',{...review,truck_id:review.truck_id||data.truck_id,trailer_id:review.trailer_id||data.trailer_id,equipment_request_id:request.id,decision:'APPROVED'})}>Approve change</button><button className="driver-button driver-button-light" disabled={busy||!review.review_note.trim()} onClick={()=>mutate('equipment_review',{...review,equipment_request_id:request.id,decision:'REJECTED'})}>Reject request</button>
         </div>}</article>)}</section>
       <section className="workflow-card"><h2>Trip paperwork & dispatcher review</h2><p>Uploaded files remain unverified until the dispatcher reviews them. Customs release requires the authorized customs workflow.</p>
-        {!staff&&<form className="workflow-form" onSubmit={upload}><label>Document type<select value={documentType} onChange={event=>setDocumentType(event.target.value)}><option value="PICKUP_DOCS">BOL / pickup paperwork</option><option value="POD">Signed proof of delivery</option><option value="OTHER">Other trip document</option></select></label><label>File<input type="file" required accept="image/jpeg,image/png,image/gif,application/pdf" onChange={event=>setDocumentFile(event.target.files[0]||null)}/></label><button className="driver-button driver-button-light" disabled={busy||!documentFile}>Upload for review</button></form>}
+        {!staff&&<form className="workflow-form" onSubmit={upload}><label>Document type<select value={documentType} onChange={event=>setDocumentType(event.target.value)}><option value="BOL">Bill of lading (BOL)</option><option value="PICKUP_DOCS">Other pickup paperwork</option><option value="POD">Signed proof of delivery</option><option value="OTHER">Other trip document</option></select></label><label>File<input type="file" required accept="image/jpeg,image/png,image/gif,application/pdf" onChange={event=>setDocumentFile(event.target.files[0]||null)}/></label><button className="driver-button driver-button-light" disabled={busy||!documentFile}>Upload for review</button></form>}
         {data.documents.map(document=><div className="workflow-document" key={document.id}><div><a href={`${BASE_URL}api/maps/trip/document/${document.id}`} target="_blank" rel="noreferrer">{document.imagetype} · {document.remarks||`Document ${document.id}`}</a><span>{reviewFor(document.id)?.status||'PENDING_REVIEW'}</span></div>{staff&&<><label>Review note<input value={documentNotes[document.id]||''} maxLength={1000} onChange={event=>setDocumentNotes({...documentNotes,[document.id]:event.target.value})}/></label><div className="workflow-actions">{['APPROVED','NEEDS_CORRECTION','REJECTED'].map(decision=><button key={decision} className="driver-button driver-button-light" disabled={busy||!documentNotes[document.id]?.trim()} onClick={()=>mutate('document_review',{document_id:document.id,decision,review_note:documentNotes[document.id]})}>{display(decision)}</button>)}</div></>}</div>)}
-        {!staff&&data.trip_status==='IN_PROGRESS'&&<button className="driver-button driver-button-primary" disabled={busy||!approvedPod||!allStopsComplete} onClick={()=>mutate('status',{status:'COMPLETED',pod_document_id:approvedPod?.id})}>Complete trip with approved POD</button>}
+        {!staff&&data.trip_status==='IN_PROGRESS'&&<button className="driver-button driver-button-primary" disabled={busy||!approvedPod||!approvedBol||!allStopsComplete} onClick={()=>mutate('status',{status:'COMPLETED',pod_document_id:approvedPod?.id,bol_document_id:approvedBol?.id})}>Complete trip with approved POD and BOL</button>}
         {data.trip_status==='COMPLETED'&&<p className="workflow-source-state">Delivery complete. {approvedPod?'Paperwork approved for billing and payroll review.':'Dispatcher paperwork review is pending.'} Payroll approval and payment remain separate.</p>}
       </section>
       <section className="workflow-card"><h2>Shared activity</h2><ul className="workflow-history">{data.history.slice(0,15).map(event=><li key={event.id}><strong>{display(event.new_status)}</strong><time>{event.created_at}</time><p>{event.note}</p></li>)}</ul></section>

@@ -1,3 +1,4 @@
+import { invoiceOrderUrl } from './invoices/invoiceWorkflowLinks';
 import axios from 'axios';
 import { BASE_URL } from '../config';
 import React, { useEffect, useState } from 'react';
@@ -99,7 +100,7 @@ const DispatchBoard = () => {
                     <td>{item.currency}</td>
                     <td>
                       <Link target="_blank" to={`${BASE_URL}pdf/invoice.php?id=${item.id}`} className="btn btn-danger btn-sm">Confirmation</Link>
-                      <Link target="_blank" to={`${BASE_URL}pdf/invoice_log.php?id=${item.id}`} className="btn btn-warning btn-xs">Invoice</Link>
+                      <Link to={invoiceOrderUrl(item.id)} className="btn btn-warning btn-xs">Invoice</Link>
                       <Link to={`/update/${item.id}`} className="btn btn-default btn-sm"><i className="fa fa-pencil" /></Link>
                       <Link to={`/assign/${item.id}`} className="btn btn-success btn-sm">Assign</Link>
                       <button type="button" className="btn btn-danger btn-sm" onClick={() => console.log('removeFunc', item.id)}>

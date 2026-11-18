@@ -6,6 +6,7 @@ import { Alert, Badge, Button, EmptyState, Input, Select } from '../../design-sy
 import { BASE_URL } from '../../config';
 import { formatMoney, invoiceBalance, invoiceFilters, invoiceSourceReference, invoiceStatus, invoiceViews, isDate, matchesView, summarizeInvoices, todayDate, validateInvoices } from './invoiceReadModel';
 import InvoiceReadyQueue from './InvoiceReadyQueue';
+import InvoiceWorkflowPanel from './InvoiceWorkflowPanel';
 import './invoices.css';
 
 const statusNames = { draft: 'Draft', approved: 'Approved', issued: 'Issued', pending: 'Pending', partial: 'Partially Paid', overdue: 'Overdue', paid: 'Paid', disputed: 'Disputed', voided: 'Voided' };
@@ -17,9 +18,8 @@ function CurrencyAmounts({ currencies, field }) {
   return entries.length ? entries.map(([currency, totals]) => <span key={currency}>{formatMoney(totals[field].toString(), currency)}</span>) : <span>No issued balances</span>;
 }
 
-// Only a future authorized ledger adapter may supply records. The live
-// container never binds order/trip arrays to this presentation.
-export function InvoiceDashboard({ records = null, shipments = null, accountId = null, loading = false, error = '', onRefresh, asOf = todayDate() }) {
+// Only persisted invoice projections are accepted; order/trip arrays are not invoices.
+export function InvoiceDashboard({ records = null, shipments = null, accountId = null, loading = false, error = '', onRefresh, capabilities = null, readyOrders = [], readyError = '', recordedPayments = null, asOf = todayDate() }) {
   const [params, setParams] = useSearchParams();
   const requestedView = params.get('status') || 'all';
   const knownView = invoiceFilters.some(([value]) => value === requestedView);
@@ -30,6 +30,9 @@ export function InvoiceDashboard({ records = null, shipments = null, accountId =
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [page, setPage] = useState(0);
+  const [selectedId, setSelectedId] = useState(null);
+  const requestedOrderId = params.get('order_id') || '';
+  const requestedTripKey = params.get('trip_key') || '';
   const projection = useMemo(() => {
     if (records === null) return { rows: [], error: '' };
     try {
@@ -39,6 +42,11 @@ export function InvoiceDashboard({ records = null, shipments = null, accountId =
       return { rows: [], error: projectionError.message };
     }
   }, [records, asOf]);
+  useEffect(() => {
+    if (!requestedOrderId && !requestedTripKey) return;
+    const existing = projection.rows.find(row => row.documentStatus !== 'voided' && ((requestedOrderId && row.sourceIds?.orderIds?.includes(requestedOrderId)) || (requestedTripKey && row.sourceIds?.tripIds?.includes(requestedTripKey))));
+    if (existing) setSelectedId(existing.id);
+  }, [requestedOrderId, requestedTripKey, projection.rows]);
   const hasData = records !== null && !loading && !error && !projection.error;
   const rows = hasData ? projection.rows : [];
   const rangeError = (from && !isDate(from)) || (to && !isDate(to)) ? 'Enter valid invoice dates.' : from && to && from > to ? 'From date must not follow To date.' : '';
@@ -62,20 +70,21 @@ export function InvoiceDashboard({ records = null, shipments = null, accountId =
   return <main className="content-wrapper iso-ui ifm-invoices" data-iso-theme="light">
     <header className="billing-header"><div><p className="billing-eyebrow">IFM / Billing & accounts receivable</p><h1>Invoices</h1><p>One place for controlled billing. Orders and trips are sources, not issued invoices.</p></div><div className="billing-actions">
       <Button variant="secondary" disabled={loading || !onRefresh} onClick={onRefresh}><FiRefreshCw aria-hidden="true" />{loading ? 'Refreshing...' : 'Refresh'}</Button>
-      <Button disabled title="Authorized draft creation and an approved invoice ledger are required."><FiFileText aria-hidden="true" />Prepare draft</Button>
+      <Button disabled={!hasData || !capabilities?.canDraft} onClick={() => document.getElementById('billing-draft-order')?.focus()} title="Prepare a draft from completed work."><FiFileText aria-hidden="true" />Prepare draft</Button>
     </div></header>
-    <div className="billing-boundary"><FiLock aria-hidden="true" /><div><strong>Financial actions locked</strong><p>No authorized invoice ledger is connected. Operational orders, route estimates and regenerated PDFs are not treated as issued invoices or payment evidence. Issuance, payments, credits and customer messaging are disabled.</p></div></div>
+    <div className="billing-boundary"><FiLock aria-hidden="true" /><div><strong>{hasData && capabilities ? 'Account-scoped billing connected' : 'Financial actions locked'}</strong><p>{hasData && capabilities ? 'Prepare a draft, review and issue it, then record received payments. Every saved action is checked against your account and permissions. CAD and USD remain separate.' : 'No authorized invoice ledger is connected. Operational records are never converted into issued invoices or payment evidence.'}</p></div></div>
     <section className="billing-summary" aria-label="Invoice summary">
       {[
         ['Total Outstanding', hasData ? <CurrencyAmounts currencies={summary.currencies} field="outstanding" /> : 'Unavailable', 'Issued AR balances, separated by currency'],
         ['Overdue Amount', hasData ? <CurrencyAmounts currencies={summary.currencies} field="overdue" /> : 'Unavailable', `Past due with an unpaid balance as of ${asOf}`],
         ['Pending Invoices', hasData ? String(summary.pending) : 'Unavailable', 'Issued invoices with an outstanding balance'],
-        ['Paid This Month', 'Unavailable', 'Verified dated payment applications required'],
+        ['Recorded Payments This Month', recordedPayments === null ? 'Unavailable' : Object.keys(recordedPayments).length ? Object.entries(recordedPayments).map(([currency, total]) => <span key={currency}>{formatMoney(total, currency)}</span>) : 'No recorded payments', 'Dated IFM payment entries; legacy opening balances excluded'],
         ['Draft Invoices', hasData ? String(summary.drafts) : 'Unavailable', 'Prepared, not issued'],
         ['Average Days to Payment', 'Not measurable', 'Complete issue and settlement history required'],
       ].map(([label, value, help]) => <div className="billing-stat" key={label} aria-label={label}><span>{label}</span><strong>{value}</strong><small>{help}</small></div>)}
     </section>
-    <InvoiceReadyQueue shipments={loading || error ? null : shipments} accountId={accountId} />
+    {hasData && capabilities && <InvoiceWorkflowPanel records={rows} capabilities={capabilities} readyOrders={readyOrders} readyError={readyError} initialOrderId={requestedOrderId} initialTripKey={requestedTripKey} selectedId={selectedId} onSelect={setSelectedId} onRefresh={onRefresh} />}
+    {(!capabilities || shipments !== null) && <InvoiceReadyQueue shipments={loading || error ? null : shipments} accountId={accountId} />}
     {(error || projection.error) && <Alert tone="danger" title="Invoice data unavailable">{error || projection.error}</Alert>}
     {!knownView && <Alert tone="danger" title="Unknown invoice view">Choose a supported invoice view. No status is inferred from an invalid link.</Alert>}
     <nav className="billing-views" aria-label="Invoice views">{invoiceViews.map(([value, label]) => <Link key={value} to={value === 'all' ? '/invoices' : `/invoices?status=${value}`} aria-current={requestedView === value ? 'page' : undefined}>{label}</Link>)}</nav>
@@ -96,7 +105,7 @@ export function InvoiceDashboard({ records = null, shipments = null, accountId =
         {visible.map(row => {
           const status = invoiceStatus(row, asOf);
           const receivable = row.documentKind === 'invoice' && row.documentStatus === 'issued';
-          return <tr key={row.id}><th scope="row">{row.number}{row.documentKind === 'credit_note' && <small>Credit note</small>}</th><td>{row.type === 'broker_order' ? 'Broker Order' : 'Carrier Trip'}</td><td>{row.customer || 'Unavailable'}</td><td>{invoiceSourceReference(row)}</td><td>{row.invoiceDate || 'Not issued'}</td><td>{row.dueDate || 'Unavailable'}</td><td>{formatMoney(row.totalMinor, row.currency)}</td><td>{receivable ? formatMoney(row.paidMinor, row.currency) : 'Not applicable'}</td><td>{receivable ? formatMoney(row.creditsMinor, row.currency) : 'Not applicable'}</td><td>{receivable ? formatMoney(invoiceBalance(row).toString(), row.currency) : 'Not a receivable'}</td><td><Badge tone={statusTones[status] || 'neutral'}>{statusNames[status]}</Badge>{row.disputed && status !== 'disputed' && <small>Disputed</small>}</td><td><Button variant="secondary" disabled title="Authorized snapshot, edit and payment workflows are not connected.">View / Edit / PDF / Payment</Button></td></tr>;
+          return <tr key={row.id}><th scope="row">{row.number}{row.documentKind === 'credit_note' && <small>Credit note</small>}</th><td>{row.type === 'broker_order' ? 'Broker Order' : 'Carrier Trip'}</td><td>{row.customer || 'Unavailable'}</td><td>{invoiceSourceReference(row)}</td><td>{row.invoiceDate || 'Not issued'}</td><td>{row.dueDate || 'Unavailable'}</td><td>{formatMoney(row.totalMinor, row.currency)}</td><td>{receivable ? formatMoney(row.paidMinor, row.currency) : 'Not applicable'}</td><td>{receivable ? formatMoney(row.creditsMinor, row.currency) : 'Not applicable'}</td><td>{receivable ? formatMoney(invoiceBalance(row).toString(), row.currency) : 'Not a receivable'}</td><td><Badge tone={statusTones[status] || 'neutral'}>{statusNames[status]}</Badge>{row.disputed && status !== 'disputed' && <small>Disputed</small>}</td><td><Button variant="secondary" disabled={!capabilities} aria-label={capabilities ? `Manage ${row.number}` : undefined} onClick={() => setSelectedId(row.id)}>{capabilities ? 'Manage' : 'View / Edit / PDF / Payment'}</Button></td></tr>;
         })}
         {!visible.length && <tr><td colSpan={12}>{loading ? <EmptyState loading title="Loading invoice access" /> : <EmptyState title={hasData ? 'No matching invoices' : 'Invoice ledger not connected'}>{hasData ? 'Adjust the selected view or filters.' : 'No order or trip is automatically issued, marked paid or presented as an invoice.'}</EmptyState>}</td></tr>}
       </tbody></table></div>
@@ -108,18 +117,33 @@ export function InvoiceDashboard({ records = null, shipments = null, accountId =
 
 export default function Invoices() {
   const [refresh, setRefresh] = useState(0);
-  const [state, setState] = useState({ loading: true, error: '' });
+  const [state, setState] = useState({ loading: true, error: '', records: null, capabilities: null, readyOrders: [], readyError: '' });
   useEffect(() => {
     const controller = new AbortController();
-    setState({ loading: true, error: '' });
-    axios.get(`${BASE_URL}api/tipsfetchProductData`, { withCredentials: true, params: { invoice_dashboard: '1' }, signal: controller.signal })
-      .then(() => {
-        if (!controller.signal.aborted) setState({ loading: false, error: 'An authorized invoice ledger is not available. Operational order responses are withheld, not converted into invoices.' });
-      })
-      .catch(requestError => {
-        if (!controller.signal.aborted) setState({ loading: false, error: requestError.response?.data?.message || requestError.message || 'Could not verify invoice data access.' });
-      });
+    setState({ loading: true, error: '', records: null, capabilities: null, readyOrders: [], readyError: '' });
+    async function load() {
+      try {
+        const { data } = await axios.get(`${BASE_URL}api/invoices`, { withCredentials: true, signal: controller.signal });
+        if (data?.status !== true || !Array.isArray(data.invoices)) throw new Error('An authorized invoice ledger projection is unavailable. Operational rows are withheld.');
+        validateInvoices(data.invoices);
+        const capabilities = data.capabilities && ['canDraft','canIssue','canRecordPayment','canVoid','canDownloadPdf'].every(key => typeof data.capabilities[key] === 'boolean') ? data.capabilities : null;
+        if (controller.signal.aborted) return;
+        setState({ loading: false, error: '', records: data.invoices, capabilities, recordedPayments: data.recordedPaymentsThisMonth || null, readyOrders: [], readyError: '' });
+        if (capabilities?.canDraft) {
+          try {
+            const ready = await axios.get(`${BASE_URL}api/invoices/ready-orders`, { withCredentials: true, signal: controller.signal });
+            if (ready.data.status !== true || !Array.isArray(ready.data.orders)) throw new Error('Completed order list is unavailable.');
+            if (!controller.signal.aborted) setState(current => ({ ...current, readyOrders: ready.data.orders }));
+          } catch (readyFailure) {
+            if (!controller.signal.aborted) setState(current => ({ ...current, readyError: readyFailure.response?.data?.message || readyFailure.message }));
+          }
+        }
+      } catch (failure) {
+        if (!controller.signal.aborted) setState({ loading: false, error: failure.response?.data?.message || failure.message || 'Could not load invoices.', records: null, capabilities: null, readyOrders: [], readyError: '' });
+      }
+    }
+    load();
     return () => controller.abort();
   }, [refresh]);
-  return <InvoiceDashboard loading={state.loading} error={state.error} onRefresh={() => setRefresh(value => value + 1)} />;
+  return <InvoiceDashboard {...state} onRefresh={() => setRefresh(value => value + 1)} />;
 }

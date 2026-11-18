@@ -173,13 +173,7 @@ const Orders = () => {
                                 >
                                   Confirmation
                                 </Link>
-                                <Link
-                                  target="_blank"
-                                  to="/pdf/invoice_orders.php?id=30"
-                                  className="btn btn-warning btn-xs"
-                                >
-                                  Invoice
-                                </Link>
+                                <span className="btn btn-default btn-xs" aria-disabled="true" title="Billing is managed by authorized dispatch staff.">Invoice handled by dispatch</span>
                                 <Link
                                   to={"/update/" + item.id}
                                   className="btn btn-default btn-sm"

@@ -1,3 +1,4 @@
+import { invoiceTripUrl } from '../../admindashboard/invoices/invoiceWorkflowLinks';
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -108,13 +109,7 @@ console.log(list)
                                 >
                                   Dispatch
                                 </Link>
-                                <Link
-                                  target="_blank"
-                                  to={`${BASE_URL}pdf/invoice_orders.php?id=${item.id}`}
-                                  className="btn btn-warning btn-xs"
-                                >
-                                  Invoice
-                                </Link>
+                                <Link to={invoiceTripUrl(item.tmsTriptId)} className="btn btn-warning btn-xs">Invoice</Link>
                               
                                 <Link to={{ pathname: '/tripdetails', state: { value: item } }}>
                 Go to Trip Details
